@@ -1,10 +1,19 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import Phaser from 'phaser';
 import { PhaserGame } from './PhaserGame';
+import { socket } from './socket';
 
 function App ()
 {
+    useEffect(() => {
+        socket.connect();
+
+        return () => {
+            socket.disconnect();
+        };
+    }, []);
+
     // The sprite can only be moved in the MainMenu Scene
     const [canMoveSprite, setCanMoveSprite] = useState(true);
     
@@ -60,6 +69,8 @@ function App ()
                 yoyo: true,
                 repeat: -1
             });
+
+            socket.emit('message', 'Added a star!');
         }
     }
 
