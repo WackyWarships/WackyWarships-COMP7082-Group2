@@ -6,6 +6,9 @@ import { socket } from './socket';
 
 function App ()
 {
+    const [roomID, setRoomId] = useState("None");
+    const [joinRoomValue, setJoinRoomValue] = useState('');
+    
     useEffect(() => {
         socket.connect();
 
@@ -14,12 +17,22 @@ function App ()
         };
     }, []);
 
-    // The sprite can only be moved in the MainMenu Scene
-    const [canMoveSprite, setCanMoveSprite] = useState(true);
+    useEffect(() => {
+        function onReceiveRoomId(value) {
+            setRoomId(value);
+        }
+        
+        socket.on('room id', onReceiveRoomId);
+        socket.on('ping', addSprite);
+
+        return () => {
+            socket.off('room id', onReceiveRoomId);
+            socket.off('ping', addSprite);
+        };
+    }, [roomID]);
     
     //  References to the PhaserGame component (game and scene are exposed)
     const phaserRef = useRef();
-    const [spritePosition, setSpritePosition] = useState({ x: 0, y: 0 });
 
     const changeScene = () => {
 
@@ -31,19 +44,17 @@ function App ()
         }
     }
 
-    const moveSprite = () => {
+    const createRoom = () => {
+        socket.emit('create room', '');
+    }
 
-        const scene = phaserRef.current.scene;
-
-        if (scene && scene.scene.key === 'MainMenu')
-        {
-            // Get the update logo position
-            scene.moveLogo(({ x, y }) => {
-
-                setSpritePosition({ x, y });
-
-            });
-        }
+    const joinRoom = () => {   
+        socket.emit('join room', joinRoomValue);
+        setJoinRoomValue('');
+    }
+    
+    function handleChange(event) {
+        setJoinRoomValue(event.target.value);
     }
 
     const addSprite = () => {
@@ -69,15 +80,16 @@ function App ()
                 yoyo: true,
                 repeat: -1
             });
-
-            socket.emit('message', 'Added a star!');
         }
+    }
+
+    const pingRoom = () => {
+        socket.emit('ping', roomID);
     }
 
     // Event emitted from the PhaserGame component
     const currentScene = (scene) => {
 
-        setCanMoveSprite(scene.scene.key !== 'MainMenu');
         
     }
 
@@ -89,13 +101,17 @@ function App ()
                     <button className="button" onClick={changeScene}>Change Scene</button>
                 </div>
                 <div>
-                    <button disabled={canMoveSprite} className="button" onClick={moveSprite}>Toggle Movement</button>
-                </div>
-                <div className="spritePosition">Sprite Position:
-                    <pre>{`{\n  x: ${spritePosition.x}\n  y: ${spritePosition.y}\n}`}</pre>
+                    <button className="button" onClick={createRoom}>Create Room</button>
                 </div>
                 <div>
-                    <button className="button" onClick={addSprite}>Add New Sprite</button>
+                    <button className="button" onClick={joinRoom}>Join Room</button>
+                    <input type="text" value={joinRoomValue} onChange={handleChange}/>
+                </div>
+                <div className="roomID">Room ID:
+                    <pre>{`${roomID}`}</pre>
+                </div>
+                <div>
+                    <button className="button" onClick={pingRoom}>Ping Room</button>
                 </div>
             </div>
         </div>

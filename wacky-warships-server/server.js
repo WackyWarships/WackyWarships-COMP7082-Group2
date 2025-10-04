@@ -1,6 +1,7 @@
 const express = require('express');
 const { createServer } = require('node:http');
 const { Server } = require('socket.io');
+const crypto = require("crypto");
 
 const app = express();
 const server = createServer(app);
@@ -10,6 +11,8 @@ const io = new Server(server, {
       origin: "http://localhost:8080"
     }
 });
+
+const roomMap = new Map();
 
 io.on('connection', (socket) => {
     
@@ -29,6 +32,23 @@ io.on('connection', (socket) => {
 
     socket.on('message', (msg) => {
         console.log('message: ' + msg);
+    });
+
+    socket.on('create room', (data) => {
+        const roomId = crypto.randomUUID();
+        socket.join(roomId);
+        roomMap.set(roomId, socket);
+        io.to(roomId).emit('room id', roomId);
+    });
+
+    socket.on('join room', (data) => {
+        socket.join(data);
+        roomMap.set(data, socket);
+        io.to(data).emit('room id', data);
+    });
+
+    socket.on('ping', (data) => {
+        io.to(data).emit('ping', 'ping');
     });
 
     socket.on('disconnect', () => {
