@@ -4,13 +4,13 @@ It is ideal for friends on a game night. It could also be played as a team build
 
 ## Getting Started
 
+Install App Dependencies
 ```bash
-# Install App Dependencies
 npm install
 ```
 
+Run App
+This would run the backend and frontend at the same time
 ```bash
-# Run App
-# This would run the backend and frontend at the same time
 npm run dev
 ```
