@@ -4,6 +4,7 @@ It is ideal for friends on a game night. It could also be played as a team build
 
 ## Getting Started
 
+App is currently hosted on Heroku at [https://wacky-warships-cdba48c85d6e.herokuapp.com/](https://wacky-warships-cdba48c85d6e.herokuapp.com/)
 Install App Dependencies
 ```bash
 npm install
