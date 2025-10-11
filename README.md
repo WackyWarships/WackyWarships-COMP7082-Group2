@@ -7,7 +7,10 @@ It is ideal for friends on a game night. It could also be played as a team build
 ```bash
 # Install App Dependencies
 npm install
+```
 
 ```bash
 # Run App
+# This would run the backend and frontend at the same time
 npm run dev
+```
