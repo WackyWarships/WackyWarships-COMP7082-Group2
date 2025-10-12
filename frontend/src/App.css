@@ -40,3 +40,12 @@
 .read-the-docs {
   color: #888;
 }
+
+.launch-mini-game-button {
+  background-color: #3f52ff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  color: #fff;
+}
