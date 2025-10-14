@@ -38,8 +38,8 @@ export class Preloader extends Scene
         this.load.image('start', 'start.png');
         this.load.image('logo', 'logo.png');
         this.load.image('star', 'star.png');
-        this.load.image('home', 'ui/home.png');
-        this.load.image('settings', 'ui/settings.png');
+        this.load.image('home', 'home.png');
+        this.load.image('settings', 'settings.png');
     }
 
     create ()
