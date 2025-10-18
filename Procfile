@@ -1,1 +1,1 @@
-web: npm --workspace frontend run build && npm --workspace backend run start
+web: npm --workspace backend run start
