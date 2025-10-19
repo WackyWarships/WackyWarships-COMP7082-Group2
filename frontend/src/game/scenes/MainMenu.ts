@@ -74,7 +74,7 @@ export class MainMenu extends Scene {
         makeButton('Settings', 90, 'Settings');
         makeButton('Credits', 150, 'Credits');
 
-        // --- Handle resizing ---
+        // Handle resizing 
         this.scale.on('resize', this.handleResize, this);
 
         EventBus.emit('current-scene-ready', this);
