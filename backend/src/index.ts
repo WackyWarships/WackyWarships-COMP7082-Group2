@@ -8,7 +8,7 @@ import { setupSocket } from "./lobby.ts";
 import type {
     ServerToClientEvents,
     ClientToServerEvents,
-} from './types.ts';
+} from 'shared/types.ts';
 
 const app = express();
 const server = createServer(app);

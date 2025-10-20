@@ -9,7 +9,7 @@ import type {
     JoinEvent,
     LeaveEvent,
     LobbyUpdate,
-} from './types.ts';
+} from 'shared/types.ts';
 
 const lobbyIdToLobbyMap = new Map<LobbyId, Lobby>();
 const playerToLobbyIdMap = new Map<PlayerId, LobbyId>();
