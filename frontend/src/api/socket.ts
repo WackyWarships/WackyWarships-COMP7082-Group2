@@ -21,7 +21,7 @@ import type {
     PlayerReconnectedEvent,
     ReconnectResponse,
     ResumeTurnEvent,
-} from './types';
+} from 'shared/types';
 
 
 // Create runtime socket then cast it to a typed Socket<ServerToClientEvents,ClientToServerEvents>.
@@ -112,11 +112,11 @@ function ensureSocket(): Socket<ServerToClientEvents, ClientToServerEvents> {
 }
 
 export function sendJoin(payload: JoinEvent): void {
-    ensureSocket().emit('join', payload);
+    ensureSocket().emit('joinLobby', payload);
 }
 
 export function sendLeave(payload: LeaveEvent): void {
-    ensureSocket().emit('leave', payload);
+    ensureSocket().emit('leaveLobby', payload);
 }
 
 export function sendChooseWeapon(payload: ChooseWeaponEvent): void {

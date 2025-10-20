@@ -19,10 +19,44 @@ export type WeaponDef = {
     // Stuff to maybe add: minigameDifficulty
 };
 
+// Lobby
+export type Lobby = {
+    id: LobbyId;
+    name: string;
+    players: PlayerId[];
+    host: PlayerId;
+}
+
 // Client -> Server ---------------------------------------------------------
-export type JoinEvent = { lobbyId: LobbyId; name?: string; client?: { version?: string; platform?: string } };
-export type LeaveEvent = { lobbyId: LobbyId; playerId?: PlayerId };
-export type ClientEvent = { join: JoinEvent; leave: LeaveEvent };
+export type CreateEvent = { 
+    lobbyId: LobbyId; 
+    playerId: PlayerId;
+    name?: string; 
+    client?: { 
+        version?: string; 
+        platform?: string 
+    };
+};
+
+export type JoinEvent = {
+    lobbyId: LobbyId; 
+    playerId: PlayerId;
+    name?: string; 
+    client?: {
+        version?: string; 
+        platform?: string 
+    };
+};
+
+export type LeaveEvent = { 
+    lobbyId: LobbyId; 
+    playerId: PlayerId;
+};
+
+export type ClientEvent = {
+    join: JoinEvent; 
+    leave: LeaveEvent;
+};
 
 export type ChooseWeaponEvent = {
     turnId: TurnId;
@@ -54,7 +88,12 @@ export type GroupMinigameResultEvent = {
 };
 
 // Server -> Client ---------------------------------------------------------
-export type PlayerState = { id: PlayerId; hp: number; alive: boolean; name?: string };
+export type PlayerState = { 
+    id: PlayerId; 
+    hp: number; 
+    alive: boolean; 
+    name?: string; 
+};
 
 export type TurnStartEvent = {
     turnId: TurnId;
@@ -102,7 +141,8 @@ export type Snapshot = {
 
 export type LobbyUpdate = {
     lobbyId: LobbyId;
-    players: Array<{ id: PlayerId; name?: string }>;
+    //players: Array<{ id: PlayerId; name?: string }>; Simplify for now
+    players: PlayerId[];
     hostId?: PlayerId;
     settings?: Record<string, any>;
 };
@@ -199,8 +239,9 @@ export type ServerToClientEvents = {
 };
 
 export type ClientToServerEvents = {
-  join: (payload: JoinEvent) => void;
-  leave: (payload: LeaveEvent) => void;
+  createLobby: (payload: CreateEvent) => void;
+  joinLobby: (payload: JoinEvent) => void;
+  leaveLobby: (payload: LeaveEvent) => void;
 
   chooseWeapon: (payload: ChooseWeaponEvent) => void;
   minigameResult: (payload: MinigameResultEvent) => void;
