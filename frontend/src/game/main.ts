@@ -9,12 +9,17 @@ let gameInstance: Phaser.Game | null = null;
 
 const baseConfig: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
-    width: 1024,
-    height: 768,
     backgroundColor: "#000000",
     scene: [Boot, Preloader, MainMenu, Game, GameOver],
     physics: { default: "arcade", arcade: { debug: false } },
-    scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+    scale: {
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: 1024,
+        height: 768,
+        min: { width: 320, height: 480 },
+        max: { width: 1920, height: 1080 },
+    }
 };
 
 export function createGame(parent: string | HTMLElement) {
