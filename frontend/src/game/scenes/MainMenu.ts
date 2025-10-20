@@ -1,5 +1,11 @@
 import { GameObjects, Scene } from 'phaser';
 import EventBus from '../EventBus';
+import {
+    getCenter,
+    isMobile,
+    getResponsiveFontSize,
+    resizeSceneBase
+} from '../utils/layout';
 
 export class MainMenu extends Scene {
     background!: GameObjects.Image;
@@ -13,19 +19,18 @@ export class MainMenu extends Scene {
 
     create() {
         const { width, height } = this.scale;
-        const centerX = width / 2;
-        const centerY = height / 2;
-
-        const isMobile = width < 700;
-        const fontSizeTop = isMobile ? 56 : 72;
-        const fontSizeBottom = isMobile ? 56 : 72;
+        const { x: centerX, y: centerY } = getCenter(this.scale);
+        const mobile = isMobile(width);
 
         // Background
         this.background = this.add.image(centerX, centerY, 'background')
             .setDisplaySize(width, height)
             .setOrigin(0.5);
 
-        // Title 
+        // Title
+        const fontSizeTop = getResponsiveFontSize(width, height, 72, 56);
+        const fontSizeBottom = getResponsiveFontSize(width, height, 72, 56);
+
         this.titleTop = this.add.text(centerX, height * 0.12, 'Wacky', {
             fontFamily: 'Arial Black',
             fontSize: `${fontSizeTop}px`,
@@ -44,17 +49,17 @@ export class MainMenu extends Scene {
             align: 'center',
         }).setOrigin(0.5);
 
-        // Menu Container 
+        // Menu Container
         this.menuContainer = this.add.container(centerX, height * 0.55);
 
         const buttonStyle = {
             fontFamily: 'Arial',
-            fontSize: `${isMobile ? 26 : 34}px`,
+            fontSize: `${mobile ? 26 : 34}px`,
             color: '#ffffff',
             backgroundColor: '#1e90ff',
             padding: { x: 20, y: 10 },
             align: 'center',
-            fixedWidth: isMobile ? 260 : 300,
+            fixedWidth: mobile ? 260 : 300,
         };
 
         const makeButton = (label: string, yOffset: number, sceneKey: string) => {
@@ -64,7 +69,6 @@ export class MainMenu extends Scene {
                 .on('pointerdown', () => this.scene.start(sceneKey))
                 .on('pointerover', () => btn.setStyle({ backgroundColor: '#63b3ff' }))
                 .on('pointerout', () => btn.setStyle({ backgroundColor: '#1e90ff' }));
-
             this.menuContainer.add(btn);
         };
 
@@ -74,7 +78,7 @@ export class MainMenu extends Scene {
         makeButton('Settings', 90, 'Settings');
         makeButton('Credits', 150, 'Credits');
 
-        // Handle resizing 
+        // Handle resizing
         this.scale.on('resize', this.handleResize, this);
 
         EventBus.emit('current-scene-ready', this);
@@ -82,19 +86,14 @@ export class MainMenu extends Scene {
 
     handleResize(gameSize: Phaser.Structs.Size) {
         const { width, height } = gameSize;
-        this.cameras.resize(width, height);
-        this.background.setDisplaySize(width, height).setPosition(width / 2, height / 2);
 
-        const centerX = width / 2;
-        const isMobile = width < 700;
-        const isVeryTall = height > width * 1.5;
+        resizeSceneBase(this, width, height);
 
-        const fontSizeTop = isMobile ? (isVeryTall ? 48 : 56) : 72;
-        const fontSizeBottom = isMobile ? (isVeryTall ? 48 : 56) : 72;
+        const { x: centerX } = getCenter(this.scale);
 
-        this.titleTop.setFontSize(fontSizeTop).setPosition(centerX, height * 0.12);
-        this.titleBottom.setFontSize(fontSizeBottom).setPosition(centerX, height * 0.21);
-
+        // Reposition dynamic elements
+        this.titleTop.setPosition(centerX, height * 0.12);
+        this.titleBottom.setPosition(centerX, height * 0.21);
         this.menuContainer.setPosition(centerX, height * 0.55);
     }
 }

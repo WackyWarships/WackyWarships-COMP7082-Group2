@@ -6,7 +6,7 @@ function App() {
     const phaserRef = useRef<IRefPhaserGame | null>(null);
 
     const currentScene = (scene: Phaser.Scene) => {
-        // Placeholder for future navbar potentially
+        // Placeholder for future navbar
     };
 
     return (
