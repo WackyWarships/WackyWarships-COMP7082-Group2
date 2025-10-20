@@ -13,7 +13,7 @@ import type {
     PlayerReconnectedEvent,
     ReconnectResponse,
     ResumeTurnEvent,
-} from '../api/types';
+} from 'shared/types';
 
 export type Events = {
     'current-scene-ready': Phaser.Scene;
