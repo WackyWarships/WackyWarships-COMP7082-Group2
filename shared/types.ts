@@ -19,9 +19,18 @@ export type WeaponDef = {
     // Stuff to maybe add: minigameDifficulty
 };
 
+// Lobby
+export type Lobby = {
+    id: LobbyId;
+    name: string;
+    players: PlayerId[];
+    host: PlayerId;
+}
+
 // Client -> Server ---------------------------------------------------------
 export type CreateLobbyEvent = {
     hostName: string;
+    playerId: PlayerId;
     lobbyName: string;
     settings?: Record<string, any>;
     client?: { version?: string; platform?: string };
@@ -29,13 +38,14 @@ export type CreateLobbyEvent = {
 
 export type JoinLobbyEvent = {
     lobbyId: LobbyId;
+    playerId: PlayerId;
     name?: string;
     client?: { version?: string; platform?: string };
 };
 
 export type LeaveLobbyEvent = {
     lobbyId: LobbyId;
-    playerId?: PlayerId;
+    playerId: PlayerId;
 };
 
 export type ChooseWeaponEvent = {
@@ -72,7 +82,7 @@ export type PlayerState = {
     id: PlayerId; 
     hp: number; 
     alive: boolean; 
-    name?: string 
+    name?: string;
 };
 
 export type TurnStartEvent = {
@@ -121,7 +131,7 @@ export type Snapshot = {
 
 export type LobbyUpdate = {
     lobbyId: LobbyId;
-    players: Array<{ id: PlayerId; name?: string }>;
+    players: PlayerId[];
     hostId?: PlayerId;
     settings?: Record<string, any>;
 };
