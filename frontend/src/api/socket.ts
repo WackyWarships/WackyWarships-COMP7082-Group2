@@ -14,8 +14,9 @@ import type {
     MinigameResultEvent,
     GroupMinigameResultEvent,
     ChooseWeaponEvent,
-    JoinEvent,
-    LeaveEvent,
+    CreateLobbyEvent,
+    JoinLobbyEvent,
+    LeaveLobbyEvent,
     ReconnectRequest,
     PlayerDisconnectedEvent,
     PlayerReconnectedEvent,
@@ -111,11 +112,15 @@ function ensureSocket(): Socket<ServerToClientEvents, ClientToServerEvents> {
     return socket;
 }
 
-export function sendJoin(payload: JoinEvent): void {
+export function sendCreateLobby(payload: CreateLobbyEvent): void {
+    ensureSocket().emit('createLobby', payload);
+}
+
+export function sendJoinLobby(payload: JoinLobbyEvent): void {
     ensureSocket().emit('joinLobby', payload);
 }
 
-export function sendLeave(payload: LeaveEvent): void {
+export function sendLeaveLobby(payload: LeaveLobbyEvent): void {
     ensureSocket().emit('leaveLobby', payload);
 }
 
