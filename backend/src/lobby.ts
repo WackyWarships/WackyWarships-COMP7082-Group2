@@ -5,9 +5,9 @@ import type {
     PlayerId,
     LobbyId,
     Lobby,
-    CreateEvent,
-    JoinEvent,
-    LeaveEvent,
+    CreateLobbyEvent,
+    JoinLobbyEvent,
+    LeaveLobbyEvent,
     LobbyUpdate,
 } from 'shared/types.ts';
 
@@ -15,14 +15,14 @@ const lobbyIdToLobbyMap = new Map<LobbyId, Lobby>();
 const playerToLobbyIdMap = new Map<PlayerId, LobbyId>();
 
 export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvents>, socket: Socket) {
-    socket.on('createLobby', (payload: CreateEvent) => {
+    socket.on('createLobby', (payload: CreateLobbyEvent) => {
         const lobbyId = crypto.randomUUID();
         socket.join(lobbyId);
         playerToLobbyIdMap.set(payload.playerId, lobbyId);
         
         const lobby: Lobby = {
             id: lobbyId,
-            name: payload.name ?? `${payload.playerId}'s Lobby`,
+            name: payload.hostName ?? `${payload.playerId}'s Lobby`,
             players: [payload.playerId],
             host: payload.playerId
         };
@@ -37,7 +37,7 @@ export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvent
         io.to(lobbyId).emit('lobbyUpdate', update);
     });
 
-    socket.on('joinLobby', (payload: JoinEvent) => {
+    socket.on('joinLobby', (payload: JoinLobbyEvent) => {
         let lobby: Lobby | undefined = undefined;
 
         if (lobby = lobbyIdToLobbyMap.get(payload.lobbyId)) {
@@ -59,7 +59,7 @@ export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvent
         }
     });
 
-    socket.on('leaveLobby', (payload: LeaveEvent) => {
+    socket.on('leaveLobby', (payload: LeaveLobbyEvent) => {
         let lobby: Lobby | undefined = undefined;
 
         if (lobby = lobbyIdToLobbyMap.get(payload.lobbyId)) {

@@ -28,34 +28,24 @@ export type Lobby = {
 }
 
 // Client -> Server ---------------------------------------------------------
-export type CreateEvent = { 
-    lobbyId: LobbyId; 
+export type CreateLobbyEvent = {
+    hostName: string;
     playerId: PlayerId;
-    name?: string; 
-    client?: { 
-        version?: string; 
-        platform?: string 
-    };
+    lobbyName: string;
+    settings?: Record<string, any>;
+    client?: { version?: string; platform?: string };
 };
 
-export type JoinEvent = {
-    lobbyId: LobbyId; 
+export type JoinLobbyEvent = {
+    lobbyId: LobbyId;
     playerId: PlayerId;
-    name?: string; 
-    client?: {
-        version?: string; 
-        platform?: string 
-    };
+    name?: string;
+    client?: { version?: string; platform?: string };
 };
 
-export type LeaveEvent = { 
-    lobbyId: LobbyId; 
+export type LeaveLobbyEvent = {
+    lobbyId: LobbyId;
     playerId: PlayerId;
-};
-
-export type ClientEvent = {
-    join: JoinEvent; 
-    leave: LeaveEvent;
 };
 
 export type ChooseWeaponEvent = {
@@ -92,7 +82,7 @@ export type PlayerState = {
     id: PlayerId; 
     hp: number; 
     alive: boolean; 
-    name?: string; 
+    name?: string;
 };
 
 export type TurnStartEvent = {
@@ -141,7 +131,6 @@ export type Snapshot = {
 
 export type LobbyUpdate = {
     lobbyId: LobbyId;
-    //players: Array<{ id: PlayerId; name?: string }>; Simplify for now
     players: PlayerId[];
     hostId?: PlayerId;
     settings?: Record<string, any>;
@@ -220,32 +209,31 @@ export type ServerSnapshot = Snapshot;
 
 // Socket.IO event maps -----------------------------------------------------
 export type ServerToClientEvents = {
-  snapshot: (snapshot: ServerSnapshot) => void;
-  ack: (ack: { seq: Seq }) => void;
-  lobbyUpdate: (lu: LobbyUpdate) => void;
-  error: (err: { code: number; message: string }) => void;
+    snapshot: (snapshot: ServerSnapshot) => void;
+    ack: (ack: { seq: Seq }) => void;
+    lobbyUpdate: (lu: LobbyUpdate) => void;
+    error: (err: { code: number; message: string }) => void;
 
-  turnStart: (evt: TurnStartEvent) => void;
-  turnResolved: (res: TurnResolvedEvent) => void;
-  gameState: (gs: GameStateTurn) => void;
+    turnStart: (evt: TurnStartEvent) => void;
+    turnResolved: (res: TurnResolvedEvent) => void;
+    gameState: (gs: GameStateTurn) => void;
 
-  groupMinigameStart: (g: GroupMinigameStartEvent) => void;
-  groupMinigameResolved: (g: GroupMinigameResolvedEvent) => void;
+    groupMinigameStart: (g: GroupMinigameStartEvent) => void;
+    groupMinigameResolved: (g: GroupMinigameResolvedEvent) => void;
 
-  playerDisconnected: (pd: PlayerDisconnectedEvent) => void;
-  playerReconnected: (pr: PlayerReconnectedEvent) => void;
-  reconnectResponse: (rr: ReconnectResponse) => void;
-  resumeTurn: (r: ResumeTurnEvent) => void;
+    playerDisconnected: (pd: PlayerDisconnectedEvent) => void;
+    playerReconnected: (pr: PlayerReconnectedEvent) => void;
+    reconnectResponse: (rr: ReconnectResponse) => void;
+    resumeTurn: (r: ResumeTurnEvent) => void;
 };
 
 export type ClientToServerEvents = {
-  createLobby: (payload: CreateEvent) => void;
-  joinLobby: (payload: JoinEvent) => void;
-  leaveLobby: (payload: LeaveEvent) => void;
+    createLobby: (payload: CreateLobbyEvent) => void;
+    joinLobby: (payload: JoinLobbyEvent) => void;
+    leaveLobby: (payload: LeaveLobbyEvent) => void;
 
-  chooseWeapon: (payload: ChooseWeaponEvent) => void;
-  minigameResult: (payload: MinigameResultEvent) => void;
-  groupMinigameResult: (payload: GroupMinigameResultEvent) => void;
-
-  reconnectRequest: (payload: ReconnectRequest) => void;
+    chooseWeapon: (payload: ChooseWeaponEvent) => void;
+    minigameResult: (payload: MinigameResultEvent) => void;
+    groupMinigameResult: (payload: GroupMinigameResultEvent) => void;
+    reconnectRequest: (payload: ReconnectRequest) => void;
 };
