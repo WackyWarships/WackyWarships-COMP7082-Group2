@@ -22,7 +22,7 @@ import type {
     PlayerReconnectedEvent,
     ReconnectResponse,
     ResumeTurnEvent,
-} from './types';
+} from 'shared/types';
 
 
 // Create runtime socket then cast it to a typed Socket<ServerToClientEvents,ClientToServerEvents>.

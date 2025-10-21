@@ -3,10 +3,18 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer } from "http";
 import { Server } from "socket.io";
+import { setupSocket } from "./lobby.ts";
+
+import type {
+    ServerToClientEvents,
+    ClientToServerEvents,
+} from 'shared/types.ts';
 
 const app = express();
 const server = createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server<ClientToServerEvents, ServerToClientEvents>(server, {
+   cors: { origin: "*" } 
+});
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Serve frontend build files
@@ -18,10 +26,7 @@ app.get('*', (req, res) => {
 io.on("connection", (socket) => {
   console.log("New player connected:", socket.id);
 
-  socket.on("attack", (data) => {
-    console.log("Attack:", data);
-    io.emit("updateHealth", data);
-  });
+  setupSocket(io, socket);
 });
 
 const PORT = process.env.PORT || 3000;
