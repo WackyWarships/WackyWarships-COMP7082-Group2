@@ -91,6 +91,12 @@ export class MainMenu extends Scene {
 
         const { x: centerX } = getCenter(this.scale);
 
+        const fontSizeTop = getResponsiveFontSize(width, height, 72, 56);
+        const fontSizeBottom = getResponsiveFontSize(width, height, 72, 56);
+
+        this.titleTop.setFontSize(fontSizeTop);
+        this.titleBottom.setFontSize(fontSizeBottom);
+
         // Reposition dynamic elements
         this.titleTop.setPosition(centerX, height * 0.12);
         this.titleBottom.setPosition(centerX, height * 0.21);
