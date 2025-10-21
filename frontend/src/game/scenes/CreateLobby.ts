@@ -133,7 +133,7 @@ export class CreateLobby extends Scene {
         const lobbyId = Math.random().toString(36).substring(2, 7).toUpperCase();
 
         console.log(`Creating lobby ${lobbyId}: ${name}`);
-        // sendCreateLobby({ hostName, lobbyName });
+        // sendCreateLobby({ hostName, playerId, lobbyName, settings?, client? });
 
         this.scene.start('Game'); // Temporary
     }
