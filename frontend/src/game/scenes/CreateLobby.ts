@@ -23,12 +23,12 @@ export class CreateLobby extends Scene {
         const { x: centerX, y: centerY } = getCenter(this.scale);
         const mobile = isMobile(width);
 
-        // Background
+        // Background 
         this.background = this.add.image(centerX, centerY, 'background')
             .setDisplaySize(width, height)
             .setOrigin(0.5);
 
-        // Title
+        // Title 
         const titleFontSize = getResponsiveFontSize(width, height, 56, 44);
         this.title = this.add.text(centerX, height * 0.15, 'Create Lobby', {
             fontFamily: 'Arial Black',
@@ -40,9 +40,9 @@ export class CreateLobby extends Scene {
         }).setOrigin(0.5);
 
         // Input Field 
-        this.createNameInput(centerX, height * 0.35);
+        this.createNameInput();
 
-        // Buttons
+        // Buttons 
         const buttonStyle = {
             fontFamily: 'Arial',
             fontSize: `${mobile ? 26 : 34}px`,
@@ -70,10 +70,10 @@ export class CreateLobby extends Scene {
             .on('pointerover', () => this.backButton.setStyle({ backgroundColor: '#7a7aff' }))
             .on('pointerout', () => this.backButton.setStyle({ backgroundColor: '#5555ff' }));
 
-        // Handle resizing
+        // Handle resizing 
         this.scale.on('resize', this.handleResize, this);
 
-        // Cleanup input on shutdown 
+        // Cleanup input on shutdown
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             if (this.nameInput) {
                 this.nameInput.remove();
@@ -84,10 +84,11 @@ export class CreateLobby extends Scene {
         EventBus.emit('current-scene-ready', this);
     }
 
-    createNameInput(x: number, y: number) {
+    // Input creation 
+    createNameInput( ) {
         this.nameInput = document.createElement('input');
         this.nameInput.type = 'text';
-        this.nameInput.placeholder = 'Enter your name';
+        this.nameInput.placeholder = 'Enter lobby name...';
 
         Object.assign(this.nameInput.style, {
             position: 'absolute',
@@ -104,19 +105,35 @@ export class CreateLobby extends Scene {
             zIndex: '10',
             pointerEvents: 'auto',
             transform: 'translate(-50%, -50%)',
-            left: `${x}px`,
-            top: `${y}px`,
         });
 
         document.body.appendChild(this.nameInput);
+
+        this.updateInputPosition();
+    }
+
+    // Correct input placement relative to canvas 
+    private updateInputPosition() {
+        if (!this.nameInput) return;
+
+        const rect = this.game.canvas.getBoundingClientRect();
+        const { height } = this.scale;
+        const { x: centerX } = getCenter(this.scale);
+
+        const titleY = height * 0.15;
+        const createBtnY = height * 0.55;
+        const midY = titleY + (createBtnY - titleY) * 0.5;
+
+        this.nameInput.style.left = `${rect.left + centerX}px`;
+        this.nameInput.style.top = `${rect.top + midY}px`;
     }
 
     handleCreateClick() {
-        const name = this.nameInput?.value?.trim() || 'Player';
+        const name = this.nameInput?.value?.trim() || 'Lobby';
         const lobbyId = Math.random().toString(36).substring(2, 7).toUpperCase();
 
-        console.log(`Creating lobby ${lobbyId} as ${name}`);
-        // sendCreateLobby({ lobby, host, settings?, client? }); // Uncomment when backend ready
+        console.log(`Creating lobby ${lobbyId}: ${name}`);
+        // sendCreateLobby({ hostName, lobbyName });
 
         this.scene.start('Game'); // Temporary
     }
@@ -127,15 +144,12 @@ export class CreateLobby extends Scene {
 
         const { x: centerX } = getCenter(this.scale);
 
-        // Reposition dynamic elements
+        // Reposition elements
         this.title.setPosition(centerX, height * 0.15);
         this.createButton.setPosition(centerX, height * 0.55);
         this.backButton.setPosition(centerX, height * 0.65);
 
-        // Move input DOM element manually
-        if (this.nameInput) {
-            this.nameInput.style.left = `${centerX}px`;
-            this.nameInput.style.top = `${height * 0.35}px`;
-        }
+        // Update DOM input position
+        this.updateInputPosition();
     }
 }
