@@ -21,7 +21,8 @@ export type WeaponDef = {
 
 // Client -> Server ---------------------------------------------------------
 export type CreateLobbyEvent = {
-    name: string;
+    hostName: string;
+    lobbyName: string;
     settings?: Record<string, any>;
     client?: { version?: string; platform?: string };
 };
