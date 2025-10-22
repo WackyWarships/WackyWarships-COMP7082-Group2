@@ -73,6 +73,10 @@ export class CreateLobby extends Scene {
         // Handle resizing 
         this.scale.on('resize', this.handleResize, this);
 
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            this.scale.off('resize', this.handleResize, this);
+        });
+
         // Cleanup input on shutdown
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             if (this.nameInput) {
@@ -85,7 +89,7 @@ export class CreateLobby extends Scene {
     }
 
     // Input creation 
-    createNameInput( ) {
+    createNameInput() {
         this.nameInput = document.createElement('input');
         this.nameInput.type = 'text';
         this.nameInput.placeholder = 'Enter lobby name...';
@@ -151,9 +155,9 @@ export class CreateLobby extends Scene {
         this.title.setPosition(centerX, height * 0.15);
         this.createButton.setPosition(centerX, height * 0.55);
         this.backButton.setPosition(centerX, height * 0.65);
-   
+
         this.updateInputPosition();
-        
+
     }
-    
+
 }

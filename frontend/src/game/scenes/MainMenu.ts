@@ -81,6 +81,10 @@ export class MainMenu extends Scene {
         // Handle resizing
         this.scale.on('resize', this.handleResize, this);
 
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            this.scale.off('resize', this.handleResize, this);
+        });
+
         EventBus.emit('current-scene-ready', this);
     }
 
