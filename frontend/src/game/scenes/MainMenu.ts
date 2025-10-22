@@ -85,6 +85,9 @@ export class MainMenu extends Scene {
     }
 
     handleResize(gameSize: Phaser.Structs.Size) {
+        // If this is not the current scene, ignore this resize
+        if (!this.background || !this.scene.isActive()) return;
+
         const { width, height } = gameSize;
 
         resizeSceneBase(this, width, height);

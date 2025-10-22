@@ -139,6 +139,9 @@ export class CreateLobby extends Scene {
     }
 
     handleResize(gameSize: Phaser.Structs.Size) {
+        // If this is not the current scene, ignore this resize
+        if (!this.background || !this.scene.isActive()) return;
+
         const { width, height } = gameSize;
         resizeSceneBase(this, width, height);
 
@@ -148,8 +151,9 @@ export class CreateLobby extends Scene {
         this.title.setPosition(centerX, height * 0.15);
         this.createButton.setPosition(centerX, height * 0.55);
         this.backButton.setPosition(centerX, height * 0.65);
-
-        // Update DOM input position
+   
         this.updateInputPosition();
+        
     }
+    
 }
