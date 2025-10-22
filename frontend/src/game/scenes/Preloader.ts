@@ -1,47 +1,42 @@
-import { Scene } from 'phaser';
+// src/game/scenes/Preloader.ts
+import Phaser from "phaser";
 
-export class Preloader extends Scene
-{
-    constructor ()
-    {
-        super('Preloader');
-    }
+export default class Preloader extends Phaser.Scene {
+  constructor() {
+    super("Preloader");
+  }
 
-    init ()
-    {
-        //  We loaded this image in our Boot Scene, so we can display it here
-        this.add.image(512, 384, 'background');
+  init() {
+    const { width, height } = this.scale;
 
-        //  A simple progress bar. This is the outline of the bar.
-        this.add.rectangle(512, 384, 468, 32).setStrokeStyle(1, 0xffffff);
+    // Simple progress UI
+    this.add
+      .rectangle(width / 2, height * 0.5, 468, 32)
+      .setStrokeStyle(1, 0xffffff);
+    const bar = this.add
+      .rectangle(width / 2 - 230, height * 0.5, 4, 28, 0xffffff)
+      .setOrigin(0, 0.5);
 
-        //  This is the progress bar itself. It will increase in size from the left based on the % of progress.
-        const bar = this.add.rectangle(512-230, 384, 4, 28, 0xffffff);
+    this.load.on("progress", (p: number) => {
+      bar.width = 4 + 460 * p;
+    });
+  }
 
-        //  Use the 'progress' event emitted by the LoaderPlugin to update the loading bar
-        this.load.on('progress', (progress: number) => {
+  preload() {
+    // Where your public assets live: <root>/public/assets/*
+    this.load.setPath("assets");
 
-            //  Update the progress bar (our bar is 464px wide, so 100% = 464px)
-            bar.width = 4 + (460 * progress);
+    // Required by your scenes
+    this.load.image("background", "bg_v2.png");
+    this.load.image("logo", "logo.png");
+    this.load.image("start", "start.png"); // used by MainMenu
 
-        });
-    }
+    // Optional (only if you actually added the files)
+    // this.load.image('playerShip', 'player.png');
+    // this.load.image('enemyShip',  'enemy.png');
+  }
 
-    preload ()
-    {
-        //  Load the assets for the game - Replace with your own assets
-        this.load.setPath('assets');
-
-        this.load.image('logo', 'logo.png');
-        this.load.image('star', 'star.png');
-    }
-
-    create ()
-    {
-        //  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
-        //  For example, you can define global animations here, so we can use them in other scenes.
-
-        //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
-        this.scene.start('MainMenu');
-    }
+  create() {
+    this.scene.start("MainMenu");
+  }
 }
