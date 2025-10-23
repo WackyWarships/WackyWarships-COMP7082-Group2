@@ -22,6 +22,8 @@ import type {
     PlayerReconnectedEvent,
     ReconnectResponse,
     ResumeTurnEvent,
+    StartGameEvent,
+    NextTurnEvent,
 } from 'shared/types';
 
 
@@ -122,6 +124,14 @@ export function sendJoinLobby(payload: JoinLobbyEvent): void {
 
 export function sendLeaveLobby(payload: LeaveLobbyEvent): void {
     ensureSocket().emit('leaveLobby', payload);
+}
+
+export function sendStartGame(payload: StartGameEvent): void {
+    ensureSocket().emit('startGame', payload);
+}
+
+export function sendNextTurn(payload: NextTurnEvent): void {
+    ensureSocket().emit('nextTurn', payload);
 }
 
 export function sendChooseWeapon(payload: ChooseWeaponEvent): void {
