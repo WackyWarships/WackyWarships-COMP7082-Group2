@@ -1,145 +1,105 @@
 import Phaser, { Scene } from 'phaser';
-import { EventBus } from '../EventBus';
+import EventBus from '../EventBus';
+import { getCenter, getResponsiveFontSize, resizeSceneBase } from '../utils/layout';
 
 type ResultData = {
-  result?: 'VICTORY' | 'DEFEAT' | string;
-  playerHP?: number;
-  enemyHP?: number;
-  shots?: number;
-  damage?: number;
+    result?: 'VICTORY' | 'DEFEAT';
+    playerHP?: number;
+    enemyHP?: number;
+    shots?: number;
+    damage?: number;
 };
 
 export class GameOver extends Scene {
-  // --- Optional compatibility properties (match repo stub style) ---
-  public camera!: Phaser.Cameras.Scene2D.Camera;
-  public background?: Phaser.GameObjects.Image;
-  public gameText?: Phaser.GameObjects.Text;
+    private background!: Phaser.GameObjects.Image;
+    private title!: Phaser.GameObjects.Text;
+    private stats!: Phaser.GameObjects.Text;
+    private mainBtn!: Phaser.GameObjects.Text;
 
-  // --- UI elements you already use ---
-  private bg?: Phaser.GameObjects.Image;
-  private card!: Phaser.GameObjects.Rectangle;
-  private title!: Phaser.GameObjects.Text;
-  private statTexts: Phaser.GameObjects.Text[] = [];
-  private menuBtn!: Phaser.GameObjects.Rectangle;
-  private menuLabel!: Phaser.GameObjects.Text;
-
-  constructor() {
-    super('GameOver');
-  }
-
-  create(data: ResultData = {}) {
-    const { width: W, height: H } = this.scale;
-
-    // alias the main camera (compat prop)
-    this.camera = this.cameras.main;
-
-    // Background (and keep alias `background`)
-    if (this.textures.exists('background')) {
-      this.bg = this.add.image(W / 2, H / 2, 'background').setOrigin(0.5).setDisplaySize(W, H);
-      this.background = this.bg; // compat alias
-    } else {
-      this.cameras.main.setBackgroundColor(0x0b5fa5);
+    constructor() {
+        super('GameOver');
     }
 
-    // Resolve result + stats
-    const result =
-      data.result ??
-      ((data.playerHP! > 0 && data.enemyHP === 0) ? 'VICTORY' :
-       (data.enemyHP! > 0 && data.playerHP === 0) ? 'DEFEAT' : 'GAME OVER');
+    create(data: ResultData): void {
+        const { width, height } = this.scale;
+        const { x: centerX, y: centerY } = getCenter(this.scale);
 
-    const playerHP = typeof data.playerHP === 'number' ? data.playerHP : 0;
-    const enemyHP  = typeof data.enemyHP  === 'number' ? data.enemyHP  : 0;
-    const shots    = typeof data.shots    === 'number' ? data.shots    : undefined;
-    const dmgDealt = typeof data.damage   === 'number' ? data.damage   : undefined;
+        // Background tinted
+        this.background = this.add.image(centerX, centerY, 'background')
+            .setOrigin(0.5)
+            .setDisplaySize(width, height)
+            .setTint(0x222222);
 
-    // Card container
-    const cardW = Math.min(520, W * 0.9);
-    const cardH = 320;
-    const cardX = W / 2;
-    const cardY = H * 0.45;
+        // Title
+        const titleSize = getResponsiveFontSize(width, height, 48, 36);
+        this.title = this.add.text(centerX, height * 0.22, data.result ?? 'GAME OVER', {
+            fontFamily: 'Arial Black',
+            fontSize: `${titleSize}px`,
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 8,
+        }).setOrigin(0.5);
 
-    this.card = this.add
-      .rectangle(cardX, cardY, cardW, cardH, 0x000000, 0.35)
-      .setStrokeStyle(2, 0xffffff, 0.7);
+        // Scoreboard
+        const bodySize = getResponsiveFontSize(width, height, 22, 18);
+        const lines = [
+            `Player HP: ${data.playerHP ?? 0}`,
+            `Enemy HP:  ${data.enemyHP ?? 0}`,
+            `Shots:     ${data.shots ?? 0}`,
+            `Damage:    ${data.damage ?? 0}`,
+        ];
+        this.stats = this.add.text(centerX, height * 0.40, lines.join('\n'), {
+            fontFamily: 'Arial',
+            fontSize: `${bodySize}px`,
+            color: '#ffffff',
+            align: 'center',
+        }).setOrigin(0.5, 0);
 
-    // Title
-    this.title = this.add.text(cardX, cardY - cardH / 2 + 40, result, {
-      fontFamily: 'Arial Black',
-      fontSize: '48px',
-      color: '#ffffff',
-      stroke: '#000000',
-      strokeThickness: 8
-    }).setOrigin(0.5);
+        // Main Menu button
+        const btnSize = getResponsiveFontSize(width, height, 24, 20);
+        this.mainBtn = this.add.text(centerX, height * 0.72, 'MAIN MENU', {
+            fontFamily: 'Arial Black',
+            fontSize: `${btnSize}px`,
+            color: '#ffffff',
+            backgroundColor: '#1e90ff',
+            padding: { x: 22, y: 12 },
+            stroke: '#000000',
+            strokeThickness: 6,
+        })
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true })
+            .on('pointerover', () => this.mainBtn.setStyle({ backgroundColor: '#63b3ff' }))
+            .on('pointerout', () => this.mainBtn.setStyle({ backgroundColor: '#1e90ff' }))
+            .on('pointerdown', () => {
+                // IMPORTANT: ensure Game is fully stopped before returning
+                this.scene.stop('Game');
+                this.scene.start('MainMenu');
+            });
 
-    // Stats
-    const lines = [
-      `Player HP: ${playerHP}`,
-      `Enemy HP: ${enemyHP}`,
-      ...(shots    !== undefined ? [`Shots Fired: ${shots}`] : []),
-      ...(dmgDealt !== undefined ? [`Damage Dealt: ${dmgDealt}`] : [])
-    ];
+        this.scale.on('resize', this.onResize, this);
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            this.scale.off('resize', this.onResize, this);
+        });
 
-    const baseY = cardY - 20;
-    this.statTexts = lines.map((txt, i) =>
-      this.add.text(cardX, baseY + i * 32, txt, {
-        fontFamily: 'Arial Black',
-        fontSize: '20px',
-        color: '#ffffff',
-        stroke: '#000000',
-        strokeThickness: 4
-      }).setOrigin(0.5)
-    );
+        EventBus.emit('current-scene-ready', this);
+    }
 
-    // Main Menu button
-    const btnW = 200, btnH = 50;
-    this.menuBtn = this.add
-      .rectangle(W / 2, H * 0.85, btnW, btnH, 0x000000, 0.35)
-      .setStrokeStyle(2, 0xffffff, 0.7)
-      .setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => this.scene.start('MainMenu'))
-      .on('pointerover', () => this.menuBtn.setAlpha(0.9))
-      .on('pointerout', () => this.menuBtn.setAlpha(1));
+    private onResize = (gameSize: Phaser.Structs.Size) => {
+        const { width, height } = gameSize;
+        const { x: centerX, y: centerY } = getCenter(this.scale);
 
-    this.menuLabel = this.add.text(this.menuBtn.x, this.menuBtn.y, 'MAIN MENU', {
-      fontFamily: 'Arial Black',
-      fontSize: '24px',
-      color: '#ffffff',
-      stroke: '#000000',
-      strokeThickness: 4
-    }).setOrigin(0.5);
+        this.background?.setPosition(centerX, centerY).setDisplaySize(width, height);
 
-    // compat alias: expose a Text via `gameText` if any code expects it
-    this.gameText = this.menuLabel;
+        const titleSize = getResponsiveFontSize(width, height, 48, 36);
+        this.title?.setPosition(centerX, height * 0.22).setFontSize(titleSize);
 
-    this.scale.on('resize', this.onResize, this);
-    EventBus.emit('current-scene-ready', this);
-  }
+        const bodySize = getResponsiveFontSize(width, height, 22, 18);
+        this.stats?.setPosition(centerX, height * 0.40).setFontSize(bodySize);
 
-  onResize(gameSize: Phaser.Structs.Size) {
-    const { width: W, height: H } = gameSize;
+        const btnSize = getResponsiveFontSize(width, height, 24, 20);
+        this.mainBtn?.setPosition(centerX, height * 0.72).setFontSize(btnSize);
 
-    // Background + alias
-    if (this.bg) this.bg.setPosition(W / 2, H / 2).setDisplaySize(W, H);
-    if (this.background) this.background.setPosition(W / 2, H / 2).setDisplaySize(W, H);
-
-    // Card + title
-    const cardW = Math.min(520, W * 0.9);
-    const cardH = 320;
-    const cardX = W / 2;
-    const cardY = H * 0.45;
-
-    this.card.setPosition(cardX, cardY).setSize(cardW, cardH);
-    this.title.setPosition(cardX, cardY - cardH / 2 + 40);
-
-    // Stats
-    const baseY = cardY - 20;
-    this.statTexts.forEach((t, i) => t.setPosition(cardX, baseY + i * 32));
-
-    // Button + alias text
-    this.menuBtn.setPosition(W / 2, H * 0.85);
-    this.menuLabel.setPosition(this.menuBtn.x, this.menuBtn.y);
-    this.gameText?.setPosition(this.menuLabel.x, this.menuLabel.y); // keep alias aligned
-  }
+        resizeSceneBase(this, width, height);
+    };
 }
-
 export default GameOver;
