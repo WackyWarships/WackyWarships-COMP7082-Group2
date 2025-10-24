@@ -3,7 +3,7 @@ export type Timestamp = number;
 export type Seq = number;
 
 export type WeaponId = string;
-export type TurnId = string;
+export type TurnId = number;
 export type PlayerId = string;
 export type LobbyId = string;
 export type ProtocolVersion = string;
@@ -48,9 +48,21 @@ export type LeaveLobbyEvent = {
     playerId: PlayerId;
 };
 
+export type StartGameEvent = {
+    lobbyId: LobbyId;
+};
+
+export type NextTurnEvent = {
+    lobbyId: LobbyId;
+    turnId: TurnId;
+    currentPlayer: PlayerId;
+};
+
 export type ChooseWeaponEvent = {
+    lobbyId: LobbyId;
     turnId: TurnId;
     playerId: PlayerId;
+    targetPlayerId: PlayerId;
     weaponId: WeaponId;
     meta?: Record<string, any>;
 };
@@ -88,7 +100,7 @@ export type PlayerState = {
 export type TurnStartEvent = {
     turnId: TurnId;
     playerId: PlayerId;
-    validWeapons: WeaponId[];
+    validWeapons?: WeaponId[];
     seed?: string | number;
     minigameParams?: Record<string, any>;
     timeLimitMs?: number;
@@ -101,7 +113,7 @@ export type TurnResolvedEvent = {
     weaponId: WeaponId;
     outcome: 'success' | 'failure';
     damage: number;
-    defenderHp: number;
+    defenderHp?: number;
     events?: Array<{ type: string; payload?: any }>;
     meta?: Record<string, any>;
 };
@@ -232,6 +244,8 @@ export type ClientToServerEvents = {
     joinLobby: (payload: JoinLobbyEvent) => void;
     leaveLobby: (payload: LeaveLobbyEvent) => void;
 
+    startGame: (payload: StartGameEvent) => void;
+    nextTurn: (payload: NextTurnEvent) => void;
     chooseWeapon: (payload: ChooseWeaponEvent) => void;
     minigameResult: (payload: MinigameResultEvent) => void;
     groupMinigameResult: (payload: GroupMinigameResultEvent) => void;

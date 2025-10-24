@@ -532,6 +532,27 @@ export class Game extends Phaser.Scene {
         const whoFont = getResponsiveFontSize(W, H, 26, 20);
         this.turnLabelText?.setFontSize(whoFont).setPosition(this.turnLabelGlass.x, this.turnLabelGlass.y);
     }
+
+    private onResize = (gameSize: Phaser.Structs.Size) => {
+        const { width, height } = gameSize;
+        const topY = height * 0.2;
+        const bottomY = height * 0.8;
+
+        this.background?.setPosition(width / 2, height / 2).setDisplaySize(width, height);
+        this.enemy.setPosition(width / 2, topY);
+        this.player.setPosition(width / 2, bottomY);
+
+        const gap = 28;
+        this.enemyHPBar.setPosition(width / 2, topY - gap);
+        this.playerHPBar.setPosition(width / 2, bottomY + gap);
+
+        this.weaponRelayout?.();
+
+        const attackFontSize = getResponsiveFontSize(width, height, 20, 16);
+        this.attackBtn?.setFontSize(attackFontSize).setPosition(width - 140, bottomY - 10);
+
+        resizeSceneBase(this, width, height);
+    };
 }
 
 export default Game;

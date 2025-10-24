@@ -21,7 +21,9 @@
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   },
   "private": true,
   "workspaces": [

@@ -82,10 +82,17 @@ export class MainMenu extends Scene {
         // Handle resizing
         this.scale.on('resize', this.handleResize, this);
 
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            this.scale.off('resize', this.handleResize, this);
+        });
+
         EventBus.emit('current-scene-ready', this);
     }
 
     handleResize(gameSize: Phaser.Structs.Size) {
+        // If this is not the current scene, ignore this resize
+        if (!this.background || !this.scene.isActive()) return;
+
         const { width, height } = gameSize;
 
         resizeSceneBase(this, width, height);
