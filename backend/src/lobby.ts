@@ -9,6 +9,11 @@ import type {
     JoinLobbyEvent,
     LeaveLobbyEvent,
     LobbyUpdate,
+    StartGameEvent,
+    TurnStartEvent,
+    ChooseWeaponEvent,
+    TurnResolvedEvent,
+    NextTurnEvent,
 } from 'shared/types.ts';
 
 const lobbyIdToLobbyMap = new Map<LobbyId, Lobby>();
@@ -82,6 +87,59 @@ export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvent
             else {
                 socket.emit("error", {code: 404, message: `Player ${payload.playerId} not found in Lobby ${payload.lobbyId}.`});
             }
+        } 
+        else {
+            socket.emit("error", {code: 404, message: `Lobby not found with id ${payload.lobbyId}.`});
+        }
+    });
+
+    socket.on('startGame', (payload: StartGameEvent) => {
+        let lobby: Lobby | undefined = undefined;
+
+        if (lobby = lobbyIdToLobbyMap.get(payload.lobbyId)) {
+            const update: TurnStartEvent = {
+                turnId: 0,
+                playerId: lobby.players[0]
+            };
+
+            io.to(lobby.id).emit('turnStart', update);
+        } 
+        else {
+            socket.emit("error", {code: 404, message: `Lobby not found with id ${payload.lobbyId}.`});
+        }
+    });
+
+    socket.on('chooseWeapon', (payload: ChooseWeaponEvent) => {
+        let lobby: Lobby | undefined = undefined;
+
+        if (lobby = lobbyIdToLobbyMap.get(payload.lobbyId)) {    
+            // Should be start minigame event once minigame is implemented       
+            const update: TurnResolvedEvent = {
+                turnId: payload.turnId,
+                attackerId: payload.playerId,
+                defenderId: payload.targetPlayerId,
+                weaponId: payload.weaponId,
+                outcome: 'success',
+                damage: 5,
+            };
+
+            io.to(lobby.id).emit('turnResolved', update);
+        } 
+        else {
+            socket.emit("error", {code: 404, message: `Lobby not found with id ${payload.lobbyId}.`});
+        }
+    });
+
+    socket.on('nextTurn', (payload: NextTurnEvent) => {
+        let lobby: Lobby | undefined = undefined;
+
+        if (lobby = lobbyIdToLobbyMap.get(payload.lobbyId)) {
+            const update: TurnStartEvent = {
+                turnId: payload.turnId + 1,
+                playerId: lobby.players[0] == payload.currentPlayer ? lobby.players[1] : lobby.players[0],
+            };
+
+            io.to(lobby.id).emit('turnStart', update);
         } 
         else {
             socket.emit("error", {code: 404, message: `Lobby not found with id ${payload.lobbyId}.`});
