@@ -6,18 +6,21 @@ import {
     getResponsiveFontSize,
     resizeSceneBase
 } from '../utils/layout';
-import { CreateLobbyEvent } from 'shared/types';
-import { getPlayerId, sendCreateLobby } from '../../api/socket';
+import { 
+    sendJoinLobby,
+    getPlayerId
+ } from '../../api/socket';
+import { JoinLobbyEvent } from 'shared/types';
 
-export class CreateLobby extends Scene {
+export class JoinLobby extends Scene {
     background!: Phaser.GameObjects.Image;
     title!: Phaser.GameObjects.Text;
-    nameInput?: HTMLInputElement;
-    createButton!: Phaser.GameObjects.Text;
+    codeInput?: HTMLInputElement;
+    joinButton!: Phaser.GameObjects.Text;
     backButton!: Phaser.GameObjects.Text;
 
     constructor() {
-        super('CreateLobby');
+        super('JoinLobby');
     }
 
     create() {
@@ -32,7 +35,7 @@ export class CreateLobby extends Scene {
 
         // Title 
         const titleFontSize = getResponsiveFontSize(width, height, 56, 44);
-        this.title = this.add.text(centerX, height * 0.15, 'Create Lobby', {
+        this.title = this.add.text(centerX, height * 0.15, 'Join Lobby', {
             fontFamily: 'Arial Black',
             fontSize: `${titleFontSize}px`,
             color: '#ffffff',
@@ -42,7 +45,7 @@ export class CreateLobby extends Scene {
         }).setOrigin(0.5);
 
         // Input Field 
-        this.createNameInput();
+        this.joinCodeInput();
 
         // Buttons 
         const buttonStyle = {
@@ -55,12 +58,12 @@ export class CreateLobby extends Scene {
             fixedWidth: mobile ? 240 : 300,
         };
 
-        this.createButton = this.add.text(centerX, height * 0.55, 'Create', buttonStyle)
+        this.joinButton = this.add.text(centerX, height * 0.55, 'Join', buttonStyle)
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true })
-            .on('pointerdown', () => this.handleCreateClick())
-            .on('pointerover', () => this.createButton.setStyle({ backgroundColor: '#63b3ff' }))
-            .on('pointerout', () => this.createButton.setStyle({ backgroundColor: '#1e90ff' }));
+            .on('pointerdown', () => this.handleJoinClick())
+            .on('pointerover', () => this.joinButton.setStyle({ backgroundColor: '#63b3ff' }))
+            .on('pointerout', () => this.joinButton.setStyle({ backgroundColor: '#1e90ff' }));
 
         this.backButton = this.add.text(centerX, height * 0.65, 'Back', {
             ...buttonStyle,
@@ -83,9 +86,9 @@ export class CreateLobby extends Scene {
 
         // Cleanup input on shutdown
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-            if (this.nameInput) {
-                this.nameInput.remove();
-                this.nameInput = undefined;
+            if (this.codeInput) {
+                this.codeInput.remove();
+                this.codeInput = undefined;
             }
         });
 
@@ -93,12 +96,12 @@ export class CreateLobby extends Scene {
     }
 
     // Input creation 
-    createNameInput() {
-        this.nameInput = document.createElement('input');
-        this.nameInput.type = 'text';
-        this.nameInput.placeholder = 'Enter lobby name...';
+    joinCodeInput() {
+        this.codeInput = document.createElement('input');
+        this.codeInput.type = 'text';
+        this.codeInput.placeholder = 'Enter lobby code...';
 
-        Object.assign(this.nameInput.style, {
+        Object.assign(this.codeInput.style, {
             position: 'absolute',
             background: 'white',
             color: 'black',
@@ -115,14 +118,14 @@ export class CreateLobby extends Scene {
             transform: 'translate(-50%, -50%)',
         });
 
-        document.body.appendChild(this.nameInput);
+        document.body.appendChild(this.codeInput);
 
         this.updateInputPosition();
     }
 
     // Correct input placement relative to canvas 
     private updateInputPosition() {
-        if (!this.nameInput) return;
+        if (!this.codeInput) return;
 
         const rect = this.game.canvas.getBoundingClientRect();
         const { height } = this.scale;
@@ -132,21 +135,23 @@ export class CreateLobby extends Scene {
         const createBtnY = height * 0.55;
         const midY = titleY + (createBtnY - titleY) * 0.5;
 
-        this.nameInput.style.left = `${rect.left + centerX}px`;
-        this.nameInput.style.top = `${rect.top + midY}px`;
+        this.codeInput.style.left = `${rect.left + centerX}px`;
+        this.codeInput.style.top = `${rect.top + midY}px`;
     }
 
-    handleCreateClick() {
-        const name = this.nameInput?.value?.trim() || 'Default Lobby';
+    handleJoinClick() {
+        const code = this.codeInput?.value?.trim() || undefined;
 
-        const payload: CreateLobbyEvent = {
-            hostName: 'Player',
-            playerId: getPlayerId(),
-            lobbyName: name
-        };
-        
-        sendCreateLobby(payload);
-        console.log(`Creating lobby ${name}`);
+        if (code) {
+            const payload: JoinLobbyEvent = {
+                lobbyId: code,
+                playerId: getPlayerId()
+            };
+            
+            sendJoinLobby(payload);
+
+            console.log(`Joining lobby ${payload.lobbyId}`);
+        }
     }
 
     handleResize(gameSize: Phaser.Structs.Size) {
@@ -160,7 +165,7 @@ export class CreateLobby extends Scene {
 
         // Reposition elements
         this.title.setPosition(centerX, height * 0.15);
-        this.createButton.setPosition(centerX, height * 0.55);
+        this.joinButton.setPosition(centerX, height * 0.55);
         this.backButton.setPosition(centerX, height * 0.65);
 
         this.updateInputPosition();

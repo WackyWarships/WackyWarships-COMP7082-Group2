@@ -19,6 +19,10 @@ import type {
 const lobbyIdToLobbyMap = new Map<LobbyId, Lobby>();
 const playerToLobbyIdMap = new Map<PlayerId, LobbyId>();
 
+export function getLobbyMap() {
+    return lobbyIdToLobbyMap;
+}
+
 export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvents>, socket: Socket) {
     socket.on('createLobby', (payload: CreateLobbyEvent) => {
         const lobbyId = crypto.randomUUID();

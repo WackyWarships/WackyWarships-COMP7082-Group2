@@ -24,12 +24,14 @@ import type {
     ResumeTurnEvent,
     StartGameEvent,
     NextTurnEvent,
+    PlayerId,
 } from 'shared/types';
 
 
 // Create runtime socket then cast it to a typed Socket<ServerToClientEvents,ClientToServerEvents>.
 
 let socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
+const playerId: PlayerId = crypto.randomUUID();
 
 export function initSocket(token?: string) {
     if (socket) return socket;
@@ -162,4 +164,8 @@ export function closeSocket(): void {
         console.error('Error closing socket:', e);
     }
     socket = null;
+}
+
+export function getPlayerId(): PlayerId {
+    return playerId;
 }
