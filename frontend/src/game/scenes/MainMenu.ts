@@ -77,6 +77,7 @@ export class MainMenu extends Scene {
         makeButton('How to Play', 30, 'HowToPlay');
         makeButton('Settings', 90, 'Settings');
         makeButton('Credits', 150, 'Credits');
+        makeButton('Start Battle', 270, 'Game'); //TEMPORARY
 
         // Handle resizing
         this.scale.on('resize', this.handleResize, this);

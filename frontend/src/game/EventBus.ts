@@ -16,13 +16,14 @@ import type {
 } from 'shared/types';
 
 export type Events = {
+    // Scene lifecycle
     'current-scene-ready': Phaser.Scene;
 
     // Network
-    'snapshot': ServerSnapshot;
+    snapshot: ServerSnapshot;
     'lobby-update': LobbyUpdate;
-    'ack': { seq: number };
-    'error': { code: number; message: string } | any;
+    ack: { seq: number };
+    error: { code: number; message: string } | any;
 
     // Turn-based
     'turn-start': TurnStartEvent;
@@ -37,12 +38,36 @@ export type Events = {
     'group-minigame-start': GroupMinigameStartEvent;
     'group-minigame-resolved': GroupMinigameResolvedEvent;
 
-    // Presence/reconnect
+    // Presence / reconnect
     'player-disconnected': PlayerDisconnectedEvent;
     'player-reconnected': PlayerReconnectedEvent;
     'reconnect-response': ReconnectResponse;
     'resume-turn': ResumeTurnEvent;
 };
 
+// The emitter
 const EventBus = mitt<Events>();
+
+// ---- Typed helpers (optional but nice to have) ----
+export function emit<K extends keyof Events>(type: K, payload: Events[K]) {
+    EventBus.emit(type, payload);
+}
+
+export function on<K extends keyof Events>(
+    type: K,
+    handler: (ev: Events[K]) => void
+): () => void {
+    EventBus.on(type, handler);
+    // Return an unsubscribe function for convenience
+    return () => off(type, handler);
+}
+
+export function off<K extends keyof Events>(
+    type: K,
+    handler: (ev: Events[K]) => void
+) {
+    EventBus.off(type, handler);
+}
+
+export { EventBus };
 export default EventBus;
