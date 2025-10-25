@@ -1,5 +1,7 @@
 import { Scene } from 'phaser';
 import EventBus from '../EventBus';
+import { sendCreateLobby } from '../../api/socket';
+import type { LobbyUpdate } from 'shared/types';
 import {
     getCenter,
     isMobile,
@@ -40,7 +42,7 @@ export class CreateLobby extends Scene {
         }).setOrigin(0.5);
 
         // Input Field 
-        this.createNameInput();
+        this.createLobbyNameInput();
 
         // Buttons 
         const buttonStyle = {
@@ -89,7 +91,7 @@ export class CreateLobby extends Scene {
     }
 
     // Input creation 
-    createNameInput() {
+    createLobbyNameInput() {
         this.nameInput = document.createElement('input');
         this.nameInput.type = 'text';
         this.nameInput.placeholder = 'Enter lobby name...';
@@ -133,11 +135,29 @@ export class CreateLobby extends Scene {
     }
 
     handleCreateClick() {
-        const name = this.nameInput?.value?.trim() || 'Lobby';
-        const lobbyId = Math.random().toString(36).substring(2, 7).toUpperCase();
+        const playerId = crypto.randomUUID();
+        const hostName = 'Host123' // Temporary
+        const lobbyName = (this.nameInput?.value ?? '').trim() || 'My Lobby';
 
-        console.log(`Creating lobby ${lobbyId}: ${name}`);
-        // sendCreateLobby({ hostName, playerId, lobbyName, settings?, client? });
+        sendCreateLobby({ hostName, hostId: playerId, lobbyName });
+
+        const handler = (update: LobbyUpdate) => {
+            if (update.hostId === playerId) {
+                if (this.nameInput) {
+                    this.nameInput.remove();
+                    this.nameInput = undefined;
+                }
+                this.scene.start('Lobby', {
+                    lobbyId: update.lobbyId,
+                    playerId,
+                    hostName,
+                    lobbyName: update.lobbyName ?? lobbyName,
+                });
+                EventBus.off('lobby-update', handler); 
+            }
+        };
+
+        EventBus.on('lobby-update', handler);
 
         this.scene.start('Game'); // Temporary
     }

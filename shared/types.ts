@@ -21,16 +21,18 @@ export type WeaponDef = {
 
 // Lobby
 export type Lobby = {
-    id: LobbyId;
-    name: string;
+    hostId: PlayerId;
+    hostName: string; 
+    lobbyId: LobbyId;
+    lobbyName: string;
+    settings?: Record<string, any>;
     players: PlayerId[];
-    host: PlayerId;
 }
 
 // Client -> Server ---------------------------------------------------------
 export type CreateLobbyEvent = {
     hostName: string;
-    playerId: PlayerId;
+    hostId: PlayerId;
     lobbyName: string;
     settings?: Record<string, any>;
     client?: { version?: string; platform?: string };
@@ -39,13 +41,14 @@ export type CreateLobbyEvent = {
 export type JoinLobbyEvent = {
     lobbyId: LobbyId;
     playerId: PlayerId;
-    name?: string;
+    playerName: string; 
     client?: { version?: string; platform?: string };
 };
 
 export type LeaveLobbyEvent = {
     lobbyId: LobbyId;
     playerId: PlayerId;
+    playerName: string; 
 };
 
 export type StartGameEvent = {
@@ -90,10 +93,10 @@ export type GroupMinigameResultEvent = {
 };
 
 // Server -> Client ---------------------------------------------------------
-export type PlayerState = { 
-    id: PlayerId; 
-    hp: number; 
-    alive: boolean; 
+export type PlayerState = {
+    id: PlayerId;
+    hp: number;
+    alive: boolean;
     name?: string;
 };
 
@@ -143,8 +146,10 @@ export type Snapshot = {
 
 export type LobbyUpdate = {
     lobbyId: LobbyId;
+    lobbyName: string;
+    hostId: PlayerId;
+    hostName: string; 
     players: PlayerId[];
-    hostId?: PlayerId;
     settings?: Record<string, any>;
 };
 
