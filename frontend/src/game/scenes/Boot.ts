@@ -1,4 +1,5 @@
 import { Scene } from 'phaser';
+import { initSocket } from '../../api/socket';
 
 export class Boot extends Scene {
     constructor() {
@@ -13,6 +14,7 @@ export class Boot extends Scene {
     }
 
     create() {
+        initSocket();
         this.scene.start('Preloader');
     }
 }
