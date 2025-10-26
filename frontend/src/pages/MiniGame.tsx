@@ -54,7 +54,7 @@ const MiniGame: React.FC = () => {
     function preload(this: Phaser.Scene) {
       // Load game assets
       this.load.image(BACKGROUND_KEY, 'src/assets/miniGame/background.png');
-      this.load.image(TUBE_KEY, 'src/assets/miniGame/fuelTube.png');
+      this.load.image(TUBE_KEY, 'src/assets/miniGame/fuelTube.svg');
     }
 
     function create(this: Phaser.Scene) {
@@ -93,6 +93,56 @@ const MiniGame: React.FC = () => {
 
       const tubeC = this.add.image(tubeSpacing * 3 + tubeWidth * 2.5, 500, TUBE_KEY);
       tubeC.setDisplaySize(tubeWidth, 180);
+
+      // Add liquid to TubeA
+      const tubeAX = tubeSpacing + tubeWidth / 2; // Use calculated position for TubeA
+      const tubeAY = 500; // TubeA's y position remains the same
+      const liquidLevel = 100; // Liquid height in pixels
+      const liquidColor = 0x00ff00; // Green color
+      const tiltAngle = 0; // Initial tilt angle in degrees
+
+      // Create a graphics object for the liquid
+      const liquidA = this.add.graphics();
+
+      const drawLiquidA = (angle: number) => {
+        liquidA.clear();
+        liquidA.fillStyle(liquidColor, 1);
+
+        // Calculate the vertices of the liquid polygon based on the tilt angle
+        const baseWidth = 72;
+        const topWidth = baseWidth - Math.tan(Phaser.Math.DegToRad(angle)) * liquidLevel;
+
+        const liquidBottomY = tubeAY + 90; // Start liquid at the bottom of the tube
+        liquidA.beginPath();
+        liquidA.moveTo(tubeAX - baseWidth / 2, liquidBottomY);
+        liquidA.lineTo(tubeAX + baseWidth / 2, liquidBottomY);
+        liquidA.lineTo(tubeAX + topWidth / 2, liquidBottomY - liquidLevel);
+        liquidA.lineTo(tubeAX - topWidth / 2, liquidBottomY - liquidLevel);
+        liquidA.closePath();
+        liquidA.fillPath();
+      };
+
+      // Draw the liquid initially
+      drawLiquidA(tiltAngle);
+
+      // Create a mask for TubeA using the updated TUBE_KEY
+      const tubeMask = this.add.image(tubeAX, tubeAY, TUBE_KEY);
+      tubeMask.setTint(0xffffff); // Set mask tint to white to avoid color blending
+      const liquidMask = tubeMask.createBitmapMask();
+      liquidA.setMask(liquidMask);
+
+      // Ensure the tube image is rendered on top of the liquid
+      tubeA.setDepth(1); // Tube depth higher than liquid
+      liquidA.setDepth(0); // Liquid depth lower than tube
+
+      // Temporarily hide the tube image for debugging
+      tubeA.setVisible(false);
+
+      // Set the blending mode to ensure the liquid color is not affected
+      liquidA.setBlendMode(Phaser.BlendModes.NORMAL);
+
+      // Temporarily remove the mask for debugging
+    //   liquidA.clearMask();
 
       // Update canvas size dynamically when the window resizes
       window.addEventListener('resize', () => {
