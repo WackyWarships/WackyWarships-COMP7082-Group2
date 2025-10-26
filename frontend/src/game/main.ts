@@ -6,6 +6,7 @@ import { MainMenu } from "./scenes/MainMenu";
 import { CreateLobby } from "./scenes/CreateLobby";
 import { JoinLobby } from "./scenes/JoinLobby";
 import { Game } from "./scenes/Game";
+import { MiniGame } from "./scenes/MiniGame";
 import { GameOver } from "./scenes/GameOver";
 
 let gameInstance: Phaser.Game | null = null;
@@ -13,7 +14,7 @@ let gameInstance: Phaser.Game | null = null;
 const baseConfig: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
     backgroundColor: "#000000",
-    scene: [Boot, Preloader, EnterUsername, MainMenu, CreateLobby, JoinLobby, Game, GameOver],
+    scene: [Boot, Preloader, EnterUsername, MainMenu, MiniGame, CreateLobby, JoinLobby, Game, GameOver],
     physics: { default: "arcade", arcade: { debug: false } },
     scale: {
         mode: Phaser.Scale.RESIZE,

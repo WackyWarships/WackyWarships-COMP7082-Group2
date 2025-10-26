@@ -100,7 +100,7 @@ export class MainMenu extends Scene {
         makeButton('Settings', 90, 'Settings');
         makeButton('Credits', 150, 'Credits');
         makeButton('Change Username', 210, 'EnterUsername');
-        makeButton('Start Battle', 300, 'Game'); //TEMPORARY
+        makeButton('Start Battle', 300, 'Game');
         
 
         // Handle resizing
