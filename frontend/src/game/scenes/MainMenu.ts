@@ -1,5 +1,6 @@
 import { GameObjects, Scene } from 'phaser';
 import EventBus from '../EventBus';
+import { clearPlayerName } from '../utils/playerIdentity';
 import {
     getCenter,
     isMobile,
@@ -66,7 +67,12 @@ export class MainMenu extends Scene {
             const btn = this.add.text(0, yOffset, label, buttonStyle)
                 .setOrigin(0.5)
                 .setInteractive({ useHandCursor: true })
-                .on('pointerdown', () => this.scene.start(sceneKey))
+                .on('pointerdown', () => {
+                    if (sceneKey === 'EnterUsername') {
+                        clearPlayerName();
+                    }
+                    this.scene.start(sceneKey);
+                })
                 .on('pointerover', () => btn.setStyle({ backgroundColor: '#63b3ff' }))
                 .on('pointerout', () => btn.setStyle({ backgroundColor: '#1e90ff' }));
             this.menuContainer.add(btn);
@@ -78,6 +84,7 @@ export class MainMenu extends Scene {
         makeButton('Settings', 90, 'Settings');
         makeButton('Credits', 150, 'Credits');
         makeButton('Start Battle', 270, 'Game'); //TEMPORARY
+        makeButton('Change Username', 300, 'EnterUsername');
 
         // Handle resizing
         this.scale.on('resize', this.handleResize, this);

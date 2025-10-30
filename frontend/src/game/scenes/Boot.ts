@@ -1,5 +1,6 @@
 import { Scene } from 'phaser';
 import { initSocket } from '../../api/socket';
+import { getStoredPlayerName } from '../utils/playerIdentity';
 
 export class Boot extends Scene {
     constructor() {
@@ -15,6 +16,11 @@ export class Boot extends Scene {
 
     create() {
         initSocket();
-        this.scene.start('Preloader');
+        const savedName = getStoredPlayerName();
+        if (savedName) {
+            this.scene.start('Preloader');
+        } else {
+            this.scene.start('EnterUsername'); 
+        }
     }
 }
