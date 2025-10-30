@@ -6,6 +6,7 @@ import type {
     ClientToServerEvents,
     ServerSnapshot,
     LobbyUpdate,
+    PlayerIdentifiedEvent,
     TurnStartEvent,
     TurnResolvedEvent,
     GameStateTurn,
@@ -14,6 +15,7 @@ import type {
     MinigameResultEvent,
     GroupMinigameResultEvent,
     ChooseWeaponEvent,
+    PlayerIdentifyEvent,
     CreateLobbyEvent,
     JoinLobbyEvent,
     LeaveLobbyEvent,
@@ -59,6 +61,10 @@ export function initSocket(token?: string) {
 
     socket.on('ack', (ack): void => {
         EventBus.emit('ack', ack);
+    });
+
+    socket.on('playerIdentified', (evt: PlayerIdentifiedEvent): void => {
+        EventBus.emit('player-identified', evt);
     });
 
     socket.on('lobbyUpdate', (lu: LobbyUpdate): void => {
@@ -114,6 +120,10 @@ export function initSocket(token?: string) {
 function ensureSocket(): Socket<ServerToClientEvents, ClientToServerEvents> {
     if (!socket) throw new Error('socket not initialized — call initSocket() first');
     return socket;
+}
+
+export function sendIdentifyPlayer(payload: PlayerIdentifyEvent): void {
+  ensureSocket().emit('playerIdentify', payload);
 }
 
 export function sendCreateLobby(payload: CreateLobbyEvent): void {

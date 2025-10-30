@@ -13,9 +13,13 @@ import type {
     PlayerReconnectedEvent,
     ReconnectResponse,
     ResumeTurnEvent,
+    PlayerIdentifiedEvent
 } from 'shared/types';
 
 export type Events = {
+    // Player identified (id and username in server?)
+    'player-identified': PlayerIdentifiedEvent;
+
     // Scene lifecycle
     'current-scene-ready': Phaser.Scene;
 
