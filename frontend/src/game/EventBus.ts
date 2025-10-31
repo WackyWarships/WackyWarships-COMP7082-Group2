@@ -20,10 +20,10 @@ export type Events = {
     'current-scene-ready': Phaser.Scene;
 
     // Network
-    snapshot: ServerSnapshot;
+    'snapshot': ServerSnapshot;
     'lobby-update': LobbyUpdate;
-    ack: { seq: number };
-    error: { code: number; message: string } | any;
+    'ack': { seq: number };
+    'error' : { code: number; message: string } | any;
 
     // Turn-based
     'turn-start': TurnStartEvent;
