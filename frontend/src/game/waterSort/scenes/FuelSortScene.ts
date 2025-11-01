@@ -15,7 +15,7 @@ import { ConfigurationManager } from '../config/ConfigurationManager';
 import EventBus from '../../EventBus';
 import { ensureParticleTexture, WATER_SORT_PARTICLE_KEY } from '../utils/textures';
 
-export class WaterSortScene extends Phaser.Scene {
+export class FuelSortScene extends Phaser.Scene {
   private gameState!: GameState;
   private tubeVisuals: TubeVisual[] = [];
   private selectedTube: TubeVisual | null = null;
@@ -1190,4 +1190,4 @@ export class WaterSortScene extends Phaser.Scene {
   }
 }
 
-export default WaterSortScene;
+export default FuelSortScene;

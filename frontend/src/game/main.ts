@@ -6,7 +6,7 @@ import { MainMenu } from "./scenes/MainMenu";
 import { CreateLobby } from "./scenes/CreateLobby";
 import { Game } from "./scenes/Game";
 import { GameOver } from "./scenes/GameOver";
-import { WaterSortScene as MiniGameScene } from "./waterSort/scenes/WaterSortScene";
+import { FuelSortScene as MiniGameScene } from "./waterSort/scenes/FuelSortScene";
 import { FailScene as WaterSortFail } from "./waterSort/scenes/FailScene";
 import { WinScene as WaterSortWin } from "./waterSort/scenes/WinScene";
 import { AdminPanelScene } from "./waterSort/scenes/AdminPanelScene";
