@@ -13,9 +13,6 @@ function App() {
     return (
         <div id="app">
             <PhaserGame ref={phaserRef} currentActiveScene={currentScene} />
-            {/* 
-              Future navbar/ui controls probably
-            */}
         </div>
     );
 }

@@ -27,9 +27,11 @@
         "build-nolog": "npx vite build --config vite/config.prod.mjs"
     },
     "dependencies": {
+        "@lottiefiles/dotlottie-react": "^0.17.6",
         "@types/react": "^19.0.10",
         "@types/react-dom": "^19.0.4",
         "@vitejs/plugin-react": "^4.3.4",
+        "lottie-web": "^5.13.0",
         "mitt": "^3.0.1",
         "phaser": "^3.90.0",
         "react": "^19.0.0",

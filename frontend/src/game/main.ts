@@ -3,16 +3,32 @@ import { Boot } from "./scenes/Boot";
 import { Preloader } from "./scenes/Preloader";
 import { MainMenu } from "./scenes/MainMenu";
 import { CreateLobby } from "./scenes/CreateLobby";
-import { JoinLobby } from "./scenes/JoinLobby";
 import { Game } from "./scenes/Game";
 import { GameOver } from "./scenes/GameOver";
+import { FuelSortScene as MiniGameScene } from "./waterSort/scenes/FuelSortScene";
+import { FailScene as WaterSortFail } from "./waterSort/scenes/FailScene";
+import { WinScene as WaterSortWin } from "./waterSort/scenes/WinScene";
+import { AdminPanelScene } from "./waterSort/scenes/AdminPanelScene";
+import { JoinLobby } from "./scenes/JoinLobby";
 
 let gameInstance: Phaser.Game | null = null;
 
 const baseConfig: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
     backgroundColor: "#000000",
-    scene: [Boot, Preloader, MainMenu, CreateLobby, JoinLobby, Game, GameOver],
+    scene: [
+        Boot,
+        Preloader,
+        MainMenu,
+        CreateLobby,
+        JoinLobby,
+        MiniGameScene,
+        WaterSortFail,
+        WaterSortWin,
+        AdminPanelScene,
+        Game,
+        GameOver
+    ],
     physics: { default: "arcade", arcade: { debug: false } },
     scale: {
         mode: Phaser.Scale.RESIZE,
