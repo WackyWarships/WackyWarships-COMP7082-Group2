@@ -186,11 +186,7 @@ export class PourAnimation {
     let progress = 0;
     const duration = ANIMATION_CONFIG.STREAM_DURATION * (0.8 + units * 0.1);
     const startTime = Date.now();
-    
-    // Stream flows straight down (vertically) from the mouth position
-    // Liquids follow gravity, so we only animate the vertical component
-    const streamStartX = from.x; // Stream stays at mouth's X position
-    const streamEndX = to.x;     // But ends at destination's X position for the splash
+
     
     const updateStream = (): void => {
       const elapsed = Date.now() - startTime;
@@ -244,14 +240,6 @@ export class PourAnimation {
     };
     
     this.animationFrameId = requestAnimationFrame(updateStream);
-  }
-
-  /**
-   * Calculates a point on a quadratic Bezier curve
-   */
-  private quadraticBezier(p0: number, p1: number, p2: number, t: number): number {
-    const oneMinusT = 1 - t;
-    return oneMinusT * oneMinusT * p0 + 2 * oneMinusT * t * p1 + t * t * p2;
   }
 
   /**

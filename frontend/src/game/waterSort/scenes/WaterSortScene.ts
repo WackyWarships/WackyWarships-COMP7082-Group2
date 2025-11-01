@@ -15,7 +15,7 @@ import { ConfigurationManager } from '../config/ConfigurationManager';
 import EventBus from '../../EventBus';
 import { ensureParticleTexture, WATER_SORT_PARTICLE_KEY } from '../utils/textures';
 
-export class GameScene extends Phaser.Scene {
+export class WaterSortScene extends Phaser.Scene {
   private gameState!: GameState;
   private tubeVisuals: TubeVisual[] = [];
   private selectedTube: TubeVisual | null = null;
@@ -58,11 +58,7 @@ export class GameScene extends Phaser.Scene {
     super({ key: 'WaterSortGame' });
   }
 
-  preload(): void {
-    // Load SVG assets for volume icons
-    this.load.svg('volume-up', '/src/assets/miniGame/volume-up.svg');
-    this.load.svg('volume-off', '/src/assets/miniGame/volume-off.svg');
-    
+  preload(): void {    
     // Load SVG assets for home and settings buttons
     this.load.svg('home', '/src/assets/miniGame/home.svg');
     this.load.svg('settings', '/src/assets/miniGame/settings.svg');
@@ -555,7 +551,7 @@ export class GameScene extends Phaser.Scene {
     
     const yesButton = this.createSimpleButton(width * 0.35, height * 0.6, 'Yes', () => {
       this.hidePauseModal();
-      this.scene.start('IntroScene');
+      this.scene.start('MainMenu');
     });
     
     const noButton = this.createSimpleButton(width * 0.65, height * 0.6, 'No', () => {
@@ -1194,4 +1190,4 @@ export class GameScene extends Phaser.Scene {
   }
 }
 
-export default GameScene;
+export default WaterSortScene;

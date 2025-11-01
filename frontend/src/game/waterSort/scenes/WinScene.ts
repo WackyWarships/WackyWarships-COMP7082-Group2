@@ -147,7 +147,7 @@ export class WinScene extends Phaser.Scene {
           this.registry.set(REGISTRY_KEYS.CURRENT_LEVEL_INDEX, nextIndex);
           this.scene.start('WaterSortGame', { levelIndex: nextIndex });
         } else {
-          this.scene.start('WaterSortIntro');
+          this.scene.start('MainMenu');
         }
       },
       buttonScale
