@@ -73,7 +73,7 @@ export class MainMenu extends Scene {
         };
 
         makeButton('Create Lobby', -90, 'CreateLobby');
-        makeButton('Join Game', -30, 'JoinGame');
+        makeButton('Join Lobby', -30, 'JoinLobby');
         makeButton('How to Play', 30, 'HowToPlay');
         makeButton('Settings', 90, 'Settings');
         makeButton('Credits', 150, 'Credits');

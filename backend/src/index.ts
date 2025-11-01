@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { setupSocket } from "./lobby.ts";
+import { getLobbyMap, setupSocket } from "./lobby.ts";
 
 import type {
     ServerToClientEvents,
@@ -18,9 +18,8 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(server, {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Serve frontend build files
-app.use(express.static(path.resolve(__dirname, '../../frontend/dist')));
 app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, '../../frontend/dist/index.html'));
+  res.send(getLobbyMap());
 });
 
 io.on("connection", (socket) => {

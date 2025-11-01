@@ -1,11 +1,12 @@
 import { useRef } from "react";
 import { IRefPhaserGame, PhaserGame } from "./PhaserGame";
-import { MainMenu } from "./game/scenes/MainMenu";
+import { initSocket } from "./api/socket";
 
 function App() {
     const phaserRef = useRef<IRefPhaserGame | null>(null);
+    initSocket();
 
-    const currentScene = (scene: Phaser.Scene) => {
+    const currentScene = () => {
         // Placeholder for future navbar potentially
     };
 

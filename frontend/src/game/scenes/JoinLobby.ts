@@ -1,24 +1,29 @@
 import { Scene } from 'phaser';
 import EventBus from '../EventBus';
-import type { LobbyUpdate } from 'shared/types';
 import {
     getCenter,
     isMobile,
     getResponsiveFontSize,
     resizeSceneBase
 } from '../utils/layout';
-import { CreateLobbyEvent } from 'shared/types';
-import { getPlayerId, sendCreateLobby } from '../../api/socket';
+import { 
+    sendJoinLobby,
+    getPlayerId
+ } from '../../api/socket';
+import { 
+    JoinLobbyEvent,
+    LobbyUpdate
+ } from 'shared/types';
 
-export class CreateLobby extends Scene {
+export class JoinLobby extends Scene {
     background!: Phaser.GameObjects.Image;
     title!: Phaser.GameObjects.Text;
-    nameInput?: HTMLInputElement;
-    createButton!: Phaser.GameObjects.Text;
+    codeInput?: HTMLInputElement;
+    joinButton!: Phaser.GameObjects.Text;
     backButton!: Phaser.GameObjects.Text;
 
     constructor() {
-        super('CreateLobby');
+        super('JoinLobby');
     }
 
     create() {
@@ -33,7 +38,7 @@ export class CreateLobby extends Scene {
 
         // Title 
         const titleFontSize = getResponsiveFontSize(width, height, 56, 44);
-        this.title = this.add.text(centerX, height * 0.15, 'Create Lobby', {
+        this.title = this.add.text(centerX, height * 0.15, 'Join Lobby', {
             fontFamily: 'Arial Black',
             fontSize: `${titleFontSize}px`,
             color: '#ffffff',
@@ -43,7 +48,7 @@ export class CreateLobby extends Scene {
         }).setOrigin(0.5);
 
         // Input Field 
-        this.createLobbyNameInput();
+        this.joinCodeInput();
 
         // Buttons 
         const buttonStyle = {
@@ -56,12 +61,12 @@ export class CreateLobby extends Scene {
             fixedWidth: mobile ? 240 : 300,
         };
 
-        this.createButton = this.add.text(centerX, height * 0.55, 'Create', buttonStyle)
+        this.joinButton = this.add.text(centerX, height * 0.55, 'Join', buttonStyle)
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true })
-            .on('pointerdown', () => this.handleCreateClick())
-            .on('pointerover', () => this.createButton.setStyle({ backgroundColor: '#63b3ff' }))
-            .on('pointerout', () => this.createButton.setStyle({ backgroundColor: '#1e90ff' }));
+            .on('pointerdown', () => this.handleJoinClick())
+            .on('pointerover', () => this.joinButton.setStyle({ backgroundColor: '#63b3ff' }))
+            .on('pointerout', () => this.joinButton.setStyle({ backgroundColor: '#1e90ff' }));
 
         this.backButton = this.add.text(centerX, height * 0.65, 'Back', {
             ...buttonStyle,
@@ -82,9 +87,9 @@ export class CreateLobby extends Scene {
 
         // Cleanup input on shutdown
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-            if (this.nameInput) {
-                this.nameInput.remove();
-                this.nameInput = undefined;
+            if (this.codeInput) {
+                this.codeInput.remove();
+                this.codeInput = undefined;
             }
         });
 
@@ -92,12 +97,12 @@ export class CreateLobby extends Scene {
     }
 
     // Input creation 
-    createLobbyNameInput() {
-        this.nameInput = document.createElement('input');
-        this.nameInput.type = 'text';
-        this.nameInput.placeholder = 'Enter lobby name...';
+    joinCodeInput() {
+        this.codeInput = document.createElement('input');
+        this.codeInput.type = 'text';
+        this.codeInput.placeholder = 'Enter lobby code...';
 
-        Object.assign(this.nameInput.style, {
+        Object.assign(this.codeInput.style, {
             position: 'absolute',
             background: 'white',
             color: 'black',
@@ -114,14 +119,14 @@ export class CreateLobby extends Scene {
             transform: 'translate(-50%, -50%)',
         });
 
-        document.body.appendChild(this.nameInput);
+        document.body.appendChild(this.codeInput);
 
         this.updateInputPosition();
     }
 
     // Correct input placement relative to canvas 
     private updateInputPosition() {
-        if (!this.nameInput) return;
+        if (!this.codeInput) return;
 
         const rect = this.game.canvas.getBoundingClientRect();
         const { height } = this.scale;
@@ -131,40 +136,43 @@ export class CreateLobby extends Scene {
         const createBtnY = height * 0.55;
         const midY = titleY + (createBtnY - titleY) * 0.5;
 
-        this.nameInput.style.left = `${rect.left + centerX}px`;
-        this.nameInput.style.top = `${rect.top + midY}px`;
+        this.codeInput.style.left = `${rect.left + centerX}px`;
+        this.codeInput.style.top = `${rect.top + midY}px`;
     }
 
-    handleCreateClick() {
-        const playerId = getPlayerId();
-        const hostName = 'Host123' // Temporary
-        const lobbyName = (this.nameInput?.value ?? '').trim() || 'My Lobby';
+    handleJoinClick() {
+        const code = this.codeInput?.value?.trim() || undefined;
 
-        const payload: CreateLobbyEvent = {
-            hostName: hostName,
-            hostId: playerId,
-            lobbyName: lobbyName
-        };
+        if (code) {
+            const playerId = getPlayerId();
+            const playerName = "Test Joiner";
 
-        sendCreateLobby(payload);
+            const payload: JoinLobbyEvent = {
+                lobbyId: code,
+                playerId: playerId,
+                playerName: playerName
+            };
+            
+            sendJoinLobby(payload);
 
-        const handler = (update: LobbyUpdate) => {
-            if (update.hostId === playerId) {
-                if (this.nameInput) {
-                    this.nameInput.remove();
-                    this.nameInput = undefined;
+            const handler = (update: LobbyUpdate) => {
+                if (update.players.includes(getPlayerId())) {
+                    if (this.codeInput) {
+                        this.codeInput.remove();
+                        this.codeInput = undefined;
+                    }
+                    this.scene.start('Lobby', {
+                        lobbyId: update.lobbyId,
+                        playerId,
+                        playerName,
+                        lobbyName: update.lobbyName ?? "Error: no lobby name",
+                    });
+                    EventBus.off('lobby-update', handler); 
                 }
-                this.scene.start('Lobby', {
-                    lobbyId: update.lobbyId,
-                    playerId,
-                    hostName,
-                    lobbyName: update.lobbyName ?? lobbyName,
-                });
-                EventBus.off('lobby-update', handler); 
-            }
-        };
+            };
 
-        EventBus.on('lobby-update', handler);
+            EventBus.on('lobby-update', handler);     
+        }
     }
 
     handleResize(gameSize: Phaser.Structs.Size) {
@@ -178,9 +186,10 @@ export class CreateLobby extends Scene {
 
         // Reposition elements
         this.title.setPosition(centerX, height * 0.15);
-        this.createButton.setPosition(centerX, height * 0.55);
+        this.joinButton.setPosition(centerX, height * 0.55);
         this.backButton.setPosition(centerX, height * 0.65);
 
         this.updateInputPosition();
+
     }
 }

@@ -19,6 +19,10 @@ import type {
 const lobbyIdToLobbyMap = new Map<LobbyId, Lobby>();
 const playerToLobbyIdMap = new Map<PlayerId, LobbyId>();
 
+export function getLobbyMap() {
+    return lobbyIdToLobbyMap;
+}
+
 export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvents>, socket: Socket) {
     socket.on('createLobby', (payload: CreateLobbyEvent) => {
         const { hostId, hostName, lobbyName, settings } = payload;
@@ -78,6 +82,8 @@ export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvent
             players: lobby.players,
             settings: lobby.settings,
         };
+
+        console.log([...lobbyIdToLobbyMap.values()]);
 
         io.to(lobby.lobbyId).emit("lobbyUpdate", update);
     });
