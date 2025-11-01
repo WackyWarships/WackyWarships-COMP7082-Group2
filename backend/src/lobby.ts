@@ -14,7 +14,7 @@ import type {
     ChooseWeaponEvent,
     TurnResolvedEvent,
     NextTurnEvent,
-} from 'shared/types.ts';
+} from '../../shared/types.js';
 
 const lobbyIdToLobbyMap = new Map<LobbyId, Lobby>();
 const playerToLobbyIdMap = new Map<PlayerId, LobbyId>();

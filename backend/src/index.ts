@@ -3,12 +3,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { getLobbyMap, setupSocket } from "./lobby.ts";
+import { getLobbyMap, setupSocket } from "./lobby.js";
 
 import type {
     ServerToClientEvents,
     ClientToServerEvents,
-} from 'shared/types.ts';
+} from '../../shared/types.js';
 
 const app = express();
 const server = createServer(app);
