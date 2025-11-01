@@ -1,0 +1,99 @@
+{
+  "version": "1.0.0",
+  "lastModified": "2024-01-01T00:00:00Z",
+  "difficultyLevels": {
+    "easy": {
+      "id": "easy",
+      "name": "Easy Mode",
+      "description": "Perfect for beginners learning the basics",
+      "totalTubes": 4,
+      "filledTubes": 3,
+      "emptyTubes": 1,
+      "targetScore": 1000,
+      "timeLimit": 300,
+      "maxUndos": 5,
+      "colorPalette": {
+        "primary": "#ff4da6",
+        "secondary": "#4bf77a", 
+        "tertiary": "#8b5cff"
+      },
+      "tubeConfiguration": [
+        ["primary", "primary", "secondary", "secondary"],
+        ["tertiary", "tertiary", "primary", "primary"],
+        ["secondary", "secondary", "tertiary", "tertiary"],
+        []
+      ]
+    },
+    "medium": {
+      "id": "medium",
+      "name": "Medium Mode",
+      "description": "Balanced challenge for intermediate players",
+      "totalTubes": 6,
+      "filledTubes": 4,
+      "emptyTubes": 2,
+      "targetScore": 4000,
+      "timeLimit": 600,
+      "maxUndos": 3,
+      "colorPalette": {
+        "primary": "#ff4da6",
+        "secondary": "#4bf77a",
+        "tertiary": "#8b5cff",
+        "quaternary": "#3fb6ff"
+      },
+      "tubeConfiguration": [
+        ["primary", "secondary", "tertiary", "quaternary"],
+        ["quaternary", "primary", "secondary", "tertiary"],
+        ["tertiary", "quaternary", "primary", "secondary"],
+        ["secondary", "tertiary", "quaternary", "primary"],
+        [],
+        []
+      ]
+    },
+    "hard": {
+      "id": "hard",
+      "name": "Hard Mode", 
+      "description": "Ultimate challenge for expert players",
+      "totalTubes": 6,
+      "filledTubes": 5,
+      "emptyTubes": 1,
+      "targetScore": 8000,
+      "timeLimit": 900,
+      "maxUndos": 1,
+      "colorPalette": {
+        "primary": "#ff4da6",
+        "secondary": "#4bf77a",
+        "tertiary": "#8b5cff",
+        "quaternary": "#3fb6ff",
+        "quinary": "#ffd23f"
+      },
+      "tubeConfiguration": [
+        ["primary", "secondary", "tertiary", "quaternary"],
+        ["quinary", "primary", "secondary", "tertiary"],
+        ["quaternary", "quinary", "primary", "secondary"],
+        ["tertiary", "quaternary", "quinary", "primary"],
+        ["secondary", "tertiary", "quaternary", "quinary"],
+        []
+      ]
+    }
+  },
+  "defaultDifficulty": "easy",
+  "scoring": {
+    "basePoints": 100,
+    "timeBonus": 10,
+    "undosPenalty": 50,
+    "perfectGameBonus": 500
+  },
+  "ui": {
+    "adaptiveLayout": true,
+    "maxTubesPerRow": 4,
+    "tubeSpacing": {
+      "x": 120,
+      "y": 220
+    },
+    "scalingFactors": {
+      "mobile": 0.8,
+      "tablet": 0.9,
+      "desktop": 1.0
+    }
+  }
+}
