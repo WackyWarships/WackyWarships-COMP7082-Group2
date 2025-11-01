@@ -5,13 +5,10 @@ import { EnterUsername } from "./scenes/EnterUsername";
 import { MainMenu } from "./scenes/MainMenu";
 import { CreateLobby } from "./scenes/CreateLobby";
 import { Game } from "./scenes/Game";
-import { MiniGame } from "./scenes/MiniGame";
 import { GameOver } from "./scenes/GameOver";
-import { IntroScene as WaterSortIntro } from "./waterSort/scenes/IntroScene";
-import { GameScene as WaterSortGame } from "./waterSort/scenes/GameScene";
+import { WaterSortScene as MiniGameScene } from "./waterSort/scenes/WaterSortScene";
 import { FailScene as WaterSortFail } from "./waterSort/scenes/FailScene";
 import { WinScene as WaterSortWin } from "./waterSort/scenes/WinScene";
-import { DifficultySelectionScene } from "./waterSort/scenes/DifficultySelectionScene";
 import { AdminPanelScene } from "./waterSort/scenes/AdminPanelScene";
 import { JoinLobby } from "./scenes/JoinLobby";
 
@@ -27,13 +24,10 @@ const baseConfig: Phaser.Types.Core.GameConfig = {
         MainMenu,
         CreateLobby,
         JoinLobby,
-        WaterSortIntro,
-        DifficultySelectionScene,
-        WaterSortGame,
+        MiniGameScene,
         WaterSortFail,
         WaterSortWin,
         AdminPanelScene,
-        MiniGame,
         Game,
         GameOver
     ],

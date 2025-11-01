@@ -77,19 +77,24 @@ export class MainMenu extends Scene {
             fixedWidth: mobile ? 260 : 300,
         };
 
-        // Button Specifications
-        const makeButton = (label: string, yOffset: number, sceneKey: string) => {
+        const makeButton = (
+            label: string, 
+            yOffset: number, 
+            action: string | (() => void)
+        ) => {
             const btn = this.add.text(0, yOffset, label, buttonStyle)
                 .setOrigin(0.5)
-                .setInteractive({ useHandCursor: true })
-                .on('pointerdown', () => {
-                    if (sceneKey === 'EnterUsername') {
-                        clearPlayerName();
-                    }
-                    this.scene.start(sceneKey);
-                })
+                .setInteractive({ useHandCursor: true });
+
+            const onClick = typeof action === 'string'
+                ? () => this.scene.start(action)
+                : action;
+
+            btn
+                .on('pointerdown', onClick)
                 .on('pointerover', () => btn.setStyle({ backgroundColor: '#63b3ff' }))
                 .on('pointerout', () => btn.setStyle({ backgroundColor: '#1e90ff' }));
+            
             this.menuContainer.add(btn);
         };
 
@@ -99,7 +104,11 @@ export class MainMenu extends Scene {
         makeButton('How to Play', 30, 'HowToPlay');
         makeButton('Settings', 90, 'Settings');
         makeButton('Credits', 150, 'Credits');
-        makeButton('Play Mini-Game', 210, 'WaterSortIntro');
+        makeButton(
+            'Play Mini-Game', 
+            210, 
+            () => { this.scene.start('WaterSortGame', { difficulty: "hard" }) }
+        );
         makeButton('Start Battle', 270, 'Game'); //TEMPORARY
 
         // Handle resizing

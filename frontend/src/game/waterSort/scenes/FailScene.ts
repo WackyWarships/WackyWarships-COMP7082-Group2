@@ -104,7 +104,7 @@ export class FailScene extends Phaser.Scene {
       () => {
         this.cameras.main.fade(250);
         this.time.delayedCall(250, () => {
-          this.scene.start('WaterSortIntro');
+          this.scene.start('MainMenu');
         });
       }
     );
