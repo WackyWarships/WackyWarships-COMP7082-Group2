@@ -2,7 +2,6 @@ import Phaser from 'phaser';
 import { GameState } from '../core/GameState';
 import { TubeVisual } from '../components/TubeVisual';
 import { PourAnimation } from '../components/PourAnimation';
-import { AudioManager } from '../managers/AudioManager';
 import {
   TUBE_CONFIG,
   UI_CONFIG,
@@ -21,11 +20,9 @@ export class GameScene extends Phaser.Scene {
   private tubeVisuals: TubeVisual[] = [];
   private selectedTube: TubeVisual | null = null;
   private pourAnimation!: PourAnimation;
-  private audioManager!: AudioManager;
   private isAnimating = false;
   private currentLevel!: LevelDefinition;
   private currentLevelIndex = 0;
-  private pendingLevelIndex: number | null = null;
   private isGameActive = false;
   private hasCountdownStarted = false;
 
@@ -38,7 +35,6 @@ export class GameScene extends Phaser.Scene {
   private timeText!: Phaser.GameObjects.Text;
   private levelText!: Phaser.GameObjects.Text;
   private levelDescriptionText!: Phaser.GameObjects.Text;
-  private muteButton!: Phaser.GameObjects.Container;
   private homeButton!: Phaser.GameObjects.Container;
   private settingsButton!: Phaser.GameObjects.Container;
   private pauseModal?: Phaser.GameObjects.Container;
@@ -104,10 +100,7 @@ export class GameScene extends Phaser.Scene {
     if (data?.difficulty) {
       configManager.setCurrentDifficulty(data.difficulty);
     }
-    
-    // For now, we'll use the current difficulty to generate a level
-    // In a full implementation, you might have multiple levels per difficulty
-    this.pendingLevelIndex = 0; // Always use first level for now
+
     this.registry.set(REGISTRY_KEYS.CURRENT_LEVEL_INDEX, 0);
   }
 
@@ -121,12 +114,9 @@ export class GameScene extends Phaser.Scene {
     this.currentLevelIndex = 0;
     this.currentLevel = this.generateLevelFromConfig(configManager);
     this.registry.set(REGISTRY_KEYS.CURRENT_LEVEL_INDEX, this.currentLevelIndex);
-    this.pendingLevelIndex = null;
 
     this.gameState = new GameState(this.currentLevel.tubes);
     this.pourAnimation = new PourAnimation(this);
-    this.audioManager = new AudioManager(this);
-    this.audioManager.init();
     this.tubeVisuals = [];
     this.selectedTube = null;
 
@@ -277,52 +267,6 @@ export class GameScene extends Phaser.Scene {
       () => this.handleSettingsButton(),
       0.06
     );
-
-    this.muteButton = this.createSvgButton(
-      width * 0.85,
-      height * 0.9,
-      'volume-up',
-      () => this.handleMute()
-    );
-  }
-
-  private createIconButton(
-    x: number,
-    y: number,
-    icon: string,
-    callback: () => void
-  ): Phaser.GameObjects.Container {
-    const container = this.add.container(x, y);
-
-    const bg = this.add.graphics();
-    bg.fillStyle(0x2a2a3e, 1);
-    bg.fillCircle(0, 0, 35);
-    bg.lineStyle(2, 0x4a4a5e, 1);
-    bg.strokeCircle(0, 0, 35);
-
-    const text = this.add.text(0, 0, icon, {
-      fontSize: '32px',
-      color: UI_CONFIG.TEXT_COLOR,
-      fontFamily: 'Arial, sans-serif'
-    });
-    text.setOrigin(0.5);
-
-    container.add([bg, text]);
-    container.setSize(70, 70);
-    container.setInteractive({ useHandCursor: true });
-
-    container.on('pointerdown', () => {
-      this.audioManager.playClick();
-      this.tweens.add({
-        targets: container,
-        scale: 0.9,
-        duration: 100,
-        yoyo: true,
-        onComplete: callback
-      });
-    });
-
-    return container;
   }
 
   private createSvgButton(
@@ -349,7 +293,6 @@ export class GameScene extends Phaser.Scene {
     container.setInteractive({ useHandCursor: true });
 
     container.on('pointerdown', () => {
-      this.audioManager.playClick();
       this.tweens.add({
         targets: container,
         scale: 0.9,
@@ -366,8 +309,6 @@ export class GameScene extends Phaser.Scene {
     if (!this.isGameActive || this.isAnimating) {
       return;
     }
-
-    this.audioManager.playClick();
 
     if (!this.selectedTube) {
       if (!tube.getTube().isEmpty()) {
@@ -395,11 +336,7 @@ export class GameScene extends Phaser.Scene {
 
       this.gameState.executeMove(sourceIndex, destIndex);
 
-      this.audioManager.playPour(units);
-
       await this.pourAnimation.animatePour(source, dest, color, units);
-
-      this.audioManager.playSplash();
 
       source.setSelected(false);
       this.selectedTube = null;
@@ -412,19 +349,12 @@ export class GameScene extends Phaser.Scene {
         this.handleWin();
       }
     } else {
-      this.audioManager.playInvalid();
       dest.animateInvalidMove();
       this.cameras.main.shake(ANIMATION_CONFIG.SHAKE_DURATION, 0.005);
 
       source.setSelected(false);
       this.selectedTube = null;
     }
-  }
-
-  private handleMute(): void {
-    const isMuted = this.audioManager.toggleMute();
-    const muteImage = this.muteButton.getAt(1) as Phaser.GameObjects.Image;
-    muteImage.setTexture(isMuted ? 'volume-off' : 'volume-up');
   }
 
   private handleHomeButton(): void {
@@ -494,7 +424,6 @@ export class GameScene extends Phaser.Scene {
     } else {
       // Settings modal - create buttons individually and add them
       const menuItems = [
-        { text: 'Toggle Sound', action: () => this.handleToggleSound() },
         { text: 'Return to Lobby', action: () => this.handleReturnToLobby() },
         { text: 'Help & Tutorial', action: () => this.handleHelpTutorial() },
         { text: 'Game Info', action: () => this.handleGameInfo() },
@@ -552,7 +481,6 @@ export class GameScene extends Phaser.Scene {
     });
     
     container.on('pointerdown', () => {
-      this.audioManager.playClick();
       container.setScale(0.95);
       
       // Execute callback after visual feedback
@@ -573,10 +501,6 @@ export class GameScene extends Phaser.Scene {
     
     this.isPaused = false;
     this.scene.resume();
-  }
-
-  private handleToggleSound(): void {
-    this.handleMute();
   }
 
   private handleReturnToLobby(): void {
@@ -657,7 +581,6 @@ export class GameScene extends Phaser.Scene {
     const levelFont = this.getResponsiveFontSize(24, width, height);
     const descriptionFont = this.getResponsiveFontSize(18, width, height);
     const infoFont = this.getResponsiveFontSize(UI_CONFIG.UI_TEXT_SIZE, width, height);
-    const smallFont = this.getResponsiveFontSize(16, width, height);
 
     this.titleText.setFontSize(titleFont);
     this.titleText.setPosition(width / 2, height * 0.08);
@@ -674,12 +597,6 @@ export class GameScene extends Phaser.Scene {
     this.timeText.setFontSize(infoFont);
     this.moveText.setPosition(width * 0.25, infoY);
     this.timeText.setPosition(width * 0.75, infoY);
-
-    const bottomPadding = Math.max(80, height * 0.12);
-    const buttonY = height - bottomPadding;
-    const buttonScale = Phaser.Math.Clamp(Math.min(width / 900, height / 900), 0.8, 1.2);
-    this.muteButton.setPosition(width * 0.82, buttonY);
-    this.muteButton.setScale(buttonScale);
 
     // Position home and settings buttons at the top
     const topButtonY = height * 0.05;
@@ -705,7 +622,6 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.isGameActive = false;
-    this.audioManager.playWin();
 
     if (this.timeInterval) {
       this.timeInterval.remove(false);
@@ -830,25 +746,21 @@ export class GameScene extends Phaser.Scene {
     this.layoutHintOverlay(width, height);
 
     const startCountdown = () => {
-      this.beginCountdown(true);
+      this.beginCountdown();
     };
 
     backdrop.once('pointerdown', startCountdown);
     panel.once('pointerdown', startCountdown);
 
-    this.time.delayedCall(1600, () => this.beginCountdown(false));
+    this.time.delayedCall(1600, () => this.beginCountdown());
   }
 
-  private beginCountdown(playTapSound: boolean): void {
+  private beginCountdown(): void {
     if (this.hasCountdownStarted || this.countdownEvent) {
       return;
     }
 
     this.hasCountdownStarted = true;
-
-    if (playTapSound) {
-      this.audioManager.playClick();
-    }
 
     if (this.hintBody) {
       this.tweens.add({
@@ -947,7 +859,6 @@ export class GameScene extends Phaser.Scene {
       this.timeInterval = undefined;
     }
 
-    this.audioManager.playInvalid();
     this.cameras.main.shake(200, 0.01);
 
     const { width, height } = this.scale;

@@ -49,13 +49,6 @@ export const ANIMATION_CONFIG = {
   MAX_TILT_ANGLE: 26
 };
 
-export const AUDIO_CONFIG = {
-  CLICK_VOLUME: 0.1,
-  POUR_VOLUME: 0.3,
-  SPLASH_VOLUME: 0.3,
-  WIN_VOLUME: 0.4
-};
-
 export const UI_CONFIG = {
   BUTTON_WIDTH: 200,
   BUTTON_HEIGHT: 60,
