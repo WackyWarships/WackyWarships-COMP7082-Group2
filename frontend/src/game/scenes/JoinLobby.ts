@@ -10,7 +10,10 @@ import {
     sendJoinLobby,
     getPlayerId
  } from '../../api/socket';
-import { JoinLobbyEvent } from 'shared/types';
+import { 
+    JoinLobbyEvent,
+    LobbyUpdate
+ } from 'shared/types';
 
 export class JoinLobby extends Scene {
     background!: Phaser.GameObjects.Image;
@@ -77,11 +80,9 @@ export class JoinLobby extends Scene {
 
         // Handle resizing 
         this.scale.on('resize', this.handleResize, this);
-        this.events.on('lobby-update', this.enterLobby, this);
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             this.scale.off('resize', this.handleResize, this);
-            this.events.off('lobby-update', this.enterLobby, this);
         });
 
         // Cleanup input on shutdown
@@ -143,14 +144,34 @@ export class JoinLobby extends Scene {
         const code = this.codeInput?.value?.trim() || undefined;
 
         if (code) {
+            const playerId = getPlayerId();
+            const playerName = "Test Joiner";
+
             const payload: JoinLobbyEvent = {
                 lobbyId: code,
-                playerId: getPlayerId()
+                playerId: playerId,
+                playerName: playerName
             };
             
             sendJoinLobby(payload);
 
-            console.log(`Joining lobby ${payload.lobbyId}`);
+            const handler = (update: LobbyUpdate) => {
+                if (update.players.includes(getPlayerId())) {
+                    if (this.codeInput) {
+                        this.codeInput.remove();
+                        this.codeInput = undefined;
+                    }
+                    this.scene.start('Lobby', {
+                        lobbyId: update.lobbyId,
+                        playerId,
+                        playerName,
+                        lobbyName: update.lobbyName ?? "Error: no lobby name",
+                    });
+                    EventBus.off('lobby-update', handler); 
+                }
+            };
+
+            EventBus.on('lobby-update', handler);     
         }
     }
 
@@ -170,9 +191,5 @@ export class JoinLobby extends Scene {
 
         this.updateInputPosition();
 
-    }
-
-    enterLobby() {
-        this.scene.start('Game');
     }
 }

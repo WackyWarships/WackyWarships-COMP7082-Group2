@@ -83,6 +83,8 @@ export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvent
             settings: lobby.settings,
         };
 
+        console.log([...lobbyIdToLobbyMap.values()]);
+
         io.to(lobby.lobbyId).emit("lobbyUpdate", update);
     });
 

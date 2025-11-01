@@ -75,11 +75,9 @@ export class CreateLobby extends Scene {
 
         // Handle resizing 
         this.scale.on('resize', this.handleResize, this);
-        this.events.on('lobby-update', this.enterLobby, this);
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             this.scale.off('resize', this.handleResize, this);
-            this.events.off('lobby-update', this.enterLobby, this);
         });
 
         // Cleanup input on shutdown
@@ -138,11 +136,17 @@ export class CreateLobby extends Scene {
     }
 
     handleCreateClick() {
-        const playerId = crypto.randomUUID();
+        const playerId = getPlayerId();
         const hostName = 'Host123' // Temporary
         const lobbyName = (this.nameInput?.value ?? '').trim() || 'My Lobby';
 
-        sendCreateLobby({ hostName, hostId: playerId, lobbyName });
+        const payload: CreateLobbyEvent = {
+            hostName: hostName,
+            hostId: playerId,
+            lobbyName: lobbyName
+        };
+
+        sendCreateLobby(payload);
 
         const handler = (update: LobbyUpdate) => {
             if (update.hostId === playerId) {
@@ -161,8 +165,6 @@ export class CreateLobby extends Scene {
         };
 
         EventBus.on('lobby-update', handler);
-
-        this.scene.start('Game'); // Temporary
     }
 
     handleResize(gameSize: Phaser.Structs.Size) {
@@ -180,10 +182,5 @@ export class CreateLobby extends Scene {
         this.backButton.setPosition(centerX, height * 0.65);
 
         this.updateInputPosition();
-
-    }
-
-    enterLobby() {
-        this.scene.start('Game');
     }
 }
