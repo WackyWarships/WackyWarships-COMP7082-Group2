@@ -31,7 +31,7 @@ export type Lobby = {
 
 // Client -> Server ---------------------------------------------------------
 
-export type PlayerIdentifyEvent = {
+export type SetUsernameEvent = {
     playerId: PlayerId;
     playerName: string;
 };
@@ -100,7 +100,7 @@ export type GroupMinigameResultEvent = {
 
 // Server -> Client ---------------------------------------------------------
 
-export type PlayerIdentifiedEvent = {
+export type UsernameSetEvent = {
     playerId: PlayerId;
     playerName: string;
     restored?: boolean;
@@ -239,7 +239,7 @@ export type ServerSnapshot = Snapshot;
 
 // Socket.IO event maps -----------------------------------------------------
 export type ServerToClientEvents = {
-    playerIdentified: (payload: PlayerIdentifiedEvent) => void;
+    usernameSet: (payload: UsernameSetEvent) => void;
 
     snapshot: (snapshot: ServerSnapshot) => void;
     ack: (ack: { seq: Seq }) => void;
@@ -260,7 +260,7 @@ export type ServerToClientEvents = {
 };
 
 export type ClientToServerEvents = {
-    playerIdentify: (payload: PlayerIdentifyEvent) => void;
+    setUsername: (payload: SetUsernameEvent) => void;
     
     createLobby: (payload: CreateLobbyEvent) => void;
     joinLobby: (payload: JoinLobbyEvent) => void;

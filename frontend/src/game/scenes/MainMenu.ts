@@ -1,6 +1,6 @@
 import { GameObjects, Scene } from 'phaser';
 import EventBus from '../EventBus';
-import { clearPlayerName } from '../utils/playerIdentity';
+import { clearPlayerName } from '../utils/playerUsername';
 import {
     getCenter,
     isMobile,

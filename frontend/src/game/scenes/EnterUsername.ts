@@ -1,6 +1,6 @@
 import { Scene, GameObjects } from 'phaser';
-import { savePlayerName, getOrCreatePlayerId } from '../utils/playerIdentity';
-import { sendIdentifyPlayer } from '../../api/socket';
+import { savePlayerName, getOrCreatePlayerId } from '../utils/playerUsername';
+import { sendSetUsername } from '../../api/socket';
 import EventBus from '../EventBus';
 import {
     getCenter,
@@ -110,9 +110,9 @@ export class EnterUsername extends Scene {
         this.inputEl.remove();
 
         const playerId = getOrCreatePlayerId();
-        sendIdentifyPlayer({ playerId, playerName });
+        sendSetUsername({ playerId, playerName });
 
-        EventBus.on('player-identified', () => {
+        EventBus.on('username-set', () => {
             this.scene.start('MainMenu');
         });
     }
