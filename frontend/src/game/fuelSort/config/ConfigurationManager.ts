@@ -181,26 +181,26 @@ export class ConfigurationManager {
     return { ...this.configuration.difficultyLevels };
   }
 
-  public getProcessedConfiguration(difficulty?: string): ProcessedTubeConfiguration {
-    const level = this.getDifficultyLevel(difficulty);
+  // public getProcessedConfiguration(difficulty?: string): ProcessedTubeConfiguration {
+  //   const level = this.getDifficultyLevel(difficulty);
     
-    // Convert color palette to ColorType values
-    const colors: Record<string, ColorType> = {};
-    Object.entries(level.colorPalette).forEach(([key, hexValue]) => {
-      colors[key] = hexValue as ColorType;
-    });
+  //   // Convert color palette to ColorType values
+  //   const colors: Record<string, ColorType> = {};
+  //   Object.entries(level.colorPalette).forEach(([key, hexValue]) => {
+  //     colors[key] = hexValue as ColorType;
+  //   });
 
-    // Convert tube configuration to use actual color values
-    const tubes: ColorType[][] = level.tubeConfiguration.map(tube => 
-      tube.map(colorRef => colors[colorRef])
-    );
+  //   // Convert tube configuration to use actual color values
+  //   const tubes: ColorType[][] = level.tubeConfiguration.map(tube => 
+  //     tube.map(colorRef => colors[colorRef])
+  //   );
 
-    return {
-      tubes,
-      colors,
-      difficulty: level
-    };
-  }
+  //   return {
+  //     tubes,
+  //     colors,
+  //     difficulty: level
+  //   };
+  // }
 
   public getConfiguration(): GameConfiguration {
     return { ...this.configuration };

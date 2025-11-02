@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
 
-export const WATER_SORT_PARTICLE_KEY = 'water-sort-particle';
+export const FUEL_SORT_PARTICLE_KEY = 'fuel-sort-particle';
 
 export function ensureParticleTexture(scene: Phaser.Scene): void {
-  if (scene.textures.exists(WATER_SORT_PARTICLE_KEY)) {
+  if (scene.textures.exists(FUEL_SORT_PARTICLE_KEY)) {
     return;
   }
 
@@ -11,14 +11,14 @@ export function ensureParticleTexture(scene: Phaser.Scene): void {
   graphics.setVisible(false);
   graphics.fillStyle(0xffffff, 1);
   graphics.fillCircle(4, 4, 4);
-  graphics.generateTexture(WATER_SORT_PARTICLE_KEY, 8, 8);
+  graphics.generateTexture(FUEL_SORT_PARTICLE_KEY, 8, 8);
   graphics.destroy();
 }
 
-const WATER_SORT_TUBE_ICON_KEY = 'water-sort-tube-icon';
+const FUEL_SORT_TUBE_ICON_KEY = 'fuel-sort-tube-icon';
 
 export function ensureTubeIconTexture(scene: Phaser.Scene): void {
-  if (scene.textures.exists(WATER_SORT_TUBE_ICON_KEY)) {
+  if (scene.textures.exists(FUEL_SORT_TUBE_ICON_KEY)) {
     return;
   }
 
@@ -52,10 +52,10 @@ export function ensureTubeIconTexture(scene: Phaser.Scene): void {
   graphics.fillStyle(0xffffff, 0.18);
   graphics.fillRoundedRect(16, liquidTop + 12, (width - 32) * 0.55, liquidHeight - 24, 16);
 
-  graphics.generateTexture(WATER_SORT_TUBE_ICON_KEY, width, height);
+  graphics.generateTexture(FUEL_SORT_TUBE_ICON_KEY, width, height);
   graphics.destroy();
 }
 
 export function getTubeIconKey(): string {
-  return WATER_SORT_TUBE_ICON_KEY;
+  return FUEL_SORT_TUBE_ICON_KEY;
 }

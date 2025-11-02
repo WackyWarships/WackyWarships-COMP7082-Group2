@@ -13,7 +13,7 @@ import {
 } from '../config/Constants';
 import { ConfigurationManager } from '../config/ConfigurationManager';
 import EventBus from '../../EventBus';
-import { ensureParticleTexture, WATER_SORT_PARTICLE_KEY } from '../utils/textures';
+import { ensureParticleTexture, FUEL_SORT_PARTICLE_KEY } from '../utils/textures';
 
 export class FuelSortScene extends Phaser.Scene {
   private gameState!: GameState;
@@ -55,7 +55,7 @@ export class FuelSortScene extends Phaser.Scene {
   private remainingTime = 0;
 
   constructor() {
-    super({ key: 'WaterSortGame' });
+    super({ key: 'FuelSortGame' });
   }
 
   preload(): void {    
@@ -65,7 +65,7 @@ export class FuelSortScene extends Phaser.Scene {
   }
 
   private shouldShowHintForLevel(levelIndex: number): boolean {
-    const registryFlag = this.registry.get('water-sort-hint-shown');
+    const registryFlag = this.registry.get('fuel-sort-hint-shown');
     if (levelIndex !== 0) {
       return false;
     }
@@ -74,7 +74,7 @@ export class FuelSortScene extends Phaser.Scene {
       return false;
     }
 
-    this.registry.set('water-sort-hint-shown', true);
+    this.registry.set('fuel-sort-hint-shown', true);
     return true;
   }
 
@@ -203,7 +203,7 @@ export class FuelSortScene extends Phaser.Scene {
   }
 
   private createUI(width: number, height: number): void {
-    this.titleText = this.add.text(width / 2, 60, 'Water Sort Puzzle', {
+    this.titleText = this.add.text(width / 2, 60, 'Fuel Sort Puzzle', {
       fontSize: '32px',
       color: UI_CONFIG.TEXT_COLOR,
       fontFamily: 'Arial, sans-serif',
@@ -928,7 +928,7 @@ export class FuelSortScene extends Phaser.Scene {
   private createWinParticles(x: number, y: number): void {
     const colors = [0xff4da6, 0x4bf77a, 0x8b5cff, 0x3fb6ff, 0xffd23f, 0xff5b5b];
 
-    const particles = this.add.particles(x, y, WATER_SORT_PARTICLE_KEY, {
+    const particles = this.add.particles(x, y, FUEL_SORT_PARTICLE_KEY, {
       speed: { min: 100, max: 300 },
       angle: { min: 0, max: 360 },
       scale: { start: 1.5, end: 0 },

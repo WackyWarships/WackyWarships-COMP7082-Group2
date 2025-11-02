@@ -107,7 +107,7 @@ export class MainMenu extends Scene {
         makeButton(
             'Play Mini-Game', 
             210, 
-            () => { this.scene.start('WaterSortGame', { difficulty: "hard" }) }
+            () => { this.scene.start('FuelSortGame', { difficulty: "hard" }) }
         );
         makeButton('Start Battle', 270, 'Game'); //TEMPORARY
 

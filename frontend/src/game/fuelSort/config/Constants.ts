@@ -164,5 +164,5 @@ export const LEVEL_DATA: { defaultLevelIndex: number; levels: LevelDefinition[] 
 };
 
 export const REGISTRY_KEYS = {
-  CURRENT_LEVEL_INDEX: 'waterSortCurrentLevelIndex'
+  CURRENT_LEVEL_INDEX: 'fuelSortCurrentLevelIndex'
 } as const;
