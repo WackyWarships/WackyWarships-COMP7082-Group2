@@ -1,4 +1,4 @@
-import { Scene } from 'phaser';
+import { Scene, GameObjects } from 'phaser';
 import EventBus from '../EventBus';
 import type { LobbyUpdate } from 'shared/types';
 import {
@@ -11,11 +11,11 @@ import { CreateLobbyEvent } from 'shared/types';
 import { getPlayerId, sendCreateLobby } from '../../api/socket';
 
 export class CreateLobby extends Scene {
-    background!: Phaser.GameObjects.Image;
-    title!: Phaser.GameObjects.Text;
+    background!: GameObjects.Image;
+    title!: GameObjects.Text;
     nameInput?: HTMLInputElement;
-    createButton!: Phaser.GameObjects.Text;
-    backButton!: Phaser.GameObjects.Text;
+    createButton!: GameObjects.Text;
+    backButton!: GameObjects.Text;
 
     constructor() {
         super('CreateLobby');
