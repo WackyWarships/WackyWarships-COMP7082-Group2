@@ -27,7 +27,7 @@ app.get('/api/lobbies', (req, res) => {
   res.json(getLobbyMap());
 });
 
-// Serve the React app for all other routes (SPA routing)
+// Serve the React app for all other routes
 // DO NOT REMOVE
 app.get('*', (req, res) => {
   res.sendFile(path.join(frontendDistPath, 'index.html'));
