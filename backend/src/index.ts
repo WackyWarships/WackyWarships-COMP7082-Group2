@@ -17,9 +17,20 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(server, {
 });
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Serve frontend build files
+// Serve static frontend files
+// When running from dist/backend/src/, we need to go up to the root and then to frontend/dist
+const frontendDistPath = path.join(__dirname, '../../../../frontend/dist');
+ app.use(express.static(frontendDistPath));
+
+// API route for lobby data
+app.get('/api/lobbies', (req, res) => {
+  res.json(getLobbyMap());
+});
+
+// Serve the React app for all other routes (SPA routing)
+// DO NOT REMOVE
 app.get('*', (req, res) => {
-  res.send(getLobbyMap());
+  res.sendFile(path.join(frontendDistPath, 'index.html'));
 });
 
 io.on("connection", (socket) => {
