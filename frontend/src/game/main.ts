@@ -8,8 +8,6 @@ import { Game } from "./scenes/Game";
 import { GameOver } from "./scenes/GameOver";
 import { FuelSortScene as MiniGameScene } from "./waterSort/scenes/FuelSortScene";
 import { FailScene as WaterSortFail } from "./waterSort/scenes/FailScene";
-import { WinScene as WaterSortWin } from "./waterSort/scenes/WinScene";
-import { AdminPanelScene } from "./waterSort/scenes/AdminPanelScene";
 import { JoinLobby } from "./scenes/JoinLobby";
 
 let gameInstance: Phaser.Game | null = null;
@@ -26,8 +24,6 @@ const baseConfig: Phaser.Types.Core.GameConfig = {
         JoinLobby,
         MiniGameScene,
         WaterSortFail,
-        WaterSortWin,
-        AdminPanelScene,
         Game,
         GameOver
     ],
