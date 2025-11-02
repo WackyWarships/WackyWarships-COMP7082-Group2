@@ -638,13 +638,9 @@ export class FuelSortScene extends Phaser.Scene {
     }
 
     this.time.delayedCall(1500, () => {
-      const stats = this.gameState.getStats();
       this.cameras.main.fade(500);
       this.time.delayedCall(500, () => {
-        this.scene.start('WaterSortWin', {
-          ...stats,
-          levelIndex: this.currentLevelIndex
-        });
+        this.scene.start('MainMenu');
       });
     });
   }
@@ -874,16 +870,10 @@ export class FuelSortScene extends Phaser.Scene {
       repeat: 1
     });
 
-    const stats = this.gameState.getStats();
-
     this.time.delayedCall(1200, () => {
       this.cameras.main.fade(400, 0, 0, 0);
       this.time.delayedCall(420, () => {
-        this.scene.start('WaterSortFail', {
-          moves: stats.moves,
-          time: stats.time,
-          levelIndex: this.currentLevelIndex
-        });
+        this.scene.start('MainMenu');
       });
     });
   }

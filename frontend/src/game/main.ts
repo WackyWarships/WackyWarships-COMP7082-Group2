@@ -7,7 +7,6 @@ import { CreateLobby } from "./scenes/CreateLobby";
 import { Game } from "./scenes/Game";
 import { GameOver } from "./scenes/GameOver";
 import { FuelSortScene as MiniGameScene } from "./waterSort/scenes/FuelSortScene";
-import { FailScene as WaterSortFail } from "./waterSort/scenes/FailScene";
 import { JoinLobby } from "./scenes/JoinLobby";
 
 let gameInstance: Phaser.Game | null = null;
@@ -23,7 +22,6 @@ const baseConfig: Phaser.Types.Core.GameConfig = {
         CreateLobby,
         JoinLobby,
         MiniGameScene,
-        WaterSortFail,
         Game,
         GameOver
     ],
