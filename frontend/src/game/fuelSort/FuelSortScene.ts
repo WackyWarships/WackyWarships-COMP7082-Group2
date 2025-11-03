@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
-import { GameState } from '../core/GameState';
-import { TubeVisual } from '../components/TubeVisual';
-import { PourAnimation } from '../components/PourAnimation';
+import { FuelSortGameState } from './core/FuelSortGameState';
+import { Tube } from './core/Tube';
+import { TubeVisual } from './components/TubeVisual';
+import { PourAnimation } from './components/PourAnimation';
 import {
   TUBE_CONFIG,
   UI_CONFIG,
@@ -9,13 +10,13 @@ import {
   ANIMATION_CONFIG,
   LevelDefinition,
   REGISTRY_KEYS
-} from '../config/Constants';
-import { ConfigurationManager } from '../config/ConfigurationManager';
-import EventBus from '../../EventBus';
-import { ensureParticleTexture, FUEL_SORT_PARTICLE_KEY } from '../utils/textures';
+} from './config/Constants';
+import { ConfigurationManager } from './config/ConfigurationManager';
+import EventBus from '../EventBus';
+import { ensureParticleTexture, FUEL_SORT_PARTICLE_KEY } from './utils/textures';
 
 export class FuelSortScene extends Phaser.Scene {
-  private gameState!: GameState;
+  private gameState!: FuelSortGameState;
   private tubeVisuals: TubeVisual[] = [];
   private selectedTube: TubeVisual | null = null;
   private pourAnimation!: PourAnimation;
@@ -35,7 +36,6 @@ export class FuelSortScene extends Phaser.Scene {
   private levelText!: Phaser.GameObjects.Text;
   private levelDescriptionText!: Phaser.GameObjects.Text;
   private homeButton!: Phaser.GameObjects.Container;
-  private settingsButton!: Phaser.GameObjects.Container;
   private pauseModal?: Phaser.GameObjects.Container;
   private isPaused = false;
 
@@ -58,9 +58,8 @@ export class FuelSortScene extends Phaser.Scene {
   }
 
   preload(): void {    
-    // Load SVG assets for home and settings buttons
+    // Load SVG assets for home button
     this.load.svg('home', '/src/assets/miniGame/home.svg');
-    this.load.svg('settings', '/src/assets/miniGame/settings.svg');
   }
 
   private shouldShowHintForLevel(levelIndex: number): boolean {
@@ -110,7 +109,7 @@ export class FuelSortScene extends Phaser.Scene {
     this.currentLevel = this.generateLevelFromConfig(configManager);
     this.registry.set(REGISTRY_KEYS.CURRENT_LEVEL_INDEX, this.currentLevelIndex);
 
-    this.gameState = new GameState(this.currentLevel.tubes);
+    this.gameState = new FuelSortGameState(this.currentLevel.tubes);
     this.pourAnimation = new PourAnimation(this);
     this.tubeVisuals = [];
     this.selectedTube = null;
@@ -190,7 +189,7 @@ export class FuelSortScene extends Phaser.Scene {
     const scaleFactor = this.getTubeScale(width, height, tubes.length);
     const positions = this.calculateTubePositions(width, height, tubes.length, scaleFactor);
 
-    tubes.forEach((tube, index) => {
+    tubes.forEach((tube: Tube, index: number) => {
       const pos = positions[index];
       const tubeVisual = new TubeVisual(this, pos.x, pos.y, tube, index);
       tubeVisual.setScale(scaleFactor);
@@ -251,15 +250,6 @@ export class FuelSortScene extends Phaser.Scene {
       height * 0.08,
       'home',
       () => this.handleHomeButton(),
-      0.06
-    );
-
-    // Add settings button at top-right
-    this.settingsButton = this.createSvgButton(
-      width * 0.9,
-      height * 0.08,
-      'settings',
-      () => this.handleSettingsButton(),
       0.06
     );
   }
@@ -353,23 +343,19 @@ export class FuelSortScene extends Phaser.Scene {
   }
 
   private handleHomeButton(): void {
-    this.showPauseModal('home');
+    this.showPauseModal();
   }
 
-  private handleSettingsButton(): void {
-    this.showPauseModal('settings');
-  }
-
-  private showPauseModal(type: 'home' | 'settings'): void {
+  private showPauseModal(): void {
     if (this.isPaused) return;
     
     this.isPaused = true;
     this.scene.pause();
     
-    this.createPauseModal(type);
+    this.createPauseModal();
   }
 
-  private createPauseModal(type: 'home' | 'settings'): void {
+  private createPauseModal(): void {
     const { width, height } = this.cameras.main;
     
     // Create a single container for everything
@@ -380,9 +366,7 @@ export class FuelSortScene extends Phaser.Scene {
     const backdrop = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7);
     backdrop.setInteractive();
     backdrop.on('pointerdown', () => {
-      if (type === 'home') {
-        this.hidePauseModal();
-      }
+      this.hidePauseModal();
     });
     
     // Create modal panel
@@ -390,54 +374,28 @@ export class FuelSortScene extends Phaser.Scene {
     panel.setStrokeStyle(4, 0x4a4a5e);
     
     // Create title
-    const title = this.add.text(width / 2, height * 0.25, 
-      type === 'home' ? 'Pause Menu' : 'Settings', {
+    const title = this.add.text(width / 2, height * 0.25, 'Pause Menu', {
       fontSize: '32px',
       color: '#ffffff',
       fontFamily: 'Arial, sans-serif'
     });
     title.setOrigin(0.5);
     
-    this.pauseModal.add([backdrop, panel, title]);
+    // Home modal content
+    const content = this.add.text(width / 2, height * 0.4, 
+      'Game is paused.\nClick outside to resume or use the buttons below.', {
+      fontSize: '18px',
+      color: '#cccccc',
+      fontFamily: 'Arial, sans-serif',
+      align: 'center'
+    });
+    content.setOrigin(0.5);
     
-    if (type === 'home') {
-      // Home modal content
-      const content = this.add.text(width / 2, height * 0.4, 
-        'Game is paused.\nClick outside to resume or use the buttons below.', {
-        fontSize: '18px',
-        color: '#cccccc',
-        fontFamily: 'Arial, sans-serif',
-        align: 'center'
-      });
-      content.setOrigin(0.5);
-      
-      const resumeButton = this.createSimpleButton(width / 2, height * 0.55, 'Resume', () => {
-        this.hidePauseModal();
-      });
-      
-      this.pauseModal.add([content, resumeButton]);
-    } else {
-      // Settings modal - create buttons individually and add them
-      const menuItems = [
-        { text: 'Return to Lobby', action: () => this.handleReturnToLobby() },
-        { text: 'Help & Tutorial', action: () => this.handleHelpTutorial() },
-        { text: 'Game Info', action: () => this.handleGameInfo() },
-        { text: 'Close', action: () => this.hidePauseModal() }
-      ];
-      
-      const startY = height * 0.35;
-      const buttonSpacing = height * 0.08;
-      
-      menuItems.forEach((item, index) => {
-        const button = this.createSimpleButton(
-          width / 2, 
-          startY + (index * buttonSpacing), 
-          item.text, 
-          item.action
-        );
-        this.pauseModal!.add(button);
-      });
-    }
+    const resumeButton = this.createSimpleButton(width / 2, height * 0.55, 'Resume', () => {
+      this.hidePauseModal();
+    });
+    
+    this.pauseModal.add([backdrop, panel, title, content, resumeButton]);
   }
 
   private createSimpleButton(x: number, y: number, text: string, callback: () => void): Phaser.GameObjects.Container {
@@ -498,68 +456,6 @@ export class FuelSortScene extends Phaser.Scene {
     this.scene.resume();
   }
 
-  private handleReturnToLobby(): void {
-    // Show confirmation dialog
-    this.hidePauseModal();
-    this.showReturnToLobbyConfirmation();
-  }
-
-  private handleHelpTutorial(): void {
-    this.hidePauseModal();
-    // TODO: Implement help/tutorial functionality
-    console.log('Help & Tutorial clicked - functionality to be implemented');
-  }
-
-  private handleGameInfo(): void {
-    this.hidePauseModal();
-    // TODO: Implement game info functionality  
-    console.log('Game Info clicked - functionality to be implemented');
-  }
-
-  private showReturnToLobbyConfirmation(): void {
-    const { width, height } = this.cameras.main;
-    
-    this.isPaused = true;
-    this.scene.pause();
-    
-    // Create confirmation modal
-    this.pauseModal = this.add.container(0, 0);
-    this.pauseModal.setDepth(1000);
-    
-    const backdrop = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7);
-    backdrop.setInteractive();
-    
-    const panel = this.add.rectangle(width / 2, height / 2, width * 0.8, height * 0.5, 0x2a2a3e);
-    panel.setStrokeStyle(4, 0x4a4a5e);
-    
-    const title = this.add.text(width / 2, height * 0.35, 'Return to Lobby?', {
-      fontSize: '32px',
-      color: '#ffffff',
-      fontFamily: 'Arial, sans-serif'
-    });
-    title.setOrigin(0.5);
-    
-    const content = this.add.text(width / 2, height * 0.45, 
-      'Are you sure you want to leave the game?\nYour progress will be lost.', {
-      fontSize: '18px',
-      color: '#cccccc',
-      fontFamily: 'Arial, sans-serif',
-      align: 'center'
-    });
-    content.setOrigin(0.5);
-    
-    const yesButton = this.createSimpleButton(width * 0.35, height * 0.6, 'Yes', () => {
-      this.hidePauseModal();
-      this.scene.start('MainMenu');
-    });
-    
-    const noButton = this.createSimpleButton(width * 0.65, height * 0.6, 'No', () => {
-      this.hidePauseModal();
-    });
-    
-    this.pauseModal.add([backdrop, panel, title, content, yesButton, noButton]);
-  }
-
   private updateUI(): void {
     const stats = this.gameState.getStats();
     this.moveText.setText(`Moves: ${stats.moves}`);
@@ -593,13 +489,11 @@ export class FuelSortScene extends Phaser.Scene {
     this.moveText.setPosition(width * 0.25, infoY);
     this.timeText.setPosition(width * 0.75, infoY);
 
-    // Position home and settings buttons at the top
+    // Position home button at the top
     const topButtonY = height * 0.05;
     const topButtonScale = Phaser.Math.Clamp(Math.min(width / 1200, height / 1200), 0.6, 1.0);
     this.homeButton.setPosition(width * 0.08, topButtonY);
     this.homeButton.setScale(topButtonScale);
-    this.settingsButton.setPosition(width * 0.92, topButtonY);
-    this.settingsButton.setScale(topButtonScale);
   }
 
   private updateTimeText(): void {

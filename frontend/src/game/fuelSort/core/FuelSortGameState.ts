@@ -8,7 +8,7 @@ interface MoveRecord {
   color: ColorType;
 }
 
-export class GameState {
+export class FuelSortGameState {
   private tubes: Tube[];
   private moves: MoveRecord[] = [];
   private startTime: number;
@@ -150,8 +150,8 @@ export class GameState {
     });
   }
 
-  static createLevel(index: number = LEVEL_DATA.defaultLevelIndex): GameState {
+  static createLevel(index: number = LEVEL_DATA.defaultLevelIndex): FuelSortGameState {
     const level = LEVEL_DATA.levels[index] ?? LEVEL_DATA.levels[LEVEL_DATA.defaultLevelIndex];
-    return new GameState(level.tubes);
+    return new FuelSortGameState(level.tubes);
   }
 }

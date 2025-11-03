@@ -6,7 +6,7 @@ import { MainMenu } from "./scenes/MainMenu";
 import { CreateLobby } from "./scenes/CreateLobby";
 import { Game } from "./scenes/Game";
 import { GameOver } from "./scenes/GameOver";
-import { FuelSortScene as MiniGameScene } from "./fuelSort/scenes/FuelSortScene";
+import { FuelSortScene as MiniGameScene } from "./fuelSort/FuelSortScene";
 import { JoinLobby } from "./scenes/JoinLobby";
 
 let gameInstance: Phaser.Game | null = null;
