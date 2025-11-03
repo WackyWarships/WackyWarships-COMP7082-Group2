@@ -291,7 +291,7 @@ export class FuelSortScene extends Phaser.Scene {
   }
 
   private handleTubeClick(tube: TubeVisual): void {
-    if (!this.isGameActive || this.isAnimating) {
+    if (!this.isGameActive || this.isAnimating || this.isPaused) {
       return;
     }
 
@@ -350,8 +350,6 @@ export class FuelSortScene extends Phaser.Scene {
     if (this.isPaused) return;
     
     this.isPaused = true;
-    this.scene.pause();
-    
     this.createPauseModal();
   }
 
@@ -383,7 +381,7 @@ export class FuelSortScene extends Phaser.Scene {
     
     // Home modal content
     const content = this.add.text(width / 2, height * 0.4, 
-      'Game is paused.\nClick outside to resume or use the buttons below.', {
+      'Game is paused.\nClick outside to resume or use the buttons below.\nPlease note that the timer is still running.', {
       fontSize: '18px',
       color: '#cccccc',
       fontFamily: 'Arial, sans-serif',
@@ -453,7 +451,6 @@ export class FuelSortScene extends Phaser.Scene {
     }
     
     this.isPaused = false;
-    this.scene.resume();
   }
 
   private updateUI(): void {
@@ -738,6 +735,13 @@ export class FuelSortScene extends Phaser.Scene {
     }
 
     this.isGameActive = false;
+
+    // Close pause modal if it's open when time runs out
+    if (this.pauseModal) {
+      this.pauseModal.destroy();
+      this.pauseModal = undefined;
+      this.isPaused = false;
+    }
 
     if (this.timeInterval) {
       this.timeInterval.remove(false);
