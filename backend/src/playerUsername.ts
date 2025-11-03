@@ -37,7 +37,7 @@ export function setupSocket(
             existing.playerName = playerName;
             existing.lastSeen = now;
             restored = true;
-            console.log(`🔁 Updated player name: ${playerName} (${playerId})`);
+            console.log(`Updated player name: ${playerName} (${playerId})`);
         } else {
             const newPlayer: PlayerRecord = {
                 playerId,
@@ -46,7 +46,7 @@ export function setupSocket(
                 lastSeen: now,
             };
             playerMap.set(playerId, newPlayer);
-            console.log(`🆕 Registered new player: ${playerName} (${playerId})`);
+            console.log(`Registered new player: ${playerName} (${playerId})`);
         }
 
         const response: UsernameSetEvent = {
