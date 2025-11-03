@@ -6,6 +6,7 @@ import {
     getResponsiveFontSize,
     resizeSceneBase
 } from '../utils/layout';
+import { getStoredPlayerName } from '../utils/playerUsername';
 import { 
     sendJoinLobby,
     getPlayerId
@@ -145,7 +146,12 @@ export class JoinLobby extends Scene {
 
         if (code) {
             const playerId = getPlayerId();
-            const playerName = "Test Joiner";
+            const playerName = getStoredPlayerName();
+
+            if (!playerName) {
+                this.scene.start('EnterUsername');
+                return;
+            }
 
             const payload: JoinLobbyEvent = {
                 lobbyId: code,

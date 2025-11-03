@@ -13,9 +13,13 @@ import type {
     PlayerReconnectedEvent,
     ReconnectResponse,
     ResumeTurnEvent,
+    SetUsernameEvent
 } from 'shared/types';
 
 export type Events = {
+    // Player identified (id and username in server?)
+    'username-set': SetUsernameEvent;
+
     // Scene lifecycle
     'current-scene-ready': Phaser.Scene;
 

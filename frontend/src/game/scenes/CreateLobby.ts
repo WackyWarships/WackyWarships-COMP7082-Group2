@@ -1,21 +1,23 @@
-import { Scene } from 'phaser';
+import { Scene, GameObjects } from 'phaser';
 import EventBus from '../EventBus';
 import type { LobbyUpdate } from 'shared/types';
+import { getStoredPlayerName } from '../utils/playerUsername';
 import {
     getCenter,
     isMobile,
     getResponsiveFontSize,
     resizeSceneBase
 } from '../utils/layout';
+
 import { CreateLobbyEvent } from 'shared/types';
 import { getPlayerId, sendCreateLobby } from '../../api/socket';
 
 export class CreateLobby extends Scene {
-    background!: Phaser.GameObjects.Image;
-    title!: Phaser.GameObjects.Text;
+    background!: GameObjects.Image;
+    title!: GameObjects.Text;
     nameInput?: HTMLInputElement;
-    createButton!: Phaser.GameObjects.Text;
-    backButton!: Phaser.GameObjects.Text;
+    createButton!: GameObjects.Text;
+    backButton!: GameObjects.Text;
 
     constructor() {
         super('CreateLobby');
@@ -137,8 +139,13 @@ export class CreateLobby extends Scene {
 
     handleCreateClick() {
         const playerId = getPlayerId();
-        const hostName = 'Host123' // Temporary
+        const hostName = getStoredPlayerName();
         const lobbyName = (this.nameInput?.value ?? '').trim() || 'My Lobby';
+
+        if (!hostName) {
+            this.scene.start('EnterUsername');
+            return;
+        }
 
         const payload: CreateLobbyEvent = {
             hostName: hostName,
@@ -160,7 +167,7 @@ export class CreateLobby extends Scene {
                     hostName,
                     lobbyName: update.lobbyName ?? lobbyName,
                 });
-                EventBus.off('lobby-update', handler); 
+                EventBus.off('lobby-update', handler);
             }
         };
 
