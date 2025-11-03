@@ -20,25 +20,6 @@ export interface GameConfiguration {
   lastModified: string;
   difficultyLevels: Record<string, DifficultyLevel>;
   defaultDifficulty: string;
-  scoring: {
-    basePoints: number;
-    timeBonus: number;
-    undosPenalty: number;
-    perfectGameBonus: number;
-  };
-  ui: {
-    adaptiveLayout: boolean;
-    maxTubesPerRow: number;
-    tubeSpacing: {
-      x: number;
-      y: number;
-    };
-    scalingFactors: {
-      mobile: number;
-      tablet: number;
-      desktop: number;
-    };
-  };
 }
 
 export interface ProcessedTubeConfiguration {
@@ -266,14 +247,6 @@ export class ConfigurationManager {
     } catch (error) {
       throw new Error(`Failed to import configuration: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  }
-
-  public getScoringConfig() {
-    return { ...this.configuration.scoring };
-  }
-
-  public getUIConfig() {
-    return { ...this.configuration.ui };
   }
 }
 

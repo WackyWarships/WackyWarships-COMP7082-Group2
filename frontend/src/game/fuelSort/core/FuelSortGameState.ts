@@ -14,9 +14,11 @@ export class FuelSortGameState {
   private startTime: number;
   private elapsedSeconds: number = 0;
   private undoCount: number = 0;
+  private targetScore: number;
 
-  constructor(tubeDefinitions: ColorType[][]) {
+  constructor(tubeDefinitions: ColorType[][], targetScore: number) {
     this.tubes = tubeDefinitions.map(contents => new Tube(contents));
+    this.targetScore = targetScore;
     this.startTime = Date.now();
   }
 
@@ -148,5 +150,9 @@ export class FuelSortGameState {
 
       return contents.every(color => color === contents[0]);
     });
+  }
+
+  calculateScore(): number {
+    return this.isGameWon() ? this.targetScore : 0;
   }
 }

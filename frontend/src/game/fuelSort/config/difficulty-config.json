@@ -9,7 +9,7 @@
       "totalTubes": 4,
       "filledTubes": 3,
       "emptyTubes": 1,
-      "targetScore": 1000,
+      "targetScore": 2000,
       "timeLimit": 30,
       "maxUndos": 5,
       "colorPalette": {
@@ -76,24 +76,5 @@
       ]
     }
   },
-  "defaultDifficulty": "easy",
-  "scoring": {
-    "basePoints": 100,
-    "timeBonus": 10,
-    "undosPenalty": 50,
-    "perfectGameBonus": 500
-  },
-  "ui": {
-    "adaptiveLayout": true,
-    "maxTubesPerRow": 4,
-    "tubeSpacing": {
-      "x": 120,
-      "y": 220
-    },
-    "scalingFactors": {
-      "mobile": 0.8,
-      "tablet": 0.9,
-      "desktop": 1.0
-    }
-  }
+  "defaultDifficulty": "easy"
 }

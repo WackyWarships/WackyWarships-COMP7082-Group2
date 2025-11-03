@@ -83,8 +83,13 @@ export class FuelSortScene extends Phaser.Scene {
 
     // Generate level from current difficulty configuration
     this.currentLevel = this.generateLevelFromConfig(configManager);
+    
+    // Get target score from configuration
+    const difficulty = configManager.getCurrentDifficulty();
+    const processedConfig = configManager.getProcessedConfiguration(difficulty);
+    const targetScore = processedConfig.difficulty.targetScore;
 
-    this.gameState = new FuelSortGameState(this.currentLevel.tubes);
+    this.gameState = new FuelSortGameState(this.currentLevel.tubes, targetScore);
     this.pourAnimation = new PourAnimation(this);
     this.tubeVisuals = [];
     this.selectedTube = null;
@@ -479,6 +484,10 @@ export class FuelSortScene extends Phaser.Scene {
 
     this.isGameActive = false;
 
+    // Calculate and log the final score
+    const finalScore = this.gameState.calculateScore();
+    console.log(`Game Won! Final Score: ${finalScore}`);
+
     if (this.timeInterval) {
       this.timeInterval.remove(false);
       this.timeInterval = undefined;
@@ -710,6 +719,10 @@ export class FuelSortScene extends Phaser.Scene {
     }
 
     this.isGameActive = false;
+
+    // Calculate and log the final score
+    const finalScore = this.gameState.calculateScore();
+    console.log(`Time Up! Final Score: ${finalScore}`);
 
     // Close pause modal if it's open when time runs out
     if (this.pauseModal) {
