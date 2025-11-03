@@ -162,6 +162,15 @@ export class ConfigurationManager {
     return { ...this.configuration.difficultyLevels };
   }
 
+  private shuffleArray<T>(array: T[]): T[] {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }
+
   public getProcessedConfiguration(difficulty?: string): ProcessedTubeConfiguration {
     const level = this.getDifficultyLevel(difficulty);
     
@@ -171,10 +180,13 @@ export class ConfigurationManager {
       colors[key] = hexValue as ColorType;
     });
 
-    // Convert tube configuration to use actual color values
-    const tubes: ColorType[][] = level.tubeConfiguration.map(tube => 
+    // Convert tube configuration to use actual color values and shuffle tube positions
+    const tubeContents: ColorType[][] = level.tubeConfiguration.map(tube => 
       tube.map(colorRef => colors[colorRef])
     );
+    
+    // Shuffle only the order/positions of the tubes, not their contents
+    const tubes = this.shuffleArray(tubeContents);
 
     return {
       tubes,
