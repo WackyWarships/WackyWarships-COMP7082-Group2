@@ -8,8 +8,7 @@ import {
   GAME_CONFIG,
   ANIMATION_CONFIG,
   LevelDefinition,
-  REGISTRY_KEYS,
-  ColorType
+  REGISTRY_KEYS
 } from '../config/Constants';
 import { ConfigurationManager } from '../config/ConfigurationManager';
 import EventBus from '../../EventBus';
@@ -1121,63 +1120,17 @@ export class FuelSortScene extends Phaser.Scene {
   }
 
   private generateLevelFromConfig(configManager: ConfigurationManager): LevelDefinition {
-    const config = configManager.getConfiguration();
     const difficulty = configManager.getCurrentDifficulty();
-    const difficultyLevel = config.difficultyLevels[difficulty];
-    
-    // Generate tubes based on configuration
-    const tubes: ColorType[][] = [];
-    const colorPalette = difficultyLevel.colorPalette;
-    const colorValues = Object.values(colorPalette) as ColorType[];
-    
-    // Create filled tubes
-    for (let i = 0; i < difficultyLevel.filledTubes; i++) {
-      const tube: ColorType[] = [];
-      // Fill each tube with segments of the same color
-      const colorIndex = i % colorValues.length;
-      const color = colorValues[colorIndex];
-      for (let j = 0; j < 4; j++) { // Use fixed capacity of 4
-        tube.push(color);
-      }
-      tubes.push(tube);
-    }
-    
-    // Create empty tubes
-    for (let i = 0; i < difficultyLevel.totalTubes - difficultyLevel.filledTubes; i++) {
-      tubes.push([]);
-    }
-    
-    // Shuffle the filled tubes to create a puzzle
-    this.shuffleTubes(tubes);
+    const processedConfig = configManager.getProcessedConfiguration(difficulty);
     
     return {
       id: 1, // Use a numeric id
       name: `${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} Mode`,
-      description: `Target Score: ${difficultyLevel.targetScore}`,
-      tubes: tubes
+      description: `Target Score: ${processedConfig.difficulty.targetScore}`,
+      tubes: processedConfig.tubes // Use the pre-configured tube arrangement
     };
   }
-  
-  private shuffleTubes(tubes: ColorType[][]): void {
-    // Simple shuffle algorithm to mix colors between tubes
-    const filledTubes = tubes.filter(tube => tube.length > 0);
-    if (filledTubes.length < 2) return;
-    
-    // Perform some random moves to shuffle
-    for (let i = 0; i < 20; i++) {
-      const sourceIndex = Math.floor(Math.random() * filledTubes.length);
-      const destIndex = Math.floor(Math.random() * tubes.length);
-      
-      if (sourceIndex !== destIndex && filledTubes[sourceIndex].length > 0) {
-        const color = filledTubes[sourceIndex].pop();
-        if (color !== undefined && tubes[destIndex].length < 4) {
-          tubes[destIndex].push(color);
-        } else if (color !== undefined) {
-          filledTubes[sourceIndex].push(color); // Put it back
-        }
-      }
-    }
-  }
+
 }
 
 export default FuelSortScene;

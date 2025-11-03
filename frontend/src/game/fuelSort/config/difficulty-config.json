@@ -18,9 +18,9 @@
         "tertiary": "#8b5cff"
       },
       "tubeConfiguration": [
-        ["primary", "primary", "secondary", "secondary"],
-        ["tertiary", "tertiary", "primary", "primary"],
-        ["secondary", "secondary", "tertiary", "tertiary"],
+        ["primary", "secondary", "primary", "tertiary"],
+        ["tertiary", "primary", "secondary", "secondary"],
+        ["secondary", "tertiary", "tertiary", "primary"],
         []
       ]
     },
@@ -41,10 +41,10 @@
         "quaternary": "#3fb6ff"
       },
       "tubeConfiguration": [
-        ["primary", "secondary", "tertiary", "quaternary"],
-        ["quaternary", "primary", "secondary", "tertiary"],
-        ["tertiary", "quaternary", "primary", "secondary"],
-        ["secondary", "tertiary", "quaternary", "primary"],
+        ["primary", "secondary", "quaternary", "tertiary"],
+        ["quaternary", "tertiary", "primary", "secondary"],
+        ["secondary", "primary", "tertiary", "quaternary"],
+        ["tertiary", "quaternary", "secondary", "primary"],
         [],
         []
       ]
@@ -67,11 +67,11 @@
         "quinary": "#ffd23f"
       },
       "tubeConfiguration": [
-        ["primary", "secondary", "tertiary", "quaternary"],
-        ["quinary", "primary", "secondary", "tertiary"],
-        ["quaternary", "quinary", "primary", "secondary"],
-        ["tertiary", "quaternary", "quinary", "primary"],
-        ["secondary", "tertiary", "quaternary", "quinary"],
+        ["primary", "quinary", "tertiary", "secondary"],
+        ["quaternary", "primary", "quinary", "tertiary"],
+        ["secondary", "quaternary", "primary", "quinary"],
+        ["tertiary", "secondary", "quaternary", "primary"],
+        ["quinary", "tertiary", "secondary", "quaternary"],
         []
       ]
     }

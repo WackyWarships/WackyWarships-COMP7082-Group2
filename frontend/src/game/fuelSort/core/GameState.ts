@@ -70,15 +70,7 @@ export class GameState {
     if (destTube.isFull()) {
       return false;
     }
-
-    const sourceTop = sourceTube.getTopColor();
-    const destTop = destTube.getTopColor();
-
-    if (!destTop) {
-      return true;
-    }
-
-    return sourceTop === destTop;
+    return true;
   }
 
   executeMove(sourceIndex: number, destIndex: number): boolean {

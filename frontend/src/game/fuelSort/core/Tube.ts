@@ -28,18 +28,12 @@ export class Tube {
       return false;
     }
 
-    const topColor = this.getTopColor();
-    const targetTop = target.getTopColor();
-
-    if (target.isEmpty()) {
-      return true;
-    }
-
     if (target.isFull()) {
       return false;
     }
 
-    return topColor === targetTop;
+    // Allow pouring regardless of color
+    return true;
   }
 
   calculatePourAmount(target: Tube): number {
@@ -52,6 +46,7 @@ export class Tube {
       return 0;
     }
 
+    // Count consecutive units of the same color from the top
     let count = 0;
     for (let i = this.contents.length - 1; i >= 0; i--) {
       if (this.contents[i] === topColor) {

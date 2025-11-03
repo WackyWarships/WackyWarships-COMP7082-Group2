@@ -105,9 +105,9 @@ export class MainMenu extends Scene {
         makeButton('Settings', 90, 'Settings');
         makeButton('Credits', 150, 'Credits');
         makeButton(
-            'Play Mini-Game', 
+            'Play Mini-Game',
             210, 
-            () => { this.scene.start('FuelSortGame', { difficulty: "hard" }) }
+            () => { this.scene.start('FuelSortGame', { difficulty: "easy" }) }
         );
         makeButton('Start Battle', 270, 'Game'); //TEMPORARY
 
