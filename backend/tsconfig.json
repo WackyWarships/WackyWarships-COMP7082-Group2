@@ -6,8 +6,6 @@
     "strict": true,
     "esModuleInterop": true,
     "moduleResolution": "nodenext",
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
     "allowSyntheticDefaultImports": true
   },
   "include": ["src", "../shared"]
