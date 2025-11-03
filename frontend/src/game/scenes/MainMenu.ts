@@ -109,7 +109,15 @@ export class MainMenu extends Scene {
             210, 
             () => { this.scene.start('FuelSortGame', { difficulty: "easy" }) }
         );
-        makeButton('Start Battle', 270, 'Game'); //TEMPORARY
+        makeButton(
+            'Change Username',
+            270, 
+            () => {
+                clearPlayerName();
+                this.scene.start('EnterUsername');
+            }
+        );
+        makeButton('Start Battle', 330, 'Game');
 
         // Handle resizing
         this.scale.on('resize', this.handleResize, this);
