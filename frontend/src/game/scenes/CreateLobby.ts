@@ -8,6 +8,7 @@ import {
     getResponsiveFontSize,
     resizeSceneBase
 } from '../utils/layout';
+
 import { CreateLobbyEvent } from 'shared/types';
 import { getPlayerId, sendCreateLobby } from '../../api/socket';
 
