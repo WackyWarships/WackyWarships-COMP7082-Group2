@@ -58,8 +58,8 @@ export class FuelSortScene extends Phaser.Scene {
   }
 
   preload(): void {    
-    // Load SVG assets for home button
-    this.load.svg('home', '/src/assets/miniGame/home.svg');
+    // Load SVG assets for home button from public assets folder
+    this.load.svg('home', 'assets/home.svg');
   }
 
   private shouldShowHintForLevel(levelIndex: number): boolean {
