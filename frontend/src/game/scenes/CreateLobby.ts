@@ -141,6 +141,11 @@ export class CreateLobby extends Scene {
         const hostName = getStoredPlayerName();
         const lobbyName = (this.nameInput?.value ?? '').trim() || 'My Lobby';
 
+        if (!hostName) {
+            this.scene.start('EnterUsername');
+            return;
+        }
+
         const payload: CreateLobbyEvent = {
             hostName: hostName,
             hostId: playerId,
@@ -161,7 +166,7 @@ export class CreateLobby extends Scene {
                     hostName,
                     lobbyName: update.lobbyName ?? lobbyName,
                 });
-                EventBus.off('lobby-update', handler); 
+                EventBus.off('lobby-update', handler);
             }
         };
 

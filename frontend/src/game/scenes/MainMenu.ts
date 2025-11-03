@@ -52,7 +52,7 @@ export class MainMenu extends Scene {
         }).setOrigin(0.5);
 
         // Current Username
-        const playerName = getStoredPlayerName() || 'Guest';
+        const playerName = getStoredPlayerName();
         const usernameFontSize = getResponsiveFontSize(width, height, 28, 22);
 
         this.usernameText = this.add.text(width - 20, 20, `Username: ${playerName}`, {

@@ -105,7 +105,7 @@ export class EnterUsername extends Scene {
     }
 
     submitUsername() {
-        const playerName = this.inputEl.value.trim() || 'Guest';
+        const playerName = this.inputEl.value.trim();
         savePlayerName(playerName);
         this.inputEl.remove();
 

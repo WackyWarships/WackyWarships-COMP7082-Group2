@@ -10,9 +10,8 @@ export function getOrCreatePlayerId(): string {
     return id;
 }
 
-export function getStoredPlayerName(): string {
-    const name = localStorage.getItem(USERNAME_KEY);
-    return name ?? 'Guest';
+export function getStoredPlayerName(): string | null {
+    return localStorage.getItem(USERNAME_KEY);
 }
 
 export function savePlayerName(name: string): void {
