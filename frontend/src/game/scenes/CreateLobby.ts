@@ -1,6 +1,7 @@
 import { Scene, GameObjects } from 'phaser';
 import EventBus from '../EventBus';
 import type { LobbyUpdate } from 'shared/types';
+import { getStoredPlayerName } from '../utils/playerUsername';
 import {
     getCenter,
     isMobile,
@@ -137,7 +138,7 @@ export class CreateLobby extends Scene {
 
     handleCreateClick() {
         const playerId = getPlayerId();
-        const hostName = 'Host123' // Temporary
+        const hostName = getStoredPlayerName();
         const lobbyName = (this.nameInput?.value ?? '').trim() || 'My Lobby';
 
         const payload: CreateLobbyEvent = {
