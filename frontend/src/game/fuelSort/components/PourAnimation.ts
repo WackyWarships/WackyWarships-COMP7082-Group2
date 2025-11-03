@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { TubeVisual } from './TubeVisual';
-import { ANIMATION_CONFIG, COLOR_VALUES, ColorType, TUBE_CONFIG } from '../config/Constants';
+import { ANIMATION_CONFIG, getColorValue, ColorType, TUBE_CONFIG } from '../config/Constants';
 
 // Animation configuration for tilting
 const TILT_CONFIG = {
@@ -179,7 +179,7 @@ export class PourAnimation {
     onProgress: (progress: number) => void,
     onComplete: () => void
   ): void {
-    const colorValue = COLOR_VALUES[color];
+    const colorValue = getColorValue(color);
     const streamWidth = Math.min(12 + units * 2, 30);
     const dropCount = Math.min(units * 2, 6);
     

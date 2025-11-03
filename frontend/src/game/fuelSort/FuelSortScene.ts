@@ -7,12 +7,18 @@ import {
   TUBE_CONFIG,
   UI_CONFIG,
   ANIMATION_CONFIG,
-  LevelDefinition,
-  REGISTRY_KEYS
+  ColorType
 } from './config/Constants';
 import { ConfigurationManager } from './config/ConfigurationManager';
 import EventBus from '../EventBus';
 import { ensureParticleTexture, FUEL_SORT_PARTICLE_KEY } from './utils/textures';
+
+interface LevelDefinition {
+  id: number;
+  name: string;
+  description: string;
+  tubes: ColorType[][];
+}
 
 export class FuelSortScene extends Phaser.Scene {
   private gameState!: FuelSortGameState;
@@ -21,7 +27,6 @@ export class FuelSortScene extends Phaser.Scene {
   private pourAnimation!: PourAnimation;
   private isAnimating = false;
   private currentLevel!: LevelDefinition;
-  private currentLevelIndex = 0;
   private isGameActive = false;
   private hasCountdownStarted = false;
 
@@ -68,8 +73,6 @@ export class FuelSortScene extends Phaser.Scene {
     if (data?.difficulty) {
       configManager.setCurrentDifficulty(data.difficulty);
     }
-
-    this.registry.set(REGISTRY_KEYS.CURRENT_LEVEL_INDEX, 0);
   }
 
   create(): void {
@@ -79,9 +82,7 @@ export class FuelSortScene extends Phaser.Scene {
     const configManager = ConfigurationManager.getInstance();
 
     // Generate level from current difficulty configuration
-    this.currentLevelIndex = 0;
     this.currentLevel = this.generateLevelFromConfig(configManager);
-    this.registry.set(REGISTRY_KEYS.CURRENT_LEVEL_INDEX, this.currentLevelIndex);
 
     this.gameState = new FuelSortGameState(this.currentLevel.tubes);
     this.pourAnimation = new PourAnimation(this);

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { Tube } from '../core/Tube';
-import { TUBE_CONFIG, COLOR_VALUES, ColorType, ANIMATION_CONFIG } from '../config/Constants';
+import { TUBE_CONFIG, getColorValue, ColorType, ANIMATION_CONFIG } from '../config/Constants';
 
 export class TubeVisual extends Phaser.GameObjects.Container {
   private tube: Tube;
@@ -96,7 +96,7 @@ export class TubeVisual extends Phaser.GameObjects.Container {
 
     const yOffset = tubeHeight / 2 - height * (layerIndex + 1) - 5;
 
-    const colorValue = COLOR_VALUES[color];
+    const colorValue = getColorValue(color);
 
     graphics.fillStyle(colorValue, 1);
 
@@ -246,7 +246,7 @@ export class TubeVisual extends Phaser.GameObjects.Container {
 
     const width = TUBE_CONFIG.WIDTH - 14;
     const unitHeight = TUBE_CONFIG.LIQUID_UNIT_HEIGHT;
-    const colorValue = COLOR_VALUES[color];
+    const colorValue = getColorValue(color);
 
     const drawProgress = (progress: number) => {
       const total = Phaser.Math.Clamp(progress, 0, 1) * units;

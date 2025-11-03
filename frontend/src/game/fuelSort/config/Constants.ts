@@ -7,14 +7,10 @@ export const COLORS = {
   RED: '#ff5b5b'
 } as const;
 
-export const COLOR_VALUES = {
-  '#ff4da6': 0xff4da6,
-  '#4bf77a': 0x4bf77a,
-  '#8b5cff': 0x8b5cff,
-  '#3fb6ff': 0x3fb6ff,
-  '#ffd23f': 0xffd23f,
-  '#ff5b5b': 0xff5b5b
-} as const;
+// Utility function to convert hex color string to numeric value for Phaser
+export const getColorValue = (hexColor: string): number => {
+  return parseInt(hexColor.replace('#', '0x'), 16);
+};
 
 export type ColorType = typeof COLORS[keyof typeof COLORS];
 
@@ -62,100 +58,4 @@ export const UI_CONFIG = {
   UI_TEXT_SIZE: 24
 };
 
-export interface LevelDefinition {
-  id: number;
-  name: string;
-  description: string;
-  tubes: ColorType[][];
-}
 
-export const LEVEL_DATA: { defaultLevelIndex: number; levels: LevelDefinition[] } = {
-  defaultLevelIndex: 0,
-  levels: [
-    {
-      id: 1,
-      name: 'Warm-Up Pour',
-      description: 'Single-color introduction with one empty tube.',
-      tubes: [[COLORS.PINK, COLORS.PINK, COLORS.PINK, COLORS.PINK], []]
-    },
-    {
-      id: 2,
-      name: 'Two-Tone Twist',
-      description: 'Learn to separate two colors with a single spare tube.',
-      tubes: [
-        [COLORS.PINK, COLORS.GREEN, COLORS.PINK, COLORS.GREEN],
-        [COLORS.GREEN, COLORS.PINK, COLORS.GREEN, COLORS.PINK],
-        []
-      ]
-    },
-    {
-      id: 3,
-      name: 'Triple Cascade',
-      description: 'Three colors require careful ordering and staging.',
-      tubes: [
-        [COLORS.BLUE, COLORS.PINK, COLORS.GREEN, COLORS.BLUE],
-        [COLORS.GREEN, COLORS.BLUE, COLORS.PINK, COLORS.GREEN],
-        [COLORS.PINK, COLORS.GREEN, COLORS.BLUE, COLORS.PINK],
-        []
-      ]
-    },
-    {
-      id: 4,
-      name: 'Quadra Shuffle',
-      description: 'Four colors with a single reserve tube.',
-      tubes: [
-        [COLORS.PINK, COLORS.GREEN, COLORS.BLUE, COLORS.YELLOW],
-        [COLORS.BLUE, COLORS.YELLOW, COLORS.PINK, COLORS.GREEN],
-        [COLORS.GREEN, COLORS.PINK, COLORS.YELLOW, COLORS.BLUE],
-        [COLORS.YELLOW, COLORS.BLUE, COLORS.GREEN, COLORS.PINK],
-        []
-      ]
-    },
-    {
-      id: 5,
-      name: 'Five-Color Flow',
-      description: 'Added complexity with two reserve tubes for planning.',
-      tubes: [
-        [COLORS.PINK, COLORS.GREEN, COLORS.PURPLE, COLORS.BLUE],
-        [COLORS.YELLOW, COLORS.PURPLE, COLORS.GREEN, COLORS.PINK],
-        [COLORS.BLUE, COLORS.YELLOW, COLORS.PINK, COLORS.GREEN],
-        [COLORS.PURPLE, COLORS.BLUE, COLORS.YELLOW, COLORS.PINK],
-        [COLORS.GREEN, COLORS.BLUE, COLORS.YELLOW, COLORS.PURPLE],
-        [],
-        []
-      ]
-    },
-    {
-      id: 6,
-      name: 'Strategic Swirl',
-      description: 'Five colors with only one empty tube demand efficiency.',
-      tubes: [
-        [COLORS.PINK, COLORS.GREEN, COLORS.BLUE, COLORS.PURPLE],
-        [COLORS.YELLOW, COLORS.PINK, COLORS.GREEN, COLORS.BLUE],
-        [COLORS.PURPLE, COLORS.YELLOW, COLORS.PINK, COLORS.GREEN],
-        [COLORS.BLUE, COLORS.PURPLE, COLORS.YELLOW, COLORS.PINK],
-        [COLORS.GREEN, COLORS.BLUE, COLORS.PURPLE, COLORS.YELLOW],
-        []
-      ]
-    },
-    {
-      id: 7,
-      name: 'Chromatic Mastery',
-      description: 'Six-color finale with limited space for mistakes.',
-      tubes: [
-        [COLORS.RED, COLORS.PINK, COLORS.BLUE, COLORS.GREEN],
-        [COLORS.YELLOW, COLORS.PURPLE, COLORS.RED, COLORS.PINK],
-        [COLORS.BLUE, COLORS.YELLOW, COLORS.PURPLE, COLORS.RED],
-        [COLORS.GREEN, COLORS.BLUE, COLORS.YELLOW, COLORS.PURPLE],
-        [COLORS.PURPLE, COLORS.RED, COLORS.PINK, COLORS.BLUE],
-        [COLORS.GREEN, COLORS.PINK, COLORS.YELLOW, COLORS.GREEN],
-        [],
-        []
-      ]
-    }
-  ]
-};
-
-export const REGISTRY_KEYS = {
-  CURRENT_LEVEL_INDEX: 'fuelSortCurrentLevelIndex'
-} as const;

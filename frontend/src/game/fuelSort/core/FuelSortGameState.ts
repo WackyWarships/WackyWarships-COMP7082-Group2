@@ -1,5 +1,5 @@
 import { Tube } from './Tube';
-import { ColorType, LevelDefinition, LEVEL_DATA, TUBE_CONFIG } from '../config/Constants';
+import { ColorType, TUBE_CONFIG } from '../config/Constants';
 
 interface MoveRecord {
   sourceIndex: number;
@@ -15,8 +15,8 @@ export class FuelSortGameState {
   private elapsedSeconds: number = 0;
   private undoCount: number = 0;
 
-  constructor(levelDefinition: LevelDefinition['tubes']) {
-    this.tubes = levelDefinition.map(contents => new Tube(contents));
+  constructor(tubeDefinitions: ColorType[][]) {
+    this.tubes = tubeDefinitions.map(contents => new Tube(contents));
     this.startTime = Date.now();
   }
 
@@ -148,10 +148,5 @@ export class FuelSortGameState {
 
       return contents.every(color => color === contents[0]);
     });
-  }
-
-  static createLevel(index: number = LEVEL_DATA.defaultLevelIndex): FuelSortGameState {
-    const level = LEVEL_DATA.levels[index] ?? LEVEL_DATA.levels[LEVEL_DATA.defaultLevelIndex];
-    return new FuelSortGameState(level.tubes);
   }
 }
