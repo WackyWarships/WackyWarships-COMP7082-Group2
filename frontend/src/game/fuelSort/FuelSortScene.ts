@@ -484,10 +484,7 @@ export class FuelSortScene extends Phaser.Scene {
 
     this.isGameActive = false;
 
-    // TODO: (MINIGAMEOVER)
-    const finalScore = this.gameState.calculateScore();
-    console.log(`TODO: (MINIGAMEOVER)`);
-    console.log(`Game Won! Final Score: ${finalScore}`);
+    this.gameOver();
 
     if (this.timeInterval) {
       this.timeInterval.remove(false);
@@ -752,9 +749,7 @@ export class FuelSortScene extends Phaser.Scene {
       repeat: 1
     });
 
-    // TODO: (MINIGAMEOVER)
-    const finalScore = this.gameState.calculateScore();
-    console.log(`Time Up! Final Score: ${finalScore}`);
+    this.gameOver();
 
     this.time.delayedCall(1200, () => {
       this.cameras.main.fade(400, 0, 0, 0);
@@ -1018,6 +1013,10 @@ export class FuelSortScene extends Phaser.Scene {
     };
   }
 
+  private gameOver() {
+    const finalScore = this.gameState.calculateScore();
+    console.log(`Game Over! Final Score: ${finalScore}`);
+  }
 }
 
 export default FuelSortScene;
