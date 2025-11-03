@@ -484,8 +484,9 @@ export class FuelSortScene extends Phaser.Scene {
 
     this.isGameActive = false;
 
-    // Calculate and log the final score
+    // TODO: (MINIGAMEOVER)
     const finalScore = this.gameState.calculateScore();
+    console.log(`TODO: (MINIGAMEOVER)`);
     console.log(`Game Won! Final Score: ${finalScore}`);
 
     if (this.timeInterval) {
@@ -720,10 +721,6 @@ export class FuelSortScene extends Phaser.Scene {
 
     this.isGameActive = false;
 
-    // Calculate and log the final score
-    const finalScore = this.gameState.calculateScore();
-    console.log(`Time Up! Final Score: ${finalScore}`);
-
     // Close pause modal if it's open when time runs out
     if (this.pauseModal) {
       this.pauseModal.destroy();
@@ -754,6 +751,10 @@ export class FuelSortScene extends Phaser.Scene {
       yoyo: true,
       repeat: 1
     });
+
+    // TODO: (MINIGAMEOVER)
+    const finalScore = this.gameState.calculateScore();
+    console.log(`Time Up! Final Score: ${finalScore}`);
 
     this.time.delayedCall(1200, () => {
       this.cameras.main.fade(400, 0, 0, 0);
