@@ -33,7 +33,7 @@ export class FuelSortScene extends Phaser.Scene {
   private moveText!: Phaser.GameObjects.Text;
   private timeText!: Phaser.GameObjects.Text;
   private levelText!: Phaser.GameObjects.Text;
-  private levelDescriptionText!: Phaser.GameObjects.Text;
+  private descriptionText!: Phaser.GameObjects.Text;
   private homeButton!: Phaser.GameObjects.Container;
   private pauseModal?: Phaser.GameObjects.Container;
   private isPaused = false;
@@ -191,13 +191,13 @@ export class FuelSortScene extends Phaser.Scene {
     );
     this.levelText.setOrigin(0.5);
 
-    this.levelDescriptionText = this.add.text(width / 2, 170, this.currentLevel.description, {
+    this.descriptionText = this.add.text(width / 2, 170, "Sort the fuel in the given time frame to fire your weapon", {
       fontSize: '20px',
       color: '#bbbbbb',
       fontFamily: 'Arial, sans-serif',
       align: 'center'
     });
-    this.levelDescriptionText.setOrigin(0.5);
+    this.descriptionText.setOrigin(0.5);
 
     this.moveText = this.add.text(width * 0.25, height * 0.2, 'Moves: 0', {
       fontSize: `${UI_CONFIG.UI_TEXT_SIZE}px`,
@@ -445,9 +445,9 @@ export class FuelSortScene extends Phaser.Scene {
     this.levelText.setFontSize(levelFont);
     this.levelText.setPosition(width / 2, height * 0.14);
 
-    this.levelDescriptionText.setFontSize(descriptionFont);
-    this.levelDescriptionText.setWordWrapWidth(width * 0.8, true);
-    this.levelDescriptionText.setPosition(width / 2, height * 0.19);
+    this.descriptionText.setFontSize(descriptionFont);
+    this.descriptionText.setWordWrapWidth(width * 0.8, true);
+    this.descriptionText.setPosition(width / 2, height * 0.19);
 
     const infoY = height * 0.25;
     this.moveText.setFontSize(infoFont);
