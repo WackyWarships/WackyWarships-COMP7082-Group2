@@ -10,7 +10,7 @@
       "filledTubes": 3,
       "emptyTubes": 1,
       "targetScore": 1000,
-      "timeLimit": 300,
+      "timeLimit": 30,
       "maxUndos": 5,
       "colorPalette": {
         "primary": "#ff4da6",
@@ -32,7 +32,7 @@
       "filledTubes": 4,
       "emptyTubes": 2,
       "targetScore": 4000,
-      "timeLimit": 600,
+      "timeLimit": 40,
       "maxUndos": 3,
       "colorPalette": {
         "primary": "#ff4da6",
@@ -57,7 +57,7 @@
       "filledTubes": 5,
       "emptyTubes": 1,
       "targetScore": 8000,
-      "timeLimit": 900,
+      "timeLimit": 50,
       "maxUndos": 1,
       "colorPalette": {
         "primary": "#ff4da6",

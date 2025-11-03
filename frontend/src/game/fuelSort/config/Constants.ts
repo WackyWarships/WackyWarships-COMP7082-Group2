@@ -62,13 +62,6 @@ export const UI_CONFIG = {
   UI_TEXT_SIZE: 24
 };
 
-export const GAME_CONFIG = {
-  MAX_UNDO: 3,
-  TARGET_FPS: 60,
-  LEVEL_TIME_BASE: 30,
-  LEVEL_TIME_INCREMENT: 10
-};
-
 export interface LevelDefinition {
   id: number;
   name: string;

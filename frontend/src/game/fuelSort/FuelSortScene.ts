@@ -6,7 +6,6 @@ import { PourAnimation } from './components/PourAnimation';
 import {
   TUBE_CONFIG,
   UI_CONFIG,
-  GAME_CONFIG,
   ANIMATION_CONFIG,
   LevelDefinition,
   REGISTRY_KEYS
@@ -95,7 +94,7 @@ export class FuelSortScene extends Phaser.Scene {
     this.positionTubes(width, height);
     this.layoutUI(width, height);
 
-    this.levelTimeLimit = this.getLevelTimeLimit(this.currentLevelIndex);
+    this.levelTimeLimit = this.getLevelTimeLimit();
     this.remainingTime = this.levelTimeLimit;
     this.updateTimeText();
 
@@ -532,8 +531,13 @@ export class FuelSortScene extends Phaser.Scene {
     }
   }
 
-  private getLevelTimeLimit(levelIndex: number): number {
-    return GAME_CONFIG.LEVEL_TIME_BASE + levelIndex * GAME_CONFIG.LEVEL_TIME_INCREMENT;
+  private getLevelTimeLimit(): number {
+    const configManager = ConfigurationManager.getInstance();
+    const difficulty = configManager.getCurrentDifficulty();
+    const processedConfig = configManager.getProcessedConfiguration(difficulty);
+    
+    // Use the timeLimit from the difficulty configuration
+    return processedConfig.difficulty.timeLimit;
   }
 
   private showHintOverlay(): void {
