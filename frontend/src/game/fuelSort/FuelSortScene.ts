@@ -62,31 +62,6 @@ export class FuelSortScene extends Phaser.Scene {
     this.load.svg('home', 'assets/home.svg');
   }
 
-  private shouldShowHintForLevel(levelIndex: number): boolean {
-    const registryFlag = this.registry.get('fuel-sort-hint-shown');
-    if (levelIndex !== 0) {
-      return false;
-    }
-
-    if (registryFlag) {
-      return false;
-    }
-
-    this.registry.set('fuel-sort-hint-shown', true);
-    return true;
-  }
-
-  private startCountdownImmediately(): void {
-    if (this.countdownEvent) {
-      this.countdownEvent.remove(false);
-      this.countdownEvent = undefined;
-    }
-
-    this.time.delayedCall(200, () => {
-      this.startGameplay();
-    });
-  }
-
   init(data?: { levelIndex?: number; difficulty?: string }): void {
     const configManager = ConfigurationManager.getInstance();
     
@@ -127,13 +102,8 @@ export class FuelSortScene extends Phaser.Scene {
     this.isGameActive = false;
     this.hasCountdownStarted = false;
 
-    const shouldShowHint = this.shouldShowHintForLevel(this.currentLevelIndex);
-    if (shouldShowHint) {
-      this.showHintOverlay();
-    } else {
-      this.clearHintOverlay();
-      this.startCountdownImmediately();
-    }
+    // Always show the hint overlay for every session
+    this.showHintOverlay();
 
     this.cameras.main.fadeIn(300);
 
@@ -590,7 +560,7 @@ export class FuelSortScene extends Phaser.Scene {
     });
     title.setOrigin(0.5);
 
-    const instructions = this.add.text(0, 0, '1. Tap a tube to select it.\n2. Tap another tube to pour.\n3. Fill each tube with a single color before time runs out!', {
+    const instructions = this.add.text(0, 0, '1. Tap a tube to select it.\n2. Tap another tube to pour.\n3. Fill each tube with a single sorted fuel color before time runs out!', {
       fontSize: '22px',
       color: '#d7d7d7',
       fontFamily: 'Arial, sans-serif',
