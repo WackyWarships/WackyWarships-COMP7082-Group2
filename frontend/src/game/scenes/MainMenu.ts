@@ -77,19 +77,24 @@ export class MainMenu extends Scene {
             fixedWidth: mobile ? 260 : 300,
         };
 
-        // Button Specifications
-        const makeButton = (label: string, yOffset: number, sceneKey: string) => {
+        const makeButton = (
+            label: string, 
+            yOffset: number, 
+            action: string | (() => void)
+        ) => {
             const btn = this.add.text(0, yOffset, label, buttonStyle)
                 .setOrigin(0.5)
-                .setInteractive({ useHandCursor: true })
-                .on('pointerdown', () => {
-                    if (sceneKey === 'EnterUsername') {
-                        clearPlayerName();
-                    }
-                    this.scene.start(sceneKey);
-                })
+                .setInteractive({ useHandCursor: true });
+
+            const onClick = typeof action === 'string'
+                ? () => this.scene.start(action)
+                : action;
+
+            btn
+                .on('pointerdown', onClick)
                 .on('pointerover', () => btn.setStyle({ backgroundColor: '#63b3ff' }))
                 .on('pointerout', () => btn.setStyle({ backgroundColor: '#1e90ff' }));
+            
             this.menuContainer.add(btn);
         };
 
@@ -99,9 +104,20 @@ export class MainMenu extends Scene {
         makeButton('How to Play', 30, 'HowToPlay');
         makeButton('Settings', 90, 'Settings');
         makeButton('Credits', 150, 'Credits');
-        makeButton('Change Username', 210, 'EnterUsername');
-        makeButton('Start Battle', 300, 'Game'); //TEMPORARY
-        
+        makeButton(
+            'Play Mini-Game',
+            210, 
+            () => { this.scene.start('FuelSortGame', { difficulty: "easy" }) }
+        );
+        makeButton(
+            'Change Username',
+            270, 
+            () => {
+                clearPlayerName();
+                this.scene.start('EnterUsername');
+            }
+        );
+        makeButton('Start Battle', 330, 'Game');
 
         // Handle resizing
         this.scale.on('resize', this.handleResize, this);

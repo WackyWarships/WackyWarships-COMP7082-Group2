@@ -532,8 +532,6 @@ export class Game extends Phaser.Scene {
         const whoFont = getResponsiveFontSize(W, H, 26, 20);
         this.turnLabelText?.setFontSize(whoFont).setPosition(this.turnLabelGlass.x, this.turnLabelGlass.y);
     }
-
-
 }
 
 export default Game;
