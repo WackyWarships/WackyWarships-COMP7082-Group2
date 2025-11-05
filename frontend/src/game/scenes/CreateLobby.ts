@@ -165,7 +165,9 @@ export class CreateLobby extends Scene {
                     lobbyId: update.lobbyId,
                     playerId,
                     hostName,
+                    hostId: update.hostId,
                     lobbyName: update.lobbyName ?? lobbyName,
+                    players: update.players,
                 });
                 EventBus.off('lobby-update', handler);
             }

@@ -7,14 +7,14 @@ import {
     resizeSceneBase
 } from '../utils/layout';
 import { getStoredPlayerName } from '../utils/playerUsername';
-import { 
+import {
     sendJoinLobby,
     getPlayerId
- } from '../../api/socket';
-import { 
+} from '../../api/socket';
+import {
     JoinLobbyEvent,
     LobbyUpdate
- } from 'shared/types';
+} from 'shared/types';
 
 export class JoinLobby extends Scene {
     background!: Phaser.GameObjects.Image;
@@ -158,7 +158,7 @@ export class JoinLobby extends Scene {
                 playerId: playerId,
                 playerName: playerName
             };
-            
+
             sendJoinLobby(payload);
 
             const handler = (update: LobbyUpdate) => {
@@ -170,14 +170,16 @@ export class JoinLobby extends Scene {
                     this.scene.start('Lobby', {
                         lobbyId: update.lobbyId,
                         playerId,
-                        playerName,
                         lobbyName: update.lobbyName ?? "Error: no lobby name",
+                        hostId: update.hostId,
+                        hostName: update.hostName,
+                        players: update.players,
                     });
-                    EventBus.off('lobby-update', handler); 
+                    EventBus.off('lobby-update', handler);
                 }
             };
 
-            EventBus.on('lobby-update', handler);     
+            EventBus.on('lobby-update', handler);
         }
     }
 
