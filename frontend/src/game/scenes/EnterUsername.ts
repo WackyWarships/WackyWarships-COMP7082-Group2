@@ -104,23 +104,24 @@ export class EnterUsername extends Scene {
         document.body.appendChild(this.inputEl);
     }
 
+    //multiplayer
     submitUsername() {
         const raw = this.inputEl.value.trim();
-        const username = raw || 'Player';                 /** LUCAS CODED: default if empty */
+        const username = raw || 'Player';                 /**default if empty */
         savePlayerName(username);
         this.inputEl.remove();
 
         const playerId = getOrCreatePlayerId();
 
         // Listen ONCE for ack before emitting to avoid stacking handlers
-        const onAck = () => {                              /** LUCAS CODED */
-            EventBus.off('username-set', onAck);          /** LUCAS CODED */
-            this.scene.start('MainMenu');                 /** LUCAS CODED */
-        };                                                /** LUCAS CODED */
-        EventBus.on('username-set', onAck);               /** LUCAS CODED */
+        const onAck = () => {                            
+            EventBus.off('username-set', onAck);         
+            this.scene.start('MainMenu');               
+        };                                               
+        EventBus.on('username-set', onAck);              
 
         // IMPORTANT: backend expects { playerId, username }, not playerName
-        sendSetUsername({ playerId, username });          /** LUCAS CODED */
+        sendSetUsername({ playerId, username });        
     }
 
     handleResize(gameSize: Phaser.Structs.Size) {

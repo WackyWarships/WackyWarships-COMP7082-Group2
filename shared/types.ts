@@ -236,7 +236,7 @@ export type ResumeTurnEvent = {
 export type ClientInput = MinigameResultEvent | GroupMinigameResultEvent | ChooseWeaponEvent;
 export type ServerSnapshot = Snapshot;
 
-// ===== LUCAS CODED: Direct-match additions (types only) ===================
+// ===== Multiplayer: Direct-match additions (types only) ===================
 export type MatchId = string;
 
 export type DirectQueueEvent = { playerId: PlayerId };

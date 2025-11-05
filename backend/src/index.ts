@@ -7,7 +7,7 @@ import { Server } from "socket.io";
 import { getLobbyMap, setupSocket as setupLobbySocket } from "./lobby.js";
 import { setupSocket as setupPlayerUsernameSocket } from "./playerUsername.js";
 
-/** LUCAS CODED */
+/**  */
 import { setupDirectSocket } from "./direct.js";
 
 import type {
@@ -42,7 +42,7 @@ io.on("connection", (socket) => {
   console.log("New player connected:", socket.id);
   setupPlayerUsernameSocket(io, socket);
   setupLobbySocket(io, socket);
-  setupDirectSocket(io, socket); /** LUCAS CODED */
+  setupDirectSocket(io, socket); /** */
 });
 
 const PORT = process.env.PORT || 3000;

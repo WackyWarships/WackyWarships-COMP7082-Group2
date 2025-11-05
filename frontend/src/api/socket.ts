@@ -31,16 +31,16 @@ import type {
 } from 'shared/types';
 
 // -----------------------------------------
-// LUCAS CODED — resolve backend URL
+// multtiplayer — resolve backend URL
 // Will use .env VITE_BACKEND_URL, else fallback to current host:3000
 // -----------------------------------------
 const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL /** LUCAS CODED */
-  ?? `${window.location.protocol}//${window.location.hostname}:3000`; /** LUCAS CODED */
+  import.meta.env.VITE_BACKEND_URL /**  */
+  ?? `${window.location.protocol}//${window.location.hostname}:3000`; /**  */
 
 let socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
 
-/** LUCAS CODED: safe playerId generator for non-HTTPS LAN */
+/** multiplayer: safe playerId generator for non-HTTPS LAN */
 function makePlayerId(): PlayerId {
   const g = (globalThis as any)?.crypto;
   if (g && typeof g.randomUUID === 'function') {
@@ -52,18 +52,18 @@ function makePlayerId(): PlayerId {
     Array.from({ length: 4 }, () => Math.random().toString(16).slice(2)).join('')
   );
 }
-/** LUCAS CODED */
+/**  */
 const playerId: PlayerId = makePlayerId();
 
 export function initSocket(token?: string) {
   if (socket) return socket;
 
   // -----------------------------------------
-  // LUCAS CODED — connect to backend URL instead of '/'
+  // Multiplayer — connect to backend URL instead of '/'
   // Explicit websocket transport & socket.io path
   // -----------------------------------------
   const raw = io(BACKEND_URL, {
-    /** LUCAS CODED */
+    /**  */
     auth: { token },
     transports: ['websocket'],
     path: '/socket.io',
@@ -139,37 +139,37 @@ export function initSocket(token?: string) {
     EventBus.emit('resume-turn', r);
   });
 
-  // ====== LUCAS CODED — quick-match (no lobby) ======
+  // ====== Multiplayer — quick-match (no lobby) ======
   // Backend (direct.ts) emits camelCase events. We forward them to EventBus
   // using kebab-case names that the UI listens to.
   socket.on('directMatchFound', (payload: any): void => {
-    /** LUCAS CODED */
+    /**  */
     EventBus.emit('direct-match-found', payload);
   });
   socket.on('directState', (payload: any): void => {
-    /** LUCAS CODED */
+    /**  */
     EventBus.emit('direct-state', payload);
   });
   socket.on('directAttack', (payload: any): void => {
-    /** LUCAS CODED */
+    /**  */
     EventBus.emit('direct-attack', payload);
   });
 
   // Also support the older `direct:*` channel shape if a teammate’s backend is used.
   socket.on('direct:found', (payload: any): void => {
-    /** LUCAS CODED (compat) */
+    /**  (compat) */
     EventBus.emit('direct-match-found', payload);
   });
   socket.on('direct:state', (payload: any): void => {
-    /** LUCAS CODED (compat) */
+    /**  (compat) */
     EventBus.emit('direct-state', payload);
   });
   socket.on('direct:attack', (payload: any): void => {
-    /** LUCAS CODED (compat) */
+    /** (compat) */
     EventBus.emit('direct-attack', payload);
   });
   socket.on('direct:error', (payload: any): void => {
-    /** LUCAS CODED (compat) */
+    /**  (compat) */
     EventBus.emit('error', payload);
   });
 
@@ -240,26 +240,26 @@ export function getPlayerId(): PlayerId {
   return playerId;
 }
 
-// ====== LUCAS CODED — quick-match helpers (no lobby) ======
+// ====== Multiplayer — quick-match helpers (no lobby) ======
 export function sendDirectQueue(payload: { playerId: PlayerId }): void {
-  /** LUCAS CODED */
+  /**  */
   ensureSocket().emit('directQueue', payload);
 }
 export function sendDirectReady(matchId: string): void {
-  /** LUCAS CODED */
+  /**  */
   ensureSocket().emit('directReady', { matchId, playerId } as any);
 }
 export function sendDirectAttack(matchId: string, weaponKey: string): void {
-  /** LUCAS CODED */
+  /**  */
   ensureSocket().emit('directAttack', { matchId, playerId, weaponKey } as any);
 }
 
 // Optional (legacy helpers if someone still calls them)
 export function sendDirectHost(matchId: string, username: string): void {
-  /** LUCAS CODED (compat) */
+  /**  (compat) */
   ensureSocket().emit('direct:host', { matchId, playerId, username } as any);
 }
 export function sendDirectJoin(matchId: string, username: string): void {
-  /** LUCAS CODED (compat) */
+  /**  (compat) */
   ensureSocket().emit('direct:join', { matchId, playerId, username } as any);
 }

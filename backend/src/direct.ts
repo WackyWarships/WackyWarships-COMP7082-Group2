@@ -4,7 +4,7 @@ import type {
   ServerToClientEvents,
 } from "../../shared/types.js";
 
-/** LUCAS CODED: canonical weapon damage table (server-authoritative) */
+/** canonical weapon damage table (server-authoritative) */
 const CANON_WEAPON_DAMAGE: Record<string, number> = {
   W1: 10,
   W2: 30,
@@ -74,16 +74,16 @@ function emitState(io: Server, to: string | string[], state: any) {
   }
 }
 
-/** LUCAS CODED: single authoritative attack emit (colon only) + unique attackId */
+/** single authoritative attack emit (colon only) + unique attackId */
 function relayAttack(
   io: Server,
   toSocketId: string | string[],
-  msg: { matchId: string; playerId: string; weaponKey: string; damage: number; serverTime: number; attackId: string } // LUCAS CODED
+  msg: { matchId: string; playerId: string; weaponKey: string; damage: number; serverTime: number; attackId: string } 
 ) {
   const targets = Array.isArray(toSocketId) ? toSocketId : [toSocketId];
   for (const sid of targets) {
     // IMPORTANT: only emit the colon version to avoid duplicates client-side
-    io.to(sid).emit("direct:attack", msg);  /** LUCAS CODED */
+    io.to(sid).emit("direct:attack", msg);  
   }
 }
 
@@ -153,10 +153,10 @@ export function setupDirectSocket(
 
     const damage = CANON_WEAPON_DAMAGE[weaponKey] ?? 10;
     const serverTime = Date.now();
-    const attackId = `${matchId}:${playerId}:${serverTime}`;  /** LUCAS CODED */
+    const attackId = `${matchId}:${playerId}:${serverTime}`; 
 
     // send to BOTH players (authoritative echo)
-    relayAttack(io, [m.a.socketId, m.b.socketId], { matchId, playerId, weaponKey, damage, serverTime, attackId }); /** LUCAS CODED */
+    relayAttack(io, [m.a.socketId, m.b.socketId], { matchId, playerId, weaponKey, damage, serverTime, attackId }); 
   });
 
   // ===================================
@@ -214,10 +214,10 @@ export function setupDirectSocket(
 
     const damage = CANON_WEAPON_DAMAGE[weaponKey] ?? 10;
     const serverTime = Date.now();
-    const attackId = `${matchId}:${playerId}:${serverTime}`;  /** LUCAS CODED */
+    const attackId = `${matchId}:${playerId}:${serverTime}`; 
 
     // send to BOTH players (authoritative echo)
-    relayAttack(io, [m.a.socketId, m.b.socketId], { matchId, playerId, weaponKey, damage, serverTime, attackId }); /** LUCAS CODED */
+    relayAttack(io, [m.a.socketId, m.b.socketId], { matchId, playerId, weaponKey, damage, serverTime, attackId }); 
   });
 
   // ---------- cleanup ----------
