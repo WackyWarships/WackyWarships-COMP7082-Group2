@@ -102,6 +102,10 @@ export class Lobby extends Scene {
             .on('pointerover', () => this.startButton?.setStyle({ backgroundColor: '#63b3ff' }))
             .on('pointerout', () => this.startButton?.setStyle({ backgroundColor: '#1e90ff' }));
 
+        // Initial start button visibility (hide for non-host or unknown host)
+        const isHostInitial = this.hostId ? (this.playerId === this.hostId) : false;
+        this.startButton.setVisible(isHostInitial).setActive(isHostInitial);
+
         // Render any initial state passed in (e.g., first lobbyUpdate)
         if (this.players.length > 0) {
             this.renderPlayers();
