@@ -1,4 +1,6 @@
 import { GameObjects, Scene } from 'phaser';
+import { getPlayerId } from '../../api/socket';           /** LUCAS CODED */
+import { sendDirectQueue } from '../../api/socket';       /** LUCAS CODED */
 import EventBus from '../EventBus';
 import { clearPlayerName, getStoredPlayerName } from '../utils/playerUsername';
 import {
@@ -100,8 +102,22 @@ export class MainMenu extends Scene {
         makeButton('Settings', 90, 'Settings');
         makeButton('Credits', 150, 'Credits');
         makeButton('Change Username', 210, 'EnterUsername');
-        makeButton('Start Battle', 300, 'Game'); //TEMPORARY
-        
+        //makeButton('Start Battle', 300, 'Game'); // TEMPORARY
+        // ^ keep it if you still want local. Otherwise, comment it and use:
+        const onlineBtn = this.add.text(0, 360, 'Start Battle (Online)', buttonStyle)  /** LUCAS CODED */
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerdown', () => {
+            sendDirectQueue({ playerId: getPlayerId() });                 /** LUCAS CODED */
+            // Wait for matchmaking then enter Game with net data
+            const off = EventBus.on('direct-match-found', (e: any) => { /** LUCAS CODED */
+            off && off();
+            this.scene.start('Game', { net: { mode: 'direct', matchId: e.matchId, starter: e.starter }});
+            });
+        })
+        .on('pointerover', () => onlineBtn.setStyle({ backgroundColor: '#63b3ff' }))
+        .on('pointerout', () => onlineBtn.setStyle({ backgroundColor: '#1e90ff' }));
+        this.menuContainer.add(onlineBtn);
 
         // Handle resizing
         this.scale.on('resize', this.handleResize, this);
