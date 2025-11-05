@@ -63,7 +63,7 @@ export class Lobby extends Scene {
 
         // Lobby Code
         const codeSize = getResponsiveFontSize(width, height, 36, 28);
-        this.codeLabel = this.add.text(centerX, height * 0.20, `Code: ${this.lobbyId.slice(0,6)}`, {
+        this.codeLabel = this.add.text(centerX, height * 0.20, `Code: ${this.lobbyId.slice(0, 6)}`, {
             fontFamily: 'Arial Black',
             fontSize: `${codeSize}px`,
             color: '#ffeb3b',
@@ -152,7 +152,9 @@ export class Lobby extends Scene {
             const isHost = pid === this.hostId;
             const isMe = pid === this.playerId;
             const icon = isHost ? '★ ' : '• ';
-            const name = isHost ? this.hostName : (isMe ? myName : (p.playerName || `Player ${short(pid)}`));
+            const name = isMe
+                ? (isHost ? `${this.hostName} (You)` : `${myName} (You)`)
+                : (isHost ? this.hostName : (p.playerName || `Player ${short(pid)}`));
 
             const text = this.add.text(centerX, startY + idx * lineHeight, `${icon}${name}`, {
                 fontFamily: 'Arial',
