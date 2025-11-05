@@ -1,4 +1,6 @@
 import { GameObjects, Scene } from 'phaser';
+import { getPlayerId } from '../../api/socket';      
+import { sendDirectQueue } from '../../api/socket';     
 import EventBus from '../EventBus';
 import { clearPlayerName, getStoredPlayerName } from '../utils/playerUsername';
 import {
@@ -117,7 +119,22 @@ export class MainMenu extends Scene {
                 this.scene.start('EnterUsername');
             }
         );
-        makeButton('Start Battle', 330, 'Game');
+        //makeButton('Start Battle', 330, 'Game');
+        //multiplayer
+        const onlineBtn = this.add.text(0, 390, 'Start Battle (Online)', buttonStyle)  
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerdown', () => {
+            sendDirectQueue({ playerId: getPlayerId() });            
+            // Wait for matchmaking then enter Game with net data
+            const off = EventBus.on('direct-match-found', (e: any) => {
+            off && off();
+            this.scene.start('Game', { net: { mode: 'direct', matchId: e.matchId, starter: e.starter }});
+            });
+        })
+        .on('pointerover', () => onlineBtn.setStyle({ backgroundColor: '#63b3ff' }))
+        .on('pointerout', () => onlineBtn.setStyle({ backgroundColor: '#1e90ff' }));
+        this.menuContainer.add(onlineBtn);
 
         // Handle resizing
         this.scale.on('resize', this.handleResize, this);

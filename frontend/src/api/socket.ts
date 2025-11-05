@@ -32,15 +32,41 @@ import type {
 
 // Create runtime socket then cast it to a typed Socket<ServerToClientEvents,ClientToServerEvents>.
 
+// -----------------------------------------
+// Multiplayer: resolve backend URL
+// Will use .env VITE_BACKEND_URL, else fallback to current host:3000
+// -----------------------------------------
+const BACKEND_URL =
+  import.meta.env.VITE_BACKEND_URL
+  ?? `${window.location.protocol}//${window.location.hostname}:3000`;
+  
 let socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
-const playerId: PlayerId = crypto.randomUUID();
+
+/** Multiplayer: safe playerId generator for non-HTTPS LAN */
+function makePlayerId(): PlayerId {
+  const g = (globalThis as any)?.crypto;
+  if (g && typeof g.randomUUID === 'function') {
+    return g.randomUUID();
+  }
+  // Fallback for http://10.x or older browsers
+  return (
+    'pid-' +
+    Array.from({ length: 4 }, () => Math.random().toString(16).slice(2)).join('')
+  );
+}
+
+const playerId: PlayerId = makePlayerId();
+//const playerId: PlayerId = crypto.randomUUID();
 
 export function initSocket(token?: string) {
     if (socket) return socket;
 
-    const raw = io(import.meta.env.VITE_BACKEND_URL || '/', {
+    //const raw = io(import.meta.env.VITE_BACKEND_URL || '/', {
+    const raw = io(BACKEND_URL, {
         auth: { token },
         transports: ['websocket'],
+        path: '/socket.io',
+        withCredentials: false,
     });
 
     socket = raw as unknown as Socket<ServerToClientEvents, ClientToServerEvents>;
@@ -112,6 +138,40 @@ export function initSocket(token?: string) {
         EventBus.emit('resume-turn', r);
     });
 
+    // ====== Multiplayer — quick-match (no lobby) ======
+    // Backend (direct.ts) emits camelCase events. We forward them to EventBus
+    // using kebab-case names that the UI listens to.
+    socket.on('directMatchFound', (payload: any): void => {
+      /**  */
+      EventBus.emit('direct-match-found', payload);
+    });
+    socket.on('directState', (payload: any): void => {
+      /**  */
+      EventBus.emit('direct-state', payload);
+    });
+    socket.on('directAttack', (payload: any): void => {
+      /**  */
+      EventBus.emit('direct-attack', payload);
+    });
+
+    // Also support the older `direct:*` channel shape if a teammate’s backend is used.
+    socket.on('direct:found', (payload: any): void => {
+      /**  (compat) */
+      EventBus.emit('direct-match-found', payload);
+    });
+    socket.on('direct:state', (payload: any): void => {
+      /**  (compat) */
+      EventBus.emit('direct-state', payload);
+    });
+    socket.on('direct:attack', (payload: any): void => {
+      /**  (compat) */
+      EventBus.emit('direct-attack', payload);
+    });
+    socket.on('direct:error', (payload: any): void => {
+      /**  (compat) */
+      EventBus.emit('error', payload);
+    });
+
     return socket;
 }
 
@@ -178,4 +238,28 @@ export function closeSocket(): void {
 
 export function getPlayerId(): PlayerId {
     return playerId;
+}
+
+// ====== quick-match helpers (no lobby) ======
+export function sendDirectQueue(payload: { playerId: PlayerId }): void {
+  /**  */
+  ensureSocket().emit('directQueue', payload);
+}
+export function sendDirectReady(matchId: string): void {
+  /**  */
+  ensureSocket().emit('directReady', { matchId, playerId } as any);
+}
+export function sendDirectAttack(matchId: string, weaponKey: string): void {
+  /**  */
+  ensureSocket().emit('directAttack', { matchId, playerId, weaponKey } as any);
+}
+
+// Optional (legacy helpers if someone still calls them)
+export function sendDirectHost(matchId: string, username: string): void {
+  /**  (compat) */
+  ensureSocket().emit('direct:host', { matchId, playerId, username } as any);
+}
+export function sendDirectJoin(matchId: string, username: string): void {
+  /**  (compat) */
+  ensureSocket().emit('direct:join', { matchId, playerId, username } as any);
 }

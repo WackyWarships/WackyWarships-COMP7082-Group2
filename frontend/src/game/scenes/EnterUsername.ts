@@ -105,16 +105,21 @@ export class EnterUsername extends Scene {
     }
 
     submitUsername() {
-        const playerName = this.inputEl.value.trim();
-        savePlayerName(playerName);
+        const raw = this.inputEl.value.trim();
+        const username = raw || 'Player'; 
+        savePlayerName(username);
         this.inputEl.remove();
 
         const playerId = getOrCreatePlayerId();
-        sendSetUsername({ playerId, playerName });
+        // Listen ONCE for ack before emitting to avoid stacking handlers
+        const onAck = () => {                           
+            EventBus.off('username-set', onAck);         
+            this.scene.start('MainMenu');                
+        };                                              
+        EventBus.on('username-set', onAck);             
 
-        EventBus.on('username-set', () => {
-            this.scene.start('MainMenu');
-        });
+        // IMPORTANT: backend expects { playerId, username }
+        sendSetUsername({ playerId, username });     
     }
 
     handleResize(gameSize: Phaser.Structs.Size) {

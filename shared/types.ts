@@ -27,7 +27,7 @@ export type Lobby = {
     lobbyName: string;
     settings?: Record<string, any>;
     players: PlayerId[];
-}
+};
 
 // Client -> Server ---------------------------------------------------------
 
@@ -104,7 +104,7 @@ export type UsernameSetEvent = {
     playerId: PlayerId;
     playerName: string;
     restored?: boolean;
-}
+};
 
 export type PlayerState = {
     id: PlayerId;
@@ -237,6 +237,19 @@ export type ResumeTurnEvent = {
 export type ClientInput = MinigameResultEvent | GroupMinigameResultEvent | ChooseWeaponEvent;
 export type ServerSnapshot = Snapshot;
 
+// ===== Multiplayer: Direct-match additions (types only) ===================
+export type MatchId = string;
+
+export type DirectQueueEvent = { playerId: PlayerId };
+export type DirectMatchFoundEvent = {
+    matchId: MatchId;
+    players: PlayerId[];
+    starter: PlayerId;
+};
+export type DirectReadyEvent = { matchId: MatchId; playerId: PlayerId };
+export type DirectAttackEvent = { matchId: MatchId; playerId: PlayerId; weaponKey: string };
+export type DirectStateEvent = { matchId: MatchId; ok: boolean };
+
 // Socket.IO event maps -----------------------------------------------------
 export type ServerToClientEvents = {
     usernameSet: (payload: UsernameSetEvent) => void;
@@ -257,6 +270,11 @@ export type ServerToClientEvents = {
     playerReconnected: (pr: PlayerReconnectedEvent) => void;
     reconnectResponse: (rr: ReconnectResponse) => void;
     resumeTurn: (r: ResumeTurnEvent) => void;
+
+    // ===== Multiplayer
+    directMatchFound: (e: DirectMatchFoundEvent) => void;
+    directAttack: (e: DirectAttackEvent) => void;
+    directState: (e: DirectStateEvent) => void;
 };
 
 export type ClientToServerEvents = {
@@ -272,4 +290,9 @@ export type ClientToServerEvents = {
     minigameResult: (payload: MinigameResultEvent) => void;
     groupMinigameResult: (payload: GroupMinigameResultEvent) => void;
     reconnectRequest: (payload: ReconnectRequest) => void;
+
+    // ===== Multiplayer
+    directQueue: (e: DirectQueueEvent) => void;
+    directReady: (e: DirectReadyEvent) => void;
+    directAttack: (e: DirectAttackEvent) => void;
 };
