@@ -104,41 +104,48 @@ export class EnterUsername extends Scene {
         document.body.appendChild(this.inputEl);
     }
 
+    //multiplayer
     submitUsername() {
-        const playerName = this.inputEl.value.trim();
-        savePlayerName(playerName);
+        const raw = this.inputEl.value.trim();
+        const username = raw || 'Player';                 /**default if empty */
+        savePlayerName(username);
         this.inputEl.remove();
 
         const playerId = getOrCreatePlayerId();
-        sendSetUsername({ playerId, playerName });
 
-        EventBus.on('username-set', () => {
-            this.scene.start('MainMenu');
-        });
+        // Listen ONCE for ack before emitting to avoid stacking handlers
+        const onAck = () => {                            
+            EventBus.off('username-set', onAck);         
+            this.scene.start('MainMenu');               
+        };                                               
+        EventBus.on('username-set', onAck);              
+
+        // IMPORTANT: backend expects { playerId, username }, not playerName
+        sendSetUsername({ playerId, username });        
     }
 
     handleResize(gameSize: Phaser.Structs.Size) {
-    const { width, height } = gameSize;
-    if (!this.scene.isActive()) return;
+        const { width, height } = gameSize;
+        if (!this.scene.isActive()) return;
 
-    resizeSceneBase(this, width, height);
-    const { x: centerX } = getCenter(this.scale);
-    const titleSize = getResponsiveFontSize(width, height, 72, 56);
+        resizeSceneBase(this, width, height);
+        const { x: centerX } = getCenter(this.scale);
+        const titleSize = getResponsiveFontSize(width, height, 72, 56);
 
-    this.title1.setFontSize(titleSize);
-    this.title2.setFontSize(titleSize);
-    this.title1.setPosition(centerX, height * (1 / 6));
-    this.title2.setPosition(centerX, this.title1.y + this.title1.height);
-    this.confirmButton.setPosition(centerX, height * (5 / 6));
+        this.title1.setFontSize(titleSize);
+        this.title2.setFontSize(titleSize);
+        this.title1.setPosition(centerX, height * (1 / 6));
+        this.title2.setPosition(centerX, this.title1.y + this.title1.height);
+        this.confirmButton.setPosition(centerX, height * (5 / 6));
 
-    if (this.inputEl) {
-        requestAnimationFrame(() => {
-            const rect = this.game.canvas.getBoundingClientRect();
-            const centerXOnScreen = rect.left + rect.width / 2;
-            const inputWidth = 240;
-            this.inputEl.style.left = `${centerXOnScreen - inputWidth / 2}px`;
-            this.inputEl.style.top = `${rect.top + height * (1 / 2) - 20}px`;
-        });
+        if (this.inputEl) {
+            requestAnimationFrame(() => {
+                const rect = this.game.canvas.getBoundingClientRect();
+                const centerXOnScreen = rect.left + rect.width / 2;
+                const inputWidth = 240;
+                this.inputEl.style.left = `${centerXOnScreen - inputWidth / 2}px`;
+                this.inputEl.style.top = `${rect.top + height * (1 / 2) - 20}px`;
+            });
+        }
     }
-}
 }

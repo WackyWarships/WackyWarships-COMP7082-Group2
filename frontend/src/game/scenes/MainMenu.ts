@@ -1,4 +1,6 @@
 import { GameObjects, Scene } from 'phaser';
+import { getPlayerId } from '../../api/socket';          
+import { sendDirectQueue } from '../../api/socket';    
 import EventBus from '../EventBus';
 import { clearPlayerName, getStoredPlayerName } from '../utils/playerUsername';
 import {
