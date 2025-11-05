@@ -8,6 +8,18 @@ export type PlayerId = string;
 export type LobbyId = string;
 export type ProtocolVersion = string;
 
+
+// Id + name
+export type HostInfo = {
+    hostId: PlayerId;
+    hostName: string;
+};
+
+export type PlayerInfo = {
+    playerId: PlayerId;
+    playerName: string;
+};
+
 // Weapon -------------------------------------------------------------------
 export type WeaponDef = {
     id: WeaponId;
@@ -21,12 +33,11 @@ export type WeaponDef = {
 
 // Lobby
 export type Lobby = {
-    hostId: PlayerId;
-    hostName: string; 
+    host: HostInfo;
     lobbyId: LobbyId;
     lobbyName: string;
     settings?: Record<string, any>;
-    players: PlayerId[];
+    players: PlayerInfo[];
 }
 
 // Client -> Server ---------------------------------------------------------
@@ -160,9 +171,8 @@ export type Snapshot = {
 export type LobbyUpdate = {
     lobbyId: LobbyId;
     lobbyName: string;
-    hostId: PlayerId;
-    hostName: string; 
-    players: PlayerId[];
+    host: HostInfo;
+    players: PlayerInfo[];
     settings?: Record<string, any>;
 };
 

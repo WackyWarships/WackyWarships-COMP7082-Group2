@@ -2,16 +2,15 @@ import { Scene, GameObjects } from 'phaser';
 import EventBus from '../EventBus';
 import { getCenter, isMobile, getResponsiveFontSize, resizeSceneBase } from '../utils/layout';
 import { getStoredPlayerName } from '../utils/playerUsername';
-import type { LobbyUpdate, PlayerId } from 'shared/types';
+import type { LobbyUpdate, PlayerId, PlayerInfo, HostInfo } from 'shared/types';
 import { sendStartGame } from '../../api/socket';
 
 type LobbyInitData = {
     lobbyId: string;
     playerId: PlayerId;
     lobbyName: string;
-    hostName?: string;
-    hostId?: PlayerId;
-    players?: PlayerId[];
+    host?: HostInfo;
+    players?: PlayerInfo[];
 };
 
 export class Lobby extends Scene {
@@ -27,7 +26,7 @@ export class Lobby extends Scene {
     lobbyName!: string;
     hostId!: PlayerId;
     hostName!: string;
-    players: PlayerId[] = [];
+    players: PlayerInfo[] = [];
 
     constructor() {
         super('Lobby');
@@ -37,8 +36,7 @@ export class Lobby extends Scene {
         this.lobbyId = data.lobbyId;
         this.playerId = data.playerId;
         this.lobbyName = data.lobbyName;
-        if (data.hostName) this.hostName = data.hostName;
-        if (data.hostId) this.hostId = data.hostId;
+        if (data.host) { this.hostId = data.host.hostId; this.hostName = data.host.hostName; }
         if (data.players) this.players = data.players;
     }
 
@@ -124,8 +122,8 @@ export class Lobby extends Scene {
 
     private onLobbyUpdate = (lu: LobbyUpdate) => {
         if (lu.lobbyId !== this.lobbyId) return;
-        this.hostId = lu.hostId;
-        this.hostName = lu.hostName;
+        this.hostId = lu.host.hostId;
+        this.hostName = lu.host.hostName;
         this.players = lu.players;
 
         this.renderPlayers();
@@ -149,11 +147,12 @@ export class Lobby extends Scene {
         const myName = getStoredPlayerName() || 'You';
         const short = (id: string) => id.slice(0, 8);
 
-        this.players.forEach((pid, idx) => {
+        this.players.forEach((p, idx) => {
+            const pid = p.playerId;
             const isHost = pid === this.hostId;
             const isMe = pid === this.playerId;
             const icon = isHost ? '★ ' : '• ';
-            const name = isHost ? this.hostName : (isMe ? myName : `Player ${short(pid)}`);
+            const name = isHost ? this.hostName : (isMe ? myName : (p.playerName || `Player ${short(pid)}`));
 
             const text = this.add.text(centerX, startY + idx * lineHeight, `${icon}${name}`, {
                 fontFamily: 'Arial',

@@ -156,7 +156,7 @@ export class CreateLobby extends Scene {
         sendCreateLobby(payload);
 
         const handler = (update: LobbyUpdate) => {
-            if (update.hostId === playerId) {
+            if (update.host.hostId === playerId) {
                 if (this.nameInput) {
                     this.nameInput.remove();
                     this.nameInput = undefined;
@@ -164,8 +164,7 @@ export class CreateLobby extends Scene {
                 this.scene.start('Lobby', {
                     lobbyId: update.lobbyId,
                     playerId,
-                    hostName,
-                    hostId: update.hostId,
+                    host: update.host,
                     lobbyName: update.lobbyName ?? lobbyName,
                     players: update.players,
                 });

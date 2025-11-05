@@ -15,6 +15,7 @@ import type {
     TurnResolvedEvent,
     NextTurnEvent,
 } from '../../shared/types.js';
+import { getPlayerMap } from './playerUsername.js';
 
 const lobbyIdToLobbyMap = new Map<LobbyId, Lobby>();
 const playerToLobbyIdMap = new Map<PlayerId, LobbyId>();
@@ -30,12 +31,11 @@ export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvent
         socket.join(lobbyId);
 
         const lobby: Lobby = {
-            hostId,
-            hostName,
+            host: { hostId, hostName },
             lobbyId,
             lobbyName,
             settings,
-            players: [hostId],
+            players: [{ playerId: hostId, playerName: hostName }],
         };
 
         lobbyIdToLobbyMap.set(lobbyId, lobby);
@@ -44,8 +44,7 @@ export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvent
         const update: LobbyUpdate = {
             lobbyId,
             lobbyName,
-            hostId,
-            hostName,
+            host: lobby.host,
             players: lobby.players,
             settings,
         };
@@ -70,15 +69,14 @@ export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvent
         playerToLobbyIdMap.set(payload.playerId, lobby.lobbyId);
 
         // prevent duplicate join
-        if (!lobby.players.includes(payload.playerId)) {
-            lobby.players.push(payload.playerId);
+        if (!lobby.players.some(p => p.playerId === payload.playerId)) {
+            lobby.players.push({ playerId: payload.playerId, playerName: payload.playerName });
         }
 
         const update: LobbyUpdate = {
             lobbyId: lobby.lobbyId,
             lobbyName: lobby.lobbyName,
-            hostId: lobby.hostId,
-            hostName: lobby.hostName,
+            host: lobby.host,
             players: lobby.players,
             settings: lobby.settings,
         };
@@ -102,7 +100,7 @@ export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvent
         socket.leave(lobby.lobbyId);
         playerToLobbyIdMap.delete(payload.playerId);
 
-        const playerIdx = lobby.players.indexOf(payload.playerId);
+        const playerIdx = lobby.players.findIndex(p => p.playerId === payload.playerId);
 
         if (playerIdx > -1) {
             lobby.players.splice(playerIdx, 1);
@@ -117,8 +115,7 @@ export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvent
         const update: LobbyUpdate = {
             lobbyId: lobby.lobbyId,
             lobbyName: lobby.lobbyName,
-            hostId: lobby.hostId,
-            hostName: lobby.hostName,
+            host: lobby.host,
             players: lobby.players,
             settings: lobby.settings,
         };
@@ -132,7 +129,7 @@ export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvent
         if (lobby = lobbyIdToLobbyMap.get(payload.lobbyId)) {
             const update: TurnStartEvent = {
                 turnId: 0,
-                playerId: lobby.players[0]
+                playerId: lobby.players[0].playerId
             };
 
             io.to(lobby.lobbyId).emit('turnStart', update);
@@ -169,7 +166,7 @@ export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvent
         if (lobby = lobbyIdToLobbyMap.get(payload.lobbyId)) {
             const update: TurnStartEvent = {
                 turnId: payload.turnId + 1,
-                playerId: lobby.players[0] == payload.currentPlayer ? lobby.players[1] : lobby.players[0],
+                playerId: lobby.players[0].playerId == payload.currentPlayer ? lobby.players[1].playerId : lobby.players[0].playerId,
             };
 
             io.to(lobby.lobbyId).emit('turnStart', update);

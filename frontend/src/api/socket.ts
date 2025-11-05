@@ -1,6 +1,7 @@
 import { io } from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
 import EventBus from '../game/EventBus';
+import { getOrCreatePlayerId } from '../game/utils/playerUsername';
 import type {
     ServerToClientEvents,
     ClientToServerEvents,
@@ -33,7 +34,7 @@ import type {
 // Create runtime socket then cast it to a typed Socket<ServerToClientEvents,ClientToServerEvents>.
 
 let socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
-const playerId: PlayerId = crypto.randomUUID();
+const playerId: PlayerId = getOrCreatePlayerId();
 
 export function initSocket(token?: string) {
     if (socket) return socket;
