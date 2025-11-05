@@ -473,116 +473,49 @@ export class Game extends Phaser.Scene {
       });
     }
 
-    // resize & cleanup
-    this.scale.on('resize', this.onResize, this);
-    EventBus.emit('current-scene-ready', this);
+    // ---------- resize ----------
+    private onResize(gameSize: Phaser.Structs.Size) {
+        const { width: W, height: H } = gameSize;
 
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.enemyTurnTimer?.remove();
-      this.scale.off('resize', this.onResize, this);
-      this.attackBtn?.removeAllListeners();
-      this.offAttack && this.offAttack(); 
-      this.offState && this.offState();  
-    });
-    this.events.once(Phaser.Scenes.Events.DESTROY, () => {
-      this.enemyTurnTimer?.remove();
-      this.scale.off('resize', this.onResize, this);
-      this.attackBtn?.removeAllListeners();
-      this.offAttack && this.offAttack(); 
-      this.offState && this.offState();   
-    });
-  };
+        resizeSceneBase(this, W, H);
 
-  private doLocalAttack() {
-    if (!this.isPlayerTurn || this.coolingDown || this.enemyHP <= 0 || this.playerHP <= 0) return;
+        const pad = 24;
+        const topY = H * 0.20;
+        const bottomY = H * 0.80;
 
-    this.coolingDown = true;
-    this.time.delayedCall(this.cooldownMs, () => (this.coolingDown = false));
+        if (this.background) this.background.setPosition(W / 2, H / 2).setDisplaySize(W, H);
 
-    const w = this.weapons[this.currentWeaponIndex];
-    const { width: W, height: H } = this.scale;
-    const topY = H * 0.20;
-    const bottomY = H * 0.80;
-    const duration = Phaser.Math.Clamp(1000 * (300 / w.speed), 120, 600);
+        (this.homeBtn as any)?.setPosition(pad + 24, pad + 24);
 
-    this.flyBullet({
-      fromX: W / 2,
-      fromY: bottomY - 30,
-      toY: topY + 20,
-      color: w.color,
-      duration,
-      onImpact: () => {
-        // === DIRECT MODE: don't mutate HP locally; wait for server echo ===
-        if (this.netMode === 'direct' && this.matchId) { 
-          sendDirectAttack(this.matchId, w.key);
-        } else {
-          // === LOCAL MODE (unchanged) ===
-          this.enemyHP = Math.max(0, this.enemyHP - w.dmg);
-          this.totalDamage += w.dmg;
-          this.enemyHPBar.set(this.enemyHP / this.enemyHPMax);
-          this.updateHPTexts();
-          if (this.enemyHP === 0) { this.endRound(true); return; }
-          this.nextTurn();
-          this.startEnemyTurn();
-        }
-      }
-    });
-  }
+        // reposition
+        (this.enemy as any)?.setPosition(W / 2, topY);
+        (this.player as any)?.setPosition(W / 2, bottomY);
 
-  // ---------- end ----------
-  private endRound(playerWon: boolean) {
-    this.enemyTurnTimer?.remove();
-    this.scale.off('resize', this.onResize, this);
-    this.attackBtn?.removeAllListeners();
+        // rescale ships by height (this is the key to “make it bigger” really working)
+        if (this.enemy instanceof Phaser.GameObjects.Image) this.sizeShipByHeight(this.enemy, H, 0.09);
+        if (this.player instanceof Phaser.GameObjects.Image) this.sizeShipByHeight(this.player, H, 0.11);
 
-    this.scene.start('GameOver', {
-      result: playerWon ? 'VICTORY' : 'DEFEAT',
-      playerHP: this.playerHP,
-      enemyHP: this.enemyHP,
-      shots: this.shotsFired,
-      damage: this.totalDamage
-    });
-  }
+        const gap = 32;
+        this.enemyHPBar?.setPosition(W / 2, topY - gap);
+        this.playerHPBar?.setPosition(W / 2, bottomY + gap);
 
-  // ---------- resize ----------
-  private onResize(gameSize: Phaser.Structs.Size) {
-    const { width: W, height: H } = gameSize;
+        const hpFont = getResponsiveFontSize(W, H, 18, 14);
+        this.enemyHPText?.setFontSize(hpFont).setPosition(W / 2, topY - gap - 20);
+        this.playerHPText?.setFontSize(hpFont).setPosition(W / 2, bottomY + gap + 20);
 
-    resizeSceneBase(this, W, H);
+        this.weaponRelayout && this.weaponRelayout();
+        this.attackBtn?.setPosition(W - 140, bottomY - 10);
 
-    const pad = 24;
-    const topY = H * 0.20;
-    const bottomY = H * 0.80;
+        const badgeW = 140, badgeH = 40;
+        this.turnBadgeGlass?.setPosition(W - (pad + badgeW / 2), pad + 24).setSize(badgeW, badgeH);
+        const badgeFont = getResponsiveFontSize(W, H, 20, 16);
+        this.turnBadgeText?.setFontSize(badgeFont).setPosition(this.turnBadgeGlass.x, this.turnBadgeGlass.y);
 
-    if (this.background) this.background.setPosition(W / 2, H / 2).setDisplaySize(W, H);
-    (this.homeBtn as any)?.setPosition(pad + 24, pad + 24);
-    (this.enemy as any)?.setPosition(W / 2, topY);
-    (this.player as any)?.setPosition(W / 2, bottomY);
-
-    if (this.enemy instanceof Phaser.GameObjects.Image) this.sizeShipByHeight(this.enemy as any, H, 0.09);
-    if (this.player instanceof Phaser.GameObjects.Image) this.sizeShipByHeight(this.player as any, H, 0.11);
-
-    const gap = 32;
-    this.enemyHPBar?.setPosition(W / 2, topY - gap);
-    this.playerHPBar?.setPosition(W / 2, bottomY + gap);
-
-    const hpFont = getResponsiveFontSize(W, H, 18, 14);
-    this.enemyHPText?.setFontSize(hpFont).setPosition(W / 2, topY - gap - 20);
-    this.playerHPText?.setFontSize(hpFont).setPosition(W / 2, bottomY + gap + 20);
-
-    this.weaponRelayout && this.weaponRelayout();
-    this.attackBtn?.setPosition(W - 140, bottomY - 10);
-
-    const badgeW = 140, badgeH = 40;
-    this.turnBadgeGlass?.setPosition(W - (pad + badgeW / 2), pad + 24).setSize(badgeW, badgeH);
-    const badgeFont = getResponsiveFontSize(W, H, 20, 16);
-    this.turnBadgeText?.setFontSize(badgeFont).setPosition(this.turnBadgeGlass.x, this.turnBadgeGlass.y);
-
-    const whoW = 220, whoH = 48;
-    this.turnLabelGlass?.setPosition(W / 2, H * 0.11).setSize(whoW, whoH);
-    const whoFont = getResponsiveFontSize(W, H, 26, 20);
-    this.turnLabelText?.setFontSize(whoFont).setPosition(this.turnLabelGlass.x, this.turnLabelGlass.y);
-  }
+        const whoW = 220, whoH = 48;
+        this.turnLabelGlass?.setPosition(W / 2, H * 0.11).setSize(whoW, whoH);
+        const whoFont = getResponsiveFontSize(W, H, 26, 20);
+        this.turnLabelText?.setFontSize(whoFont).setPosition(this.turnLabelGlass.x, this.turnLabelGlass.y);
+    }
 }
 
 export default Game;
