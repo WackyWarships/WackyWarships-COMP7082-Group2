@@ -24,6 +24,7 @@ import type {
     ResumeTurnEvent,
     StartGameEvent,
     NextTurnEvent,
+    MinigameStartEvent,
 } from 'shared/types';
 
 
@@ -77,6 +78,10 @@ export function initSocket(token?: string) {
 
     socket.on('gameState', (gs: GameStateTurn): void => {
         EventBus.emit('game-state', gs);
+    });
+
+    socket.on('minigameStart', (ms: MinigameStartEvent): void => {
+        EventBus.emit('minigame-start', ms);
     });
 
     socket.on('groupMinigameStart', (gms: GroupMinigameStartEvent): void => {

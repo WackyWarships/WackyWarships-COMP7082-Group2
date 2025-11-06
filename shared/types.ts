@@ -73,8 +73,10 @@ export type ChooseWeaponEvent = {
 export type MinigameInputCompact = [number, string, number?]; // [dtMs, actionCode, optValue]
 
 export type MinigameResultEvent = {
+    lobbyId: LobbyId;
     turnId: TurnId;
     playerId: PlayerId;
+    targetPlayerId: PlayerId;
     outcome: 'success' | 'failure';
     score?: number;
     durationMs?: number;
@@ -113,8 +115,6 @@ export type TurnResolvedEvent = {
     turnId: TurnId;
     attackerId: PlayerId;
     defenderId: PlayerId;
-    weaponId: WeaponId;
-    outcome: 'success' | 'failure';
     damage: number;
     defenderHp?: number;
     events?: Array<{ type: string; payload?: any }>;
@@ -151,6 +151,18 @@ export type LobbyUpdate = {
     hostName: string; 
     players: PlayerId[];
     settings?: Record<string, any>;
+};
+
+export type MinigameStartEvent = {
+    lobbyId: LobbyId;
+    attackerId: PlayerId;
+    defenderId: PlayerId;
+    weaponId: WeaponId;
+    seed?: string | number;
+    minigameParams?: Record<string, any>;
+    timeLimitMs?: number;
+    expectedDurationMs?: number;
+    meta?: Record<string, any>;
 };
 
 // Group minigame start -----------------------------------------------------
@@ -235,6 +247,7 @@ export type ServerToClientEvents = {
     turnResolved: (res: TurnResolvedEvent) => void;
     gameState: (gs: GameStateTurn) => void;
 
+    minigameStart: (g: MinigameStartEvent) => void;
     groupMinigameStart: (g: GroupMinigameStartEvent) => void;
     groupMinigameResolved: (g: GroupMinigameResolvedEvent) => void;
 
