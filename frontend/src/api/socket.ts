@@ -41,16 +41,19 @@ const BACKEND_URL =
 let socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
 
 /** multiplayer: safe playerId generator for non-HTTPS LAN */
+// MINIMAL CHANGE #1: persist a stable playerId in localStorage
 function makePlayerId(): PlayerId {
+  const KEY = 'ww_player_id';
+  const existing = typeof localStorage !== 'undefined' ? localStorage.getItem(KEY) : null;
+  if (existing) return existing as PlayerId;
+
   const g = (globalThis as any)?.crypto;
-  if (g && typeof g.randomUUID === 'function') {
-    return g.randomUUID();
-  }
-  // Fallback for http://10.x or older browsers
-  return (
-    'pid-' +
-    Array.from({ length: 4 }, () => Math.random().toString(16).slice(2)).join('')
-  );
+  const id: PlayerId = (g && typeof g.randomUUID === 'function')
+    ? g.randomUUID()
+    : ('pid-' + Array.from({ length: 4 }, () => Math.random().toString(16).slice(2)).join(''));
+
+  try { localStorage.setItem(KEY, id); } catch {}
+  return id;
 }
 /**  */
 const playerId: PlayerId = makePlayerId();
@@ -74,6 +77,11 @@ export function initSocket(token?: string) {
 
   socket.on('connect', (): void => {
     console.debug('socket connected', socket!.id);
+    // MINIMAL CHANGE #2: immediately identify this socket to the server
+    // (server maps playerId -> socket and routes direct attacks)
+    try {
+      (socket as any).emit('setUsername', { playerId, username: playerId } as SetUsernameEvent);
+    } catch {}
   });
 
   socket.on('connect_error', (err: unknown): void => {
@@ -140,8 +148,6 @@ export function initSocket(token?: string) {
   });
 
   // ====== Multiplayer — quick-match (no lobby) ======
-  // Backend (direct.ts) emits camelCase events. We forward them to EventBus
-  // using kebab-case names that the UI listens to.
   socket.on('directMatchFound', (payload: any): void => {
     /**  */
     EventBus.emit('direct-match-found', payload);
@@ -155,7 +161,7 @@ export function initSocket(token?: string) {
     EventBus.emit('direct-attack', payload);
   });
 
-  // Also support the older `direct:*` channel shape if a teammate’s backend is used.
+  // legacy `direct:*` (compat)
   socket.on('direct:found', (payload: any): void => {
     /**  (compat) */
     EventBus.emit('direct-match-found', payload);

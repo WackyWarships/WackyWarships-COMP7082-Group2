@@ -1,3 +1,4 @@
+// src/game/scenes/Game.ts
 import Phaser from 'phaser';
 import EventBus from '../EventBus';
 import {
@@ -9,7 +10,7 @@ import {
   getPlayerId,
   sendDirectReady,
   sendDirectAttack
-} from '../../api/socket'; 
+} from '../../api/socket';
 
 type HPBar = {
   width: number;
@@ -71,23 +72,23 @@ export class Game extends Phaser.Scene {
   private enemyHPText!: Phaser.GameObjects.Text;
   private playerHPText!: Phaser.GameObjects.Text;
 
-  // ====== ADDED BY LUCAS — net/direct mode wiring ======
-  private netMode: 'local' | 'direct' = 'local'; 
-  private matchId?: string; 
-  private meId: string = getPlayerId(); 
-  private isStarter: boolean = false; 
+  // ====== net/direct wiring ======
+  private netMode: 'local' | 'direct' = 'local';
+  private matchId?: string;
+  private meId: string = getPlayerId();
+  private isStarter: boolean = false;
   private offAttack?: () => void;
-  private offState?: () => void; 
+  private offState?: () => void;
 
-  /** de-dup incoming server attacks (fixes random huge totals) */
+  /** de-dup incoming server attacks */
   private seenAttackIds = new Set<string>();
 
   constructor() {
     super('Game');
   }
 
+  // ---------- lifecycle ----------
   init(data: any) {
-    // if we were started by Quick Match
     if (data?.net?.mode === 'direct') {
       this.netMode = 'direct';
       this.matchId = data.net.matchId;
@@ -104,17 +105,16 @@ export class Game extends Phaser.Scene {
 
     this.currentWeaponIndex = 0;
     this.coolingDown = false;
-       this.shotsFired = 0;
+    this.shotsFired = 0;
     this.totalDamage = 0;
 
-    // Starter begins
-    this.isPlayerTurn = (this.netMode === 'direct') ? this.isStarter : true; 
+    this.isPlayerTurn = (this.netMode === 'direct') ? this.isStarter : true;
     this.turnNumber = 1;
 
     this.enemyTurnTimer?.remove();
     this.enemyTurnTimer = undefined;
 
-    this.seenAttackIds.clear(); 
+    this.seenAttackIds.clear();
   }
 
   // ---------- helpers ----------
@@ -269,10 +269,9 @@ export class Game extends Phaser.Scene {
 
   private startEnemyTurn() {
     this.isPlayerTurn = false;
-       this.turnLabelText.setText('ENEMY TURN').setColor('#ff6969');
+    this.turnLabelText.setText('ENEMY TURN').setColor('#ff6969');
     this.setAttackEnabled(false);
 
-    // local-only: enemy fires automatically
     if (this.netMode === 'local') {
       this.enemyTurnTimer?.remove();
       this.enemyTurnTimer = this.time.delayedCall(700, () => this.doEnemyAttack(), undefined, this);
@@ -329,6 +328,7 @@ export class Game extends Phaser.Scene {
 
   // ---------- create ----------
   create() {
+    console.log('[Game] netMode=', this.netMode, 'matchId=', this.matchId);
     const { width: W, height: H } = this.scale;
     const { x: centerX, y: centerY } = getCenter(this.scale);
 
@@ -419,23 +419,24 @@ export class Game extends Phaser.Scene {
 
     // ====== wire direct mode listeners ======
     if (this.netMode === 'direct' && this.matchId) {
-      sendDirectReady(this.matchId); // tell server I'm ready
+      sendDirectReady(this.matchId);
 
-      // inside create(), after sendDirectReady(...)
-      this.offAttack = EventBus.on('direct-attack', (ev: any) => {
+      // Subscribe via wildcard and filter event name; keep a disposer for cleanup.
+      const onDirectAttack = (type: string, payload: any) => {
+        if (type !== 'direct-attack') return;
+        const ev = payload;
         if (!ev || ev.matchId !== this.matchId) return;
 
-        // de-dup by attackId if present (server now provides it)
-        if (ev.attackId && this.seenAttackIds.has(ev.attackId)) return;  
-        if (ev.attackId) this.seenAttackIds.add(ev.attackId);           
+        if (ev.attackId && this.seenAttackIds.has(ev.attackId)) return;
+        if (ev.attackId) this.seenAttackIds.add(ev.attackId);
 
         const weap = this.weapons.find(x => x.key === ev.weaponKey) || this.weapons[0];
         const dmg = Number(ev?.damage ?? weap.dmg) || 0;
 
-        const { width: W2, height: H2 } = this.scale;
+        const { height: H2, width: W2 } = this.scale;
         const topY2 = H2 * 0.20, bottomY2 = H2 * 0.80;
 
-        const shotFromTop = ev.playerId !== this.meId; // enemy shot -> from top; my shot -> from bottom
+        const shotFromTop = ev.playerId !== this.meId;
 
         this.flyBullet({
           fromX: W2 / 2,
@@ -445,7 +446,6 @@ export class Game extends Phaser.Scene {
           duration: 300,
           onImpact: () => {
             if (shotFromTop) {
-              // enemy hit me
               this.playerHP = Math.max(0, this.playerHP - dmg);
               this.playerHPBar.set(this.playerHP / this.playerHPMax);
               this.updateHPTexts();
@@ -453,7 +453,6 @@ export class Game extends Phaser.Scene {
               this.nextTurn();
               this.startPlayerTurn();
             } else {
-              // my shot hit enemy (authoritative echo)
               this.enemyHP = Math.max(0, this.enemyHP - dmg);
               this.totalDamage += dmg;
               this.enemyHPBar.set(this.enemyHP / this.enemyHPMax);
@@ -464,58 +463,134 @@ export class Game extends Phaser.Scene {
             }
           }
         });
-      });
+      };
 
-      // Could listen to 'direct-state' to resync if needed
-      this.offState = EventBus.on('direct-state', (st: any) => {
+      EventBus.on('*', onDirectAttack as any);
+      this.offAttack = () => EventBus.off('*', onDirectAttack as any);
+
+      const onDirectState = (type: string, st: any) => {
+        if (type !== 'direct-state') return;
         if (!st || st.matchId !== this.matchId) return;
-        // Minimal: trust my local; this is just for future resync.
-      });
+        // (optional resync hook)
+      };
+
+      EventBus.on('*', onDirectState as any);
+      this.offState = () => EventBus.off('*', onDirectState as any);
     }
 
-    // ---------- resize ----------
-    private onResize(gameSize: Phaser.Structs.Size) {
-        const { width: W, height: H } = gameSize;
+    // resize & cleanup hooks
+    this.scale.on('resize', this.onResize, this);
+    EventBus.emit('current-scene-ready', this);
 
-        resizeSceneBase(this, W, H);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.enemyTurnTimer?.remove();
+      this.scale.off('resize', this.onResize, this);
+      this.attackBtn?.removeAllListeners();
+      this.offAttack && this.offAttack();
+      this.offState && this.offState();
+    });
+    this.events.once(Phaser.Scenes.Events.DESTROY, () => {
+      this.enemyTurnTimer?.remove();
+      this.scale.off('resize', this.onResize, this);
+      this.attackBtn?.removeAllListeners();
+      this.offAttack && this.offAttack();
+      this.offState && this.offState();
+    });
+  } // <-- IMPORTANT: close create()
 
-        const pad = 24;
-        const topY = H * 0.20;
-        const bottomY = H * 0.80;
+  // ---------- resize ----------
+  private onResize(gameSize: Phaser.Structs.Size) {
+    const { width: W, height: H } = gameSize;
 
-        if (this.background) this.background.setPosition(W / 2, H / 2).setDisplaySize(W, H);
+    resizeSceneBase(this, W, H);
 
-        (this.homeBtn as any)?.setPosition(pad + 24, pad + 24);
+    const pad = 24;
+    const topY = H * 0.20;
+    const bottomY = H * 0.80;
 
-        // reposition
-        (this.enemy as any)?.setPosition(W / 2, topY);
-        (this.player as any)?.setPosition(W / 2, bottomY);
+    if (this.background) this.background.setPosition(W / 2, H / 2).setDisplaySize(W, H);
+    (this.homeBtn as any)?.setPosition(pad + 24, pad + 24);
 
-        // rescale ships by height (this is the key to “make it bigger” really working)
-        if (this.enemy instanceof Phaser.GameObjects.Image) this.sizeShipByHeight(this.enemy, H, 0.09);
-        if (this.player instanceof Phaser.GameObjects.Image) this.sizeShipByHeight(this.player, H, 0.11);
+    (this.enemy as any)?.setPosition(W / 2, topY);
+    (this.player as any)?.setPosition(W / 2, bottomY);
 
-        const gap = 32;
-        this.enemyHPBar?.setPosition(W / 2, topY - gap);
-        this.playerHPBar?.setPosition(W / 2, bottomY + gap);
+    if (this.enemy instanceof Phaser.GameObjects.Image) this.sizeShipByHeight(this.enemy as any, H, 0.09);
+    if (this.player instanceof Phaser.GameObjects.Image) this.sizeShipByHeight(this.player as any, H, 0.11);
 
-        const hpFont = getResponsiveFontSize(W, H, 18, 14);
-        this.enemyHPText?.setFontSize(hpFont).setPosition(W / 2, topY - gap - 20);
-        this.playerHPText?.setFontSize(hpFont).setPosition(W / 2, bottomY + gap + 20);
+    const gap = 32;
+    this.enemyHPBar?.setPosition(W / 2, topY - gap);
+    this.playerHPBar?.setPosition(W / 2, bottomY + gap);
 
-        this.weaponRelayout && this.weaponRelayout();
-        this.attackBtn?.setPosition(W - 140, bottomY - 10);
+    const hpFont = getResponsiveFontSize(W, H, 18, 14);
+    this.enemyHPText?.setFontSize(hpFont).setPosition(W / 2, topY - gap - 20);
+    this.playerHPText?.setFontSize(hpFont).setPosition(W / 2, bottomY + gap + 20);
 
-        const badgeW = 140, badgeH = 40;
-        this.turnBadgeGlass?.setPosition(W - (pad + badgeW / 2), pad + 24).setSize(badgeW, badgeH);
-        const badgeFont = getResponsiveFontSize(W, H, 20, 16);
-        this.turnBadgeText?.setFontSize(badgeFont).setPosition(this.turnBadgeGlass.x, this.turnBadgeGlass.y);
+    this.weaponRelayout && this.weaponRelayout();
+    this.attackBtn?.setPosition(W - 140, bottomY - 10);
 
-        const whoW = 220, whoH = 48;
-        this.turnLabelGlass?.setPosition(W / 2, H * 0.11).setSize(whoW, whoH);
-        const whoFont = getResponsiveFontSize(W, H, 26, 20);
-        this.turnLabelText?.setFontSize(whoFont).setPosition(this.turnLabelGlass.x, this.turnLabelGlass.y);
-    }
+    const badgeW = 140, badgeH = 40;
+    this.turnBadgeGlass?.setPosition(W - (pad + badgeW / 2), pad + 24).setSize(badgeW, badgeH);
+    const badgeFont = getResponsiveFontSize(W, H, 20, 16);
+    this.turnBadgeText?.setFontSize(badgeFont).setPosition(this.turnBadgeGlass.x, this.turnBadgeGlass.y);
+
+    const whoW = 220, whoH = 48;
+    this.turnLabelGlass?.setPosition(W / 2, H * 0.11).setSize(whoW, whoH);
+    const whoFont = getResponsiveFontSize(W, H, 26, 20);
+    this.turnLabelText?.setFontSize(whoFont).setPosition(this.turnLabelGlass.x, this.turnLabelGlass.y);
+  }
+
+  // ---------- attacks ----------
+  private doLocalAttack() {
+    if (!this.isPlayerTurn || this.coolingDown || this.enemyHP <= 0 || this.playerHP <= 0) return;
+
+    this.coolingDown = true;
+    this.time.delayedCall(this.cooldownMs, () => (this.coolingDown = false));
+
+    const w = this.weapons[this.currentWeaponIndex];
+    this.shotsFired++;
+
+    const { width: W, height: H } = this.scale;
+    const topY = H * 0.20;
+    const bottomY = H * 0.80;
+    const duration = Phaser.Math.Clamp(1000 * (300 / w.speed), 120, 600);
+
+    this.flyBullet({
+      fromX: W / 2,
+      fromY: bottomY - 30,
+      toY: topY + 20,
+      color: w.color,
+      duration,
+      onImpact: () => {
+        // Local-only mutation. In direct mode you should rely on server echoes.
+        if (this.netMode === 'direct' && this.matchId) {
+          sendDirectAttack(this.matchId, w.key);
+        } else {
+          this.enemyHP = Math.max(0, this.enemyHP - w.dmg);
+          this.totalDamage += w.dmg;
+          this.enemyHPBar.set(this.enemyHP / this.enemyHPMax);
+          this.updateHPTexts();
+          if (this.enemyHP === 0) { this.endRound(true); return; }
+          this.nextTurn();
+          this.startEnemyTurn();
+        }
+      }
+    });
+  }
+
+  // ---------- end ----------
+  private endRound(playerWon: boolean) {
+    this.enemyTurnTimer?.remove();
+    this.scale.off('resize', this.onResize, this);
+    this.attackBtn?.removeAllListeners();
+
+    this.scene.start('GameOver', {
+      result: playerWon ? 'VICTORY' : 'DEFEAT',
+      playerHP: this.playerHP,
+      enemyHP: this.enemyHP,
+      shots: this.shotsFired,
+      damage: this.totalDamage
+    });
+  }
 }
 
 export default Game;
