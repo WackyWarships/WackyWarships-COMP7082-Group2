@@ -78,12 +78,12 @@ function emitState(io: Server, to: string | string[], state: any) {
 function relayAttack(
   io: Server,
   toSocketId: string | string[],
-  msg: { matchId: string; playerId: string; weaponKey: string; damage: number; serverTime: number; attackId: string } 
+  msg: { matchId: string; playerId: string; weaponKey: string; damage: number; serverTime: number; attackId: string }
 ) {
   const targets = Array.isArray(toSocketId) ? toSocketId : [toSocketId];
   for (const sid of targets) {
     // IMPORTANT: only emit the colon version to avoid duplicates client-side
-    io.to(sid).emit("direct:attack", msg);  
+    io.to(sid).emit("direct:attack", msg);
   }
 }
 
@@ -153,18 +153,24 @@ export function setupDirectSocket(
 
     const damage = CANON_WEAPON_DAMAGE[weaponKey] ?? 10;
     const serverTime = Date.now();
-    const attackId = `${matchId}:${playerId}:${serverTime}`; 
+    const attackId = `${matchId}:${playerId}:${serverTime}`;
 
     // send to BOTH players (authoritative echo)
-    relayAttack(io, [m.a.socketId, m.b.socketId], { matchId, playerId, weaponKey, damage, serverTime, attackId }); 
+    relayAttack(io, [m.a.socketId, m.b.socketId], { matchId, playerId, weaponKey, damage, serverTime, attackId });
   });
 
   // ===================================
-  // EXPLICIT HOST/JOIN (kept)
+  // EXPLICIT HOST/JOIN (colon versions)
   // ===================================
+  // NOTE: These event names are not in ClientToServerEvents; handle with `as any`
+  // and avoid parameter destructuring to silence implicit-any diagnostics.
 
-  socket.on("direct:host", ({ matchId, playerId, username }) => {
+  (socket as any).on("direct:host", (payload: any) => {
+    const matchId: string | undefined = payload?.matchId;
+    const playerId: string | undefined = payload?.playerId;
+    const username: string | undefined = payload?.username;
     if (!playerId) return;
+
     socketByPlayer.set(playerId, socket);
     playerBySocket.set(socket.id, playerId);
 
@@ -178,8 +184,12 @@ export function setupDirectSocket(
     if (m.b) emitFound(io, m);
   });
 
-  socket.on("direct:join", ({ matchId, playerId, username }) => {
+  (socket as any).on("direct:join", (payload: any) => {
+    const matchId: string | undefined = payload?.matchId;
+    const playerId: string | undefined = payload?.playerId;
+    const username: string | undefined = payload?.username;
     if (!playerId || !matchId) return;
+
     socketByPlayer.set(playerId, socket);
     playerBySocket.set(socket.id, playerId);
 
@@ -192,9 +202,14 @@ export function setupDirectSocket(
     if (m.b?.socketId) emitState(io, m.b.socketId, { matchId, role: "guest" });
   });
 
-  socket.on("direct:ready", ({ matchId, playerId }) => {
+  (socket as any).on("direct:ready", (payload: any) => {
+    const matchId: string | undefined = payload?.matchId;
+    const playerId: string | undefined = payload?.playerId;
+    if (!matchId || !playerId) return;
+
     const m = matchById.get(matchId);
     if (!m) return;
+
     if (m.a?.playerId === playerId) m.a.ready = true;
     if (m.b?.playerId === playerId) m.b.ready = true;
 
@@ -203,21 +218,34 @@ export function setupDirectSocket(
 
     if (!m.started && m.a?.ready && m.b?.ready) {
       m.started = true;
-      if (!m.starter) m.starter = m.a.playerId;
+      // safe fallback to avoid "possibly undefined"
+      if (!m.starter) m.starter = m.a?.playerId ?? m.b?.playerId ?? playerId;
       emitState(io, sids, { matchId, started: true, starter: m.starter });
     }
   });
 
-  socket.on("direct:attack", ({ matchId, playerId, weaponKey }) => {
+  (socket as any).on("direct:attack", (payload: any) => {
+    const matchId: string | undefined = payload?.matchId;
+    const playerId: string | undefined = payload?.playerId;
+    const weaponKey: string | undefined = payload?.weaponKey;
+    if (!matchId || !playerId || !weaponKey) return;
+
     const m = matchById.get(matchId);
     if (!m || !m.a || !m.b) return;
 
     const damage = CANON_WEAPON_DAMAGE[weaponKey] ?? 10;
     const serverTime = Date.now();
-    const attackId = `${matchId}:${playerId}:${serverTime}`; 
+    const attackId = `${matchId}:${playerId}:${serverTime}`;
 
     // send to BOTH players (authoritative echo)
-    relayAttack(io, [m.a.socketId, m.b.socketId], { matchId, playerId, weaponKey, damage, serverTime, attackId }); 
+    relayAttack(io, [m.a.socketId, m.b.socketId], {
+      matchId,
+      playerId,
+      weaponKey,
+      damage,
+      serverTime,
+      attackId,
+    });
   });
 
   // ---------- cleanup ----------
