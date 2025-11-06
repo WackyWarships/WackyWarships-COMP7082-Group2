@@ -1,3 +1,4 @@
+// src/game/scenes/EnterUsername.ts
 import { Scene, GameObjects } from 'phaser';
 import { savePlayerName, getOrCreatePlayerId } from '../utils/playerUsername';
 import { sendSetUsername } from '../../api/socket';
@@ -107,21 +108,21 @@ export class EnterUsername extends Scene {
     //multiplayer
     submitUsername() {
         const raw = this.inputEl.value.trim();
-        const username = raw || 'Player';                 /**default if empty */
+        const username = raw || 'Player';                 /** default if empty */
         savePlayerName(username);
         this.inputEl.remove();
 
         const playerId = getOrCreatePlayerId();
 
         // Listen ONCE for ack before emitting to avoid stacking handlers
-        const onAck = () => {                            
-            EventBus.off('username-set', onAck);         
-            this.scene.start('MainMenu');               
-        };                                               
-        EventBus.on('username-set', onAck);              
+        const onAck = () => {
+            EventBus.off('username-set', onAck);
+            this.scene.start('MainMenu');
+        };
+        EventBus.on('username-set', onAck);
 
-        // IMPORTANT: backend expects { playerId, username }, not playerName
-        sendSetUsername({ playerId, username });        
+        // FIX: SetUsernameEvent expects { playerId, playerName }
+        sendSetUsername({ playerId, playerName: username });
     }
 
     handleResize(gameSize: Phaser.Structs.Size) {

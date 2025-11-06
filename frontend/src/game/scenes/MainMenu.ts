@@ -146,7 +146,11 @@ export class MainMenu extends Scene {
       sendDirectQueue({ playerId: pid });
 
       // 2) wait for server to pair us, then launch Game with net data
-      this.offDirectFound = EventBus.on('direct-match-found', (p: any) => {
+      // FIX: subscribe via wildcard and filter, then store a disposer
+      const onDirectFound = (type: string, payload: any) => {
+        if (type !== 'direct-match-found') return;
+        const p = payload;
+
         // normalize a tiny bit; your server already sends { matchId, starter }
         const matchId = p?.matchId;
         const starter = p?.starter ?? p?.host?.playerId ?? p?.guest?.playerId;
@@ -165,7 +169,11 @@ export class MainMenu extends Scene {
 
         // 3) start the Game scene with the exact shape Game.ts expects
         this.scene.start('Game', { net: { mode: 'direct', matchId, starter } });
-      });
+      };
+
+      (EventBus as any).on('*', onDirectFound as any);
+      this.offDirectFound = () => (EventBus as any).off('*', onDirectFound as any);
+
     } catch (e) {
       console.error('[MainMenu] quick-match error', e);
       startBtn.setText('Start Battle');
