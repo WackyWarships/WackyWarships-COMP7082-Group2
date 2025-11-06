@@ -248,8 +248,10 @@ export function sendDirectAttack(matchId: string, weaponKey: string): void {
 
 // legacy helpers
 export function sendDirectHost(matchId: string, username: string): void {
-  ensureSocket().emit('direct:host', { matchId, playerId, username } as any);
+  (ensureSocket() as any).emit('direct:host', { matchId, playerId, username } as any);
 }
 export function sendDirectJoin(matchId: string, username: string): void {
-  ensureSocket().emit('direct:join', { matchId, playerId, username } as any);
+  (ensureSocket() as any).emit('direct:join', { matchId, playerId, username } as any);
 }
+
+
