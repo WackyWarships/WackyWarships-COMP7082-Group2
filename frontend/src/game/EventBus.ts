@@ -14,17 +14,21 @@ import type {
     ReconnectResponse,
     ResumeTurnEvent,
     MinigameStartEvent,
+    SetUsernameEvent
 } from 'shared/types';
 
 export type Events = {
+    // Player identified (id and username in server?)
+    'username-set': SetUsernameEvent;
+
     // Scene lifecycle
     'current-scene-ready': Phaser.Scene;
 
     // Network
-    snapshot: ServerSnapshot;
+    'snapshot': ServerSnapshot;
     'lobby-update': LobbyUpdate;
-    ack: { seq: number };
-    error: { code: number; message: string } | any;
+    'ack': { seq: number };
+    'error' : { code: number; message: string } | any;
 
     // Turn-based
     'turn-start': TurnStartEvent;

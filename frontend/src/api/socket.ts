@@ -6,6 +6,7 @@ import type {
     ClientToServerEvents,
     ServerSnapshot,
     LobbyUpdate,
+    UsernameSetEvent,
     TurnStartEvent,
     TurnResolvedEvent,
     GameStateTurn,
@@ -14,6 +15,7 @@ import type {
     MinigameResultEvent,
     GroupMinigameResultEvent,
     ChooseWeaponEvent,
+    SetUsernameEvent,
     CreateLobbyEvent,
     JoinLobbyEvent,
     LeaveLobbyEvent,
@@ -25,12 +27,14 @@ import type {
     StartGameEvent,
     NextTurnEvent,
     MinigameStartEvent,
+    PlayerId,
 } from 'shared/types';
 
 
 // Create runtime socket then cast it to a typed Socket<ServerToClientEvents,ClientToServerEvents>.
 
 let socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
+const playerId: PlayerId = crypto.randomUUID();
 
 export function initSocket(token?: string) {
     if (socket) return socket;
@@ -58,6 +62,10 @@ export function initSocket(token?: string) {
 
     socket.on('ack', (ack): void => {
         EventBus.emit('ack', ack);
+    });
+
+    socket.on('usernameSet', (evt: UsernameSetEvent): void => {
+        EventBus.emit('username-set', evt);
     });
 
     socket.on('lobbyUpdate', (lu: LobbyUpdate): void => {
@@ -119,6 +127,10 @@ function ensureSocket(): Socket<ServerToClientEvents, ClientToServerEvents> {
     return socket;
 }
 
+export function sendSetUsername(payload: SetUsernameEvent): void {
+  ensureSocket().emit('setUsername', payload);
+}
+
 export function sendCreateLobby(payload: CreateLobbyEvent): void {
     ensureSocket().emit('createLobby', payload);
 }
@@ -167,4 +179,8 @@ export function closeSocket(): void {
         console.error('Error closing socket:', e);
     }
     socket = null;
+}
+
+export function getPlayerId(): PlayerId {
+    return playerId;
 }

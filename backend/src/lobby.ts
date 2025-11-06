@@ -16,10 +16,14 @@ import type {
     NextTurnEvent,
     MinigameResultEvent,
     MinigameStartEvent,
-} from 'shared/types.ts';
+} from '../../shared/types.js';
 
 const lobbyIdToLobbyMap = new Map<LobbyId, Lobby>();
 const playerToLobbyIdMap = new Map<PlayerId, LobbyId>();
+
+export function getLobbyMap() {
+    return lobbyIdToLobbyMap;
+}
 
 export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvents>, socket: Socket) {
     socket.on('createLobby', (payload: CreateLobbyEvent) => {
@@ -80,6 +84,8 @@ export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvent
             players: lobby.players,
             settings: lobby.settings,
         };
+
+        console.log([...lobbyIdToLobbyMap.values()]);
 
         io.to(lobby.lobbyId).emit("lobbyUpdate", update);
     });
