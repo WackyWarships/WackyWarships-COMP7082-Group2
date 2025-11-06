@@ -31,42 +31,39 @@ import type {
 } from 'shared/types';
 
 // -----------------------------------------
-// multtiplayer — resolve backend URL
-// Will use .env VITE_BACKEND_URL, else fallback to current host:3000
+// backend URL (env override -> same host:3000)
 // -----------------------------------------
 const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL /**  */
-  ?? `${window.location.protocol}//${window.location.hostname}:3000`; /**  */
+  (import.meta as any).env?.VITE_BACKEND_URL ??
+  `${window.location.protocol}//${window.location.hostname}:3000`;
 
 let socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
 
-/** multiplayer: safe playerId generator for non-HTTPS LAN */
-// MINIMAL CHANGE #1: persist a stable playerId in localStorage
+// helper: allow emitting bus events that aren't in the typed Events map
+const emitBus = (type: string, payload?: any) =>
+  (EventBus as any).emit(type, payload);
+
+// ---------- player id ----------
 function makePlayerId(): PlayerId {
   const KEY = 'ww_player_id';
   const existing = typeof localStorage !== 'undefined' ? localStorage.getItem(KEY) : null;
   if (existing) return existing as PlayerId;
 
   const g = (globalThis as any)?.crypto;
-  const id: PlayerId = (g && typeof g.randomUUID === 'function')
-    ? g.randomUUID()
-    : ('pid-' + Array.from({ length: 4 }, () => Math.random().toString(16).slice(2)).join(''));
+  const id: PlayerId =
+    g && typeof g.randomUUID === 'function'
+      ? g.randomUUID()
+      : ('pid-' + Array.from({ length: 4 }, () => Math.random().toString(16).slice(2)).join(''));
 
   try { localStorage.setItem(KEY, id); } catch {}
   return id;
 }
-/**  */
 const playerId: PlayerId = makePlayerId();
 
 export function initSocket(token?: string) {
   if (socket) return socket;
 
-  // -----------------------------------------
-  // Multiplayer — connect to backend URL instead of '/'
-  // Explicit websocket transport & socket.io path
-  // -----------------------------------------
   const raw = io(BACKEND_URL, {
-    /**  */
     auth: { token },
     transports: ['websocket'],
     path: '/socket.io',
@@ -77,112 +74,104 @@ export function initSocket(token?: string) {
 
   socket.on('connect', (): void => {
     console.debug('socket connected', socket!.id);
-    // MINIMAL CHANGE #2: immediately identify this socket to the server
-    // (server maps playerId -> socket and routes direct attacks)
-    try {
-      (socket as any).emit('setUsername', { playerId, username: playerId } as SetUsernameEvent);
-    } catch {}
+    // IMPORTANT: SetUsernameEvent expects playerName (not username)
+    const payload: SetUsernameEvent = { playerId, playerName: playerId };
+    (socket as any).emit('setUsername', payload);
   });
 
   socket.on('connect_error', (err: unknown): void => {
     console.warn('socket connect_error', err);
-    EventBus.emit('error', { code: 0, message: 'Failed to connect' });
+    emitBus('error', { code: 0, message: 'Failed to connect' });
   });
 
-  // ----- server -> client pass-throughs already used by teammates -----
+  // ----- server -> client pass-throughs -----
   socket.on('snapshot', (snapshot: ServerSnapshot): void => {
-    EventBus.emit('snapshot', snapshot);
+    emitBus('snapshot', snapshot);
   });
 
-  socket.on('ack', (ack): void => {
-    EventBus.emit('ack', ack);
+  socket.on('ack', (ack: unknown): void => {
+    emitBus('ack', ack);
   });
 
   socket.on('usernameSet', (evt: UsernameSetEvent): void => {
-    EventBus.emit('username-set', evt);
+    emitBus('username-set', evt);
   });
 
   socket.on('lobbyUpdate', (lu: LobbyUpdate): void => {
-    EventBus.emit('lobby-update', lu);
+    emitBus('lobby-update', lu);
   });
 
-  socket.on('error', (err): void => {
-    EventBus.emit('error', err);
+  socket.on('error', (err: unknown): void => {
+    emitBus('error', err);
   });
 
   socket.on('turnStart', (evt: TurnStartEvent): void => {
-    EventBus.emit('turn-start', evt);
+    emitBus('turn-start', evt);
   });
 
   socket.on('turnResolved', (res: TurnResolvedEvent): void => {
-    EventBus.emit('turn-resolved', res);
+    emitBus('turn-resolved', res);
   });
 
   socket.on('gameState', (gs: GameStateTurn): void => {
-    EventBus.emit('game-state', gs);
+    emitBus('game-state', gs);
   });
 
   socket.on('groupMinigameStart', (gms: GroupMinigameStartEvent): void => {
-    EventBus.emit('group-minigame-start', gms);
+    emitBus('group-minigame-start', gms);
   });
 
   socket.on('groupMinigameResolved', (gmr: GroupMinigameResolvedEvent): void => {
-    EventBus.emit('group-minigame-resolved', gmr);
+    emitBus('group-minigame-resolved', gmr);
   });
 
   // Presence/Reconnect
   socket.on('playerDisconnected', (pd: PlayerDisconnectedEvent): void => {
-    EventBus.emit('player-disconnected', pd);
+    emitBus('player-disconnected', pd);
   });
 
   socket.on('playerReconnected', (pr: PlayerReconnectedEvent): void => {
-    EventBus.emit('player-reconnected', pr);
+    emitBus('player-reconnected', pr);
   });
 
   socket.on('reconnectResponse', (rr: ReconnectResponse): void => {
-    EventBus.emit('reconnect-response', rr);
+    emitBus('reconnect-response', rr);
   });
 
   socket.on('resumeTurn', (r: ResumeTurnEvent): void => {
-    EventBus.emit('resume-turn', r);
+    emitBus('resume-turn', r);
   });
 
-  // ====== Multiplayer — quick-match (no lobby) ======
-  socket.on('directMatchFound', (payload: any): void => {
-    /**  */
-    EventBus.emit('direct-match-found', payload);
+  // ====== Quick-match (no lobby) ======
+  // These event names are not in ServerToClientEvents — cast the on() for them.
+  (socket as any).on('directMatchFound', (payload: any): void => {
+    emitBus('direct-match-found', payload);
   });
-  socket.on('directState', (payload: any): void => {
-    /**  */
-    EventBus.emit('direct-state', payload);
+  (socket as any).on('directState', (payload: any): void => {
+    emitBus('direct-state', payload);
   });
-  socket.on('directAttack', (payload: any): void => {
-    /**  */
-    EventBus.emit('direct-attack', payload);
+  (socket as any).on('directAttack', (payload: any): void => {
+    emitBus('direct-attack', payload);
   });
 
   // legacy `direct:*` (compat)
-  socket.on('direct:found', (payload: any): void => {
-    /**  (compat) */
-    EventBus.emit('direct-match-found', payload);
+  (socket as any).on('direct:found', (payload: any): void => {
+    emitBus('direct-match-found', payload);
   });
-  socket.on('direct:state', (payload: any): void => {
-    /**  (compat) */
-    EventBus.emit('direct-state', payload);
+  (socket as any).on('direct:state', (payload: any): void => {
+    emitBus('direct-state', payload);
   });
-  socket.on('direct:attack', (payload: any): void => {
-    /** (compat) */
-    EventBus.emit('direct-attack', payload);
+  (socket as any).on('direct:attack', (payload: any): void => {
+    emitBus('direct-attack', payload);
   });
-  socket.on('direct:error', (payload: any): void => {
-    /**  (compat) */
-    EventBus.emit('error', payload);
+  (socket as any).on('direct:error', (payload: any): void => {
+    emitBus('error', payload);
   });
 
   return socket;
 }
 
-// ---------- client -> server helpers (teammates' events kept) ----------
+// ---------- client -> server helpers ----------
 function ensureSocket(): Socket<ServerToClientEvents, ClientToServerEvents> {
   if (!socket) throw new Error('socket not initialized — call initSocket() first');
   return socket;
@@ -246,26 +235,21 @@ export function getPlayerId(): PlayerId {
   return playerId;
 }
 
-// ====== Multiplayer — quick-match helpers (no lobby) ======
+// ====== Quick-match helpers (no lobby) ======
 export function sendDirectQueue(payload: { playerId: PlayerId }): void {
-  /**  */
-  ensureSocket().emit('directQueue', payload);
+  ensureSocket().emit('directQueue', payload as any);
 }
 export function sendDirectReady(matchId: string): void {
-  /**  */
   ensureSocket().emit('directReady', { matchId, playerId } as any);
 }
 export function sendDirectAttack(matchId: string, weaponKey: string): void {
-  /**  */
   ensureSocket().emit('directAttack', { matchId, playerId, weaponKey } as any);
 }
 
-// Optional (legacy helpers if someone still calls them)
+// legacy helpers
 export function sendDirectHost(matchId: string, username: string): void {
-  /**  (compat) */
   ensureSocket().emit('direct:host', { matchId, playerId, username } as any);
 }
 export function sendDirectJoin(matchId: string, username: string): void {
-  /**  (compat) */
   ensureSocket().emit('direct:join', { matchId, playerId, username } as any);
 }
