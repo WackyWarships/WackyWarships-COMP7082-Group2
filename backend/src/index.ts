@@ -25,8 +25,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // CORS
 const allowedOrigins = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',')
-    : ['http://localhost:5173'];
+  ? process.env.CORS_ORIGIN.split(',')
+  : [];
 
 app.use(cors({
     origin: allowedOrigins,
