@@ -174,6 +174,7 @@ export class Lobby extends Scene {
 
     private onLobbyUpdate = (lu: LobbyUpdate) => {
         if (lu.lobbyId !== this.lobbyId) return;
+
         this.hostId = lu.host.hostId;
         this.hostName = lu.host.hostName;
         this.players = lu.players;
@@ -196,6 +197,7 @@ export class Lobby extends Scene {
     };
 
     private renderPlayers() {
+        // Clear previous text objects
         this.playerTexts.forEach(t => t.destroy());
         this.kickButtons.forEach(b => b.destroy());
         this.playerTexts = [];
@@ -207,16 +209,23 @@ export class Lobby extends Scene {
         const startY = height * 0.36;
         const lineHeight = itemSize + 10;
 
-        const myName = getStoredPlayerName() || 'You';
+        const localName = getStoredPlayerName() || 'You';
         const short = (id: string) => id.slice(0, 8);
+
+        // Find yourself in the latest server update
+        const me = this.players.find(p => p.playerId === this.playerId);
+        // Server’s displayed name, fallback to local name
+        const displayName = me?.playerName || localName;
 
         this.players.forEach((p, idx) => {
             const pid = p.playerId;
             const isHost = pid === this.hostId;
             const isMe = pid === this.playerId;
             const icon = isHost ? '★ ' : '• ';
+
+            // Use server name for everyone, but only label yourself with (You)
             const name = isMe
-                ? (isHost ? `${this.hostName} (You)` : `${myName} (You)`)
+                ? `${displayName} (You)`
                 : (isHost ? this.hostName : (p.playerName || `Player ${short(pid)}`));
 
             const text = this.add.text(centerX, startY + idx * lineHeight, `${icon}${name}`, {
@@ -230,10 +239,9 @@ export class Lobby extends Scene {
 
             this.playerTexts.push(text);
 
-            // Add kick control for host (cannot kick self or host)
-            const { width } = this.scale;
+            // Add kick button (only visible for host, not on mobile)
             const mobile = isMobile(width);
-            const offsetX = mobile ? 70 : 180; 
+            const offsetX = mobile ? 70 : 180;
 
             if (this.playerId === this.hostId && !isHost && !isMe) {
                 const kick = this.add.text(centerX + offsetX, startY + idx * lineHeight, 'Kick', {

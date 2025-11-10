@@ -17,7 +17,6 @@ import type {
     TurnResolvedEvent,
     NextTurnEvent,
 } from '../../shared/types.js';
-import { getPlayerMap } from './playerUsername.js';
 
 const lobbyIdToLobbyMap = new Map<LobbyId, Lobby>();
 const playerToLobbyIdMap = new Map<PlayerId, LobbyId>();
@@ -84,13 +83,29 @@ export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvent
             return;
         }
 
-        socket.join(lobby.lobbyId);
-        playerToLobbyIdMap.set(payload.playerId, lobby.lobbyId);
-
-        // prevent duplicate join
-        if (!lobby.players.some(p => p.playerId === payload.playerId)) {
-            lobby.players.push({ playerId: payload.playerId, playerName: payload.playerName });
+        // Prevent duplicate joins
+        if (lobby.players.some(p => p.playerId === payload.playerId)) {
+            socket.emit("error", {
+                code: 409,
+                message: "Player already in this lobby.",
+            });
+            return;
         }
+
+        // Generate unique display name before adding 
+        const baseName = payload.playerName.trim();
+        const pattern = new RegExp(`^${baseName}(\\s\\[\\d+\\])?$`, "i");
+        const duplicates = lobby.players.filter(p => pattern.test(p.playerName));
+
+        let finalName = baseName;
+        if (duplicates.length > 0) {
+            finalName = `${baseName} [${duplicates.length + 1}]`;
+        }
+
+        // Add player with unique name
+        lobby.players.push({ playerId: payload.playerId, playerName: finalName });
+        playerToLobbyIdMap.set(payload.playerId, lobby.lobbyId);
+        socket.join(lobby.lobbyId);
 
         const update: LobbyUpdate = {
             lobbyId: lobby.lobbyId,
@@ -99,8 +114,6 @@ export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvent
             players: lobby.players,
             settings: lobby.settings,
         };
-
-        console.log([...lobbyIdToLobbyMap.values()]);
 
         io.to(lobby.lobbyId).emit("lobbyUpdate", update);
     });
