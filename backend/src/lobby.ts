@@ -29,6 +29,23 @@ export function getLobbyMap() {
 export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvents>, socket: Socket) {
     socket.on('createLobby', (payload: CreateLobbyEvent) => {
         const { hostId, hostName, lobbyName, settings } = payload;
+
+        const existingLobbyId = playerToLobbyIdMap.get(hostId);
+        if (existingLobbyId) {
+            const existingLobby = lobbyIdToLobbyMap.get(existingLobbyId);
+            if (existingLobby && existingLobby.host.hostId === hostId) {
+                // Disband the old lobby first
+                io.to(existingLobby.lobbyId).emit('lobbyDisbanded', {
+                    lobbyId: existingLobby.lobbyId,
+                    reason: 'Host started a new lobby',
+                });
+                for (const p of existingLobby.players) {
+                    playerToLobbyIdMap.delete(p.playerId);
+                }
+                lobbyIdToLobbyMap.delete(existingLobby.lobbyId);
+            }
+        }
+
         const lobbyId = crypto.randomUUID();
         socket.join(lobbyId);
 
