@@ -3,7 +3,7 @@ import EventBus from '../EventBus';
 import { getCenter, isMobile, getResponsiveFontSize, resizeSceneBase } from '../utils/layout';
 import { getStoredPlayerName } from '../utils/playerUsername';
 import type { LobbyUpdate, PlayerId, PlayerInfo, HostInfo } from 'shared/types';
-import { sendStartGame } from '../../api/socket';
+import { sendStartGame, sendLeaveLobby, sendKickPlayer, sendDisbandLobby } from '../../api/socket';
 
 type LobbyInitData = {
     lobbyId: string;
@@ -20,6 +20,9 @@ export class Lobby extends Scene {
     playersTitle!: GameObjects.Text;
     playerTexts: GameObjects.Text[] = [];
     startButton?: GameObjects.Text;
+    leaveButton?: GameObjects.Text;
+    disbandButton?: GameObjects.Text;
+    kickButtons: GameObjects.Text[] = [];
 
     lobbyId!: string;
     playerId!: PlayerId;
@@ -100,9 +103,42 @@ export class Lobby extends Scene {
             .on('pointerover', () => this.startButton?.setStyle({ backgroundColor: '#63b3ff' }))
             .on('pointerout', () => this.startButton?.setStyle({ backgroundColor: '#1e90ff' }));
 
-        // Initial start button visibility (hide for non-host or unknown host)
+        // Leave Button (players only)
+        this.leaveButton = this.add.text(centerX, height * 0.90, 'Leave Lobby', {
+            fontFamily: 'Arial',
+            fontSize: `${mobile ? 22 : 26}px`,
+            color: '#ffffff',
+            backgroundColor: '#444444',
+            padding: { x: 16, y: 8 },
+            align: 'center',
+            fixedWidth: mobile ? 200 : 220,
+        })
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true })
+            .on('pointerdown', () => this.handleLeaveLobby())
+            .on('pointerover', () => this.leaveButton?.setStyle({ backgroundColor: '#666666' }))
+            .on('pointerout', () => this.leaveButton?.setStyle({ backgroundColor: '#444444' }));
+
+        // Disband Button (host only)
+        this.disbandButton = this.add.text(centerX, height * 0.95, 'Disband Lobby', {
+            fontFamily: 'Arial',
+            fontSize: `${mobile ? 20 : 24}px`,
+            color: '#ffffff',
+            backgroundColor: '#a52a2a',
+            padding: { x: 16, y: 6 },
+            align: 'center',
+            fixedWidth: mobile ? 200 : 240,
+        })
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true })
+            .on('pointerdown', () => this.handleDisbandLobby())
+            .on('pointerover', () => this.disbandButton?.setStyle({ backgroundColor: '#c34242' }))
+            .on('pointerout', () => this.disbandButton?.setStyle({ backgroundColor: '#a52a2a' }));
+
         const isHostInitial = this.hostId ? (this.playerId === this.hostId) : false;
         this.startButton.setVisible(isHostInitial).setActive(isHostInitial);
+        this.leaveButton.setVisible(!isHostInitial).setActive(!isHostInitial);
+        this.disbandButton.setVisible(isHostInitial).setActive(isHostInitial);
 
         // Render any initial state passed in (e.g., first lobbyUpdate)
         if (this.players.length > 0) {
@@ -112,10 +148,26 @@ export class Lobby extends Scene {
         // Subscribe to lobby updates
         EventBus.on('lobby-update', this.onLobbyUpdate);
 
+        // Moderation notices
+        const onKicked = (n: any) => {
+            if (n && n.lobbyId === this.lobbyId && n.targetPlayerId === this.playerId) {
+                this.scene.start('MainMenu');
+            }
+        };
+        const onDisbanded = (n: any) => {
+            if (n && n.lobbyId === this.lobbyId) {
+                this.scene.start('MainMenu');
+            }
+        };
+        EventBus.on('player-kicked', onKicked as any);
+        EventBus.on('lobby-disbanded', onDisbanded as any);
+
         // Resize handling
         this.scale.on('resize', this.handleResize, this);
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             EventBus.off('lobby-update', this.onLobbyUpdate);
+            EventBus.off('player-kicked', onKicked as any);
+            EventBus.off('lobby-disbanded', onDisbanded as any);
             this.scale.off('resize', this.handleResize, this);
         });
     }
@@ -128,15 +180,26 @@ export class Lobby extends Scene {
 
         this.renderPlayers();
 
+        const isHost = this.playerId === this.hostId;
+
         if (this.startButton) {
-            const isHost = this.playerId === this.hostId;
             this.startButton.setVisible(isHost).setActive(isHost);
+        }
+
+        if (this.leaveButton) {
+            this.leaveButton.setVisible(!isHost).setActive(!isHost);
+        }
+
+        if (this.disbandButton) {
+            this.disbandButton.setVisible(isHost).setActive(isHost);
         }
     };
 
     private renderPlayers() {
         this.playerTexts.forEach(t => t.destroy());
+        this.kickButtons.forEach(b => b.destroy());
         this.playerTexts = [];
+        this.kickButtons = [];
 
         const { width, height } = this.scale;
         const { x: centerX } = getCenter(this.scale);
@@ -166,12 +229,52 @@ export class Lobby extends Scene {
             }).setOrigin(0.5);
 
             this.playerTexts.push(text);
+
+            // Add kick control for host (cannot kick self or host)
+            const { width } = this.scale;
+            const mobile = isMobile(width);
+            const offsetX = mobile ? 70 : 180; 
+
+            if (this.playerId === this.hostId && !isHost && !isMe) {
+                const kick = this.add.text(centerX + offsetX, startY + idx * lineHeight, 'Kick', {
+                    fontFamily: 'Arial',
+                    fontSize: `${Math.max(16, itemSize - 6)}px`,
+                    color: '#ffffff',
+                    backgroundColor: '#a52a2a',
+                    padding: { x: 8, y: 4 },
+                    align: 'center',
+                })
+                    .setOrigin(0.5)
+                    .setInteractive({ useHandCursor: true })
+                    .on('pointerdown', () => this.handleKick(pid))
+                    .on('pointerover', () => kick.setStyle({ backgroundColor: '#c34242' }))
+                    .on('pointerout', () => kick.setStyle({ backgroundColor: '#a52a2a' }));
+
+                this.kickButtons.push(kick);
+            }
         });
     }
 
     private handleStartGame() {
         if (this.playerId !== this.hostId) return;
         sendStartGame({ lobbyId: this.lobbyId });
+    }
+
+    private handleLeaveLobby() {
+        const playerName = getStoredPlayerName() || 'Player';
+        sendLeaveLobby({ lobbyId: this.lobbyId, playerId: this.playerId, playerName });
+        this.scene.start('MainMenu');
+    }
+
+    private handleDisbandLobby() {
+        if (this.playerId !== this.hostId) return;
+        sendDisbandLobby({ lobbyId: this.lobbyId });
+        this.scene.start('MainMenu');
+    }
+
+    private handleKick(targetPlayerId: PlayerId) {
+        if (this.playerId !== this.hostId) return;
+        sendKickPlayer({ lobbyId: this.lobbyId, targetPlayerId });
     }
 
     handleResize(gameSize: Phaser.Structs.Size) {
@@ -188,6 +291,8 @@ export class Lobby extends Scene {
         this.codeLabel.setFontSize(codeSize).setPosition(centerX, height * 0.20);
         this.playersTitle.setFontSize(listHeaderSize).setPosition(centerX, height * 0.30);
         this.startButton?.setPosition(centerX, height * 0.85);
+        this.leaveButton?.setPosition(centerX, height * 0.90);
+        this.disbandButton?.setPosition(centerX, height * 0.95);
 
         this.renderPlayers();
     }
