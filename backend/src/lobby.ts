@@ -8,6 +8,8 @@ import type {
     CreateLobbyEvent,
     JoinLobbyEvent,
     LeaveLobbyEvent,
+    KickPlayerEvent,
+    DisbandLobbyEvent,
     LobbyUpdate,
     StartGameEvent,
     TurnStartEvent,
@@ -174,5 +176,67 @@ export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvent
         else {
             socket.emit("error", { code: 404, message: `Lobby not found with id ${payload.lobbyId}.` });
         }
+    });
+
+    // Host-only: kick a player from the lobby
+    socket.on('kickPlayer', (payload: KickPlayerEvent) => {
+        const lobby = lobbyIdToLobbyMap.get(payload.lobbyId);
+        if (!lobby) {
+            socket.emit('error', { code: 404, message: `Lobby not found with id ${payload.lobbyId}.` });
+            return;
+        }
+
+        const hostId = lobby.host.hostId;
+
+        // prevent host from kicking themselves
+        if (payload.targetPlayerId === hostId) {
+            socket.emit('error', { code: 403, message: 'Host cannot kick themselves.' });
+            return;
+        }
+
+        const idx = lobby.players.findIndex(p => p.playerId === payload.targetPlayerId);
+        if (idx === -1) {
+            socket.emit('error', { code: 404, message: `Player ${payload.targetPlayerId} not found in lobby.` });
+            return;
+        }
+
+        lobby.players.splice(idx, 1);
+        playerToLobbyIdMap.delete(payload.targetPlayerId);
+
+        io.to(lobby.lobbyId).emit('playerKicked', {
+            lobbyId: lobby.lobbyId,
+            targetPlayerId: payload.targetPlayerId,
+            by: hostId,
+            reason: payload.reason || 'Removed by host',
+        });
+
+        const update: LobbyUpdate = {
+            lobbyId: lobby.lobbyId,
+            lobbyName: lobby.lobbyName,
+            host: lobby.host,
+            players: lobby.players,
+            settings: lobby.settings,
+        };
+        io.to(lobby.lobbyId).emit('lobbyUpdate', update);
+    });
+
+    // Host-only: disband lobby
+    socket.on('disbandLobby', (payload: DisbandLobbyEvent) => {
+        const lobby = lobbyIdToLobbyMap.get(payload.lobbyId);
+        if (!lobby) {
+            socket.emit('error', { code: 404, message: `Lobby not found with id ${payload.lobbyId}.` });
+            return;
+        }
+
+        io.to(lobby.lobbyId).emit('lobbyDisbanded', {
+            lobbyId: lobby.lobbyId,
+            reason: payload.reason || 'Lobby disbanded by host',
+        });
+
+        for (const p of lobby.players) {
+            playerToLobbyIdMap.delete(p.playerId);
+        }
+        lobbyIdToLobbyMap.delete(lobby.lobbyId);
+        io.in(lobby.lobbyId).socketsLeave(lobby.lobbyId);
     });
 }
