@@ -52,13 +52,15 @@ export class EnterUsername extends Scene {
         }).setOrigin(0.5);
 
         // Input 
-        this.createInput(height * (1 / 2));
+        this.createInput(height * 0.5);
 
-        this.errorText = this.add.text(width / 2, height * 0.60, '', {
+        const errorY = Math.min(height * 0.75, height - 40);
+        this.errorText = this.add.text(width / 2, errorY, '', {
             fontFamily: 'Arial',
             fontSize: `${mobile ? 18 : 20}px`,
             color: '#ff5555',
             align: 'center',
+            wordWrap: { width: width * 0.8 },
         }).setOrigin(0.5);
 
         // Confirm Button 
@@ -128,7 +130,7 @@ export class EnterUsername extends Scene {
             return;
         }
 
-        // ✅ Passed validation — clear error
+        // Passed validation — clear error
         this.showError('');
 
         // Save and send to server
@@ -152,24 +154,42 @@ export class EnterUsername extends Scene {
         const { width, height } = gameSize;
         if (!this.scene.isActive()) return;
 
+        // Adjust background and camera
         resizeSceneBase(this, width, height);
         const { x: centerX } = getCenter(this.scale);
+        const mobile = isMobile(width);
+
+        // Responsive title sizes
         const titleSize = getResponsiveFontSize(width, height, 72, 56);
 
-        this.title1.setFontSize(titleSize);
-        this.title2.setFontSize(titleSize);
-        this.title1.setPosition(centerX, height * (1 / 6));
-        this.title2.setPosition(centerX, this.title1.y + this.title1.height);
-        this.confirmButton.setPosition(centerX, height * (5 / 6));
+        this.title1
+            .setFontSize(titleSize)
+            .setPosition(centerX, height * (1 / 6));
 
+        this.title2
+            .setFontSize(titleSize)
+            .setPosition(centerX, this.title1.y + this.title1.height);
+
+        // Confirm button position
+        this.confirmButton?.setPosition(centerX, height * (5 / 6));
+
+        // Keep input centered and aligned
         if (this.inputEl) {
             requestAnimationFrame(() => {
                 const rect = this.game.canvas.getBoundingClientRect();
                 const centerXOnScreen = rect.left + rect.width / 2;
                 const inputWidth = 240;
                 this.inputEl.style.left = `${centerXOnScreen - inputWidth / 2}px`;
-                this.inputEl.style.top = `${rect.top + height * (1 / 2) - 20}px`;
+                this.inputEl.style.top = `${rect.top + height * 0.5 - 20}px`;
             });
+        }
+
+        // Keep error text visible within viewport
+        if (this.errorText) {
+            const errorY = Math.min(height * 0.62, height - 40);
+            this.errorText
+                .setFontSize(mobile ? 18 : 20)
+                .setPosition(centerX, errorY);
         }
     }
 }
