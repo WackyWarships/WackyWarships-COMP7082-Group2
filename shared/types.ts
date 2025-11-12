@@ -11,7 +11,7 @@ export type LobbyId = string;
 export type ProtocolVersion = string;
 
 
-// Id + name
+// Id + name -----------------------------------------------------------------
 export type HostInfo = {
     hostId: PlayerId;
     hostName: string;
@@ -32,7 +32,16 @@ export type WeaponDef = {
     description?: string;
 };
 
-// Lobby
+// Player Session ----------------------------------------------------------
+export interface PlayerSession {
+    lobbyId: LobbyId;
+    scene: string;
+    lastKnownTurnId?: number;
+    lastKnownSeq?: number;
+    timestamp?: number;
+}
+
+// Lobby -------------------------------------------------------------------
 export type Lobby = {
     host: HostInfo;
     lobbyId: LobbyId;
