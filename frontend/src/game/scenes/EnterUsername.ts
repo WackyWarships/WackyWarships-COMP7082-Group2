@@ -16,6 +16,7 @@ export class EnterUsername extends Scene {
   title2!: GameObjects.Text;
   confirmButton!: GameObjects.Text;
   inputEl!: HTMLInputElement;
+  errorText!: GameObjects.Text;
 
   constructor() {
     super('EnterUsername');
@@ -58,6 +59,19 @@ export class EnterUsername extends Scene {
 
     // Input
     this.createInput(height * 0.5);
+
+    // Error line (hidden by default)
+    const errorY = Math.min(height * 0.75, height - 40);
+    this.errorText = this.add
+      .text(width / 2, errorY, '', {
+        fontFamily: 'Arial',
+        fontSize: `${mobile ? 18 : 20}px`,
+        color: '#ff5555',
+        align: 'center',
+        wordWrap: { width: width * 0.8 },
+      })
+      .setOrigin(0.5)
+      .setVisible(false);
 
     // Confirm button
     const buttonStyle = {
@@ -116,14 +130,28 @@ export class EnterUsername extends Scene {
   }
 
   private submitUsername() {
-    const raw = (this.inputEl?.value ?? '').trim();
-    const username = raw || 'Player'; // default if empty
-    savePlayerName(username);
-    if (this.inputEl) this.inputEl.remove();
-
+    const playerName = (this.inputEl?.value ?? '').trim();
     const playerId = getOrCreatePlayerId();
 
-    // Use on/off (no .once on EventBus)
+    // Validation
+    if (playerName.length === 0) {
+      this.showError('Username cannot be empty.');
+      return;
+    }
+    const USERNAME_REGEX = /^[A-Za-z0-9 _-]{3,16}$/;
+    if (!USERNAME_REGEX.test(playerName)) {
+      this.showError(
+        'Only letters, numbers, spaces, "_" and "-" allowed (3–16 chars).',
+      );
+      return;
+    }
+    this.showError('');
+
+    // Save locally and send to server
+    savePlayerName(playerName);
+    this.inputEl?.remove();
+
+    // One-time wait for ack (use on/off instead of once)
     const onAck = () => {
       EventBus.off('username-set', onAck);
       this.scene.start('MainMenu');
@@ -131,7 +159,12 @@ export class EnterUsername extends Scene {
     EventBus.on('username-set', onAck);
 
     // SetUsernameEvent expects { playerId, playerName }
-    sendSetUsername({ playerId, playerName: username });
+    sendSetUsername({ playerId, playerName });
+  }
+
+  private showError(msg: string) {
+    if (!this.errorText) return;
+    this.errorText.setText(msg).setVisible(!!msg);
   }
 
   private handleResize(gameSize: Phaser.Structs.Size) {
@@ -156,6 +189,11 @@ export class EnterUsername extends Scene {
         this.inputEl.style.left = `${centerXOnScreen - inputWidth / 2}px`;
         this.inputEl.style.top = `${rect.top + height * 0.5 - 20}px`;
       });
+    }
+
+    if (this.errorText) {
+      const errorY = Math.min(height * 0.75, height - 40);
+      this.errorText.setPosition(centerX, errorY);
     }
   }
 }

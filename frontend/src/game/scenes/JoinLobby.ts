@@ -7,14 +7,15 @@ import {
     resizeSceneBase
 } from '../utils/layout';
 import { getStoredPlayerName } from '../utils/playerUsername';
-import { 
+import {
     sendJoinLobby,
     getPlayerId
- } from '../../api/socket';
-import { 
+} from '../../api/socket';
+import {
     JoinLobbyEvent,
-    LobbyUpdate
- } from 'shared/types';
+    LobbyUpdate,
+    Lobby
+} from 'shared/types';
 
 export class JoinLobby extends Scene {
     background!: Phaser.GameObjects.Image;
@@ -22,6 +23,7 @@ export class JoinLobby extends Scene {
     codeInput?: HTMLInputElement;
     joinButton!: Phaser.GameObjects.Text;
     backButton!: Phaser.GameObjects.Text;
+    errorText?: Phaser.GameObjects.Text;
 
     constructor() {
         super('JoinLobby');
@@ -79,19 +81,23 @@ export class JoinLobby extends Scene {
             .on('pointerover', () => this.backButton.setStyle({ backgroundColor: '#7a7aff' }))
             .on('pointerout', () => this.backButton.setStyle({ backgroundColor: '#5555ff' }));
 
+        // Error message (hidden by default)
+        this.errorText = this.add.text(centerX, height * 0.75, '', {
+            fontFamily: 'Arial',
+            fontSize: '18px',
+            color: '#ff6b6b',
+            stroke: '#000000',
+            strokeThickness: 4,
+            align: 'center',
+        }).setOrigin(0.5).setVisible(false);
+
         // Handle resizing 
         this.scale.on('resize', this.handleResize, this);
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             this.scale.off('resize', this.handleResize, this);
-        });
-
-        // Cleanup input on shutdown
-        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-            if (this.codeInput) {
-                this.codeInput.remove();
-                this.codeInput = undefined;
-            }
+            this.codeInput?.remove();
+            this.codeInput = undefined;
         });
 
         EventBus.emit('current-scene-ready', this);
@@ -141,44 +147,97 @@ export class JoinLobby extends Scene {
         this.codeInput.style.top = `${rect.top + midY}px`;
     }
 
-    handleJoinClick() {
-        const code = this.codeInput?.value?.trim() || undefined;
+    async handleJoinClick() {
+        const partialCode = this.codeInput?.value?.trim();
+        if (!partialCode || partialCode.length < 1) {
+            this.showError('Please enter a lobby code.');
+            return;
+        }
 
-        if (code) {
-            const playerId = getPlayerId();
-            const playerName = getStoredPlayerName();
+        const playerId = getPlayerId();
+        const playerName = getStoredPlayerName();
+        if (!playerName) {
+            this.scene.start('EnterUsername');
+            return;
+        }
 
-            if (!playerName) {
-                this.scene.start('EnterUsername');
-                return;
+        // Find lobby by matching first 6 characters of the lobbyId
+        let targetLobby: Lobby | undefined;
+        try {
+            console.log("[JoinLobby] Fetching lobbies from /api/lobbies...");
+            const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+            const res = await fetch(`${backendUrl}/api/lobbies`);
+
+            console.log("[JoinLobby] Response status:", res.status);
+
+            if (!res.ok) {
+                console.error("[JoinLobby] Fetch failed. Response not OK.");
+                throw new Error('Failed to fetch lobbies');
             }
 
-            const payload: JoinLobbyEvent = {
-                lobbyId: code,
-                playerId: playerId,
-                playerName: playerName
-            };
-            
-            sendJoinLobby(payload);
+            const lobbies = (await res.json()) as Lobby[];
+            console.log("[JoinLobby] Received lobbies:", lobbies);
 
-            const handler = (update: LobbyUpdate) => {
-                if (update.players.includes(getPlayerId())) {
-                    if (this.codeInput) {
-                        this.codeInput.remove();
-                        this.codeInput = undefined;
-                    }
-                    this.scene.start('Lobby', {
-                        lobbyId: update.lobbyId,
-                        playerId,
-                        playerName,
-                        lobbyName: update.lobbyName ?? "Error: no lobby name",
-                    });
-                    EventBus.off('lobby-update', handler); 
-                }
-            };
+            targetLobby = lobbies.find(l => l.lobbyId.startsWith(partialCode));
+            console.log("[JoinLobby] Matching lobby:", targetLobby);
 
-            EventBus.on('lobby-update', handler);     
+        } catch (e) {
+            console.error("[JoinLobby] Error fetching lobbies:", e);
+            this.showError('Unable to check lobby code. Try again.');
+            return;
         }
+
+        if (!targetLobby) {
+            this.showError('Lobby code not found.');
+            return;
+        }
+
+        const payload: JoinLobbyEvent = {
+            lobbyId: targetLobby.lobbyId,
+            playerId: playerId,
+            playerName: playerName
+        };
+
+        // Clear any previous error
+        this.showError('', false);
+
+        sendJoinLobby(payload);
+
+        const onUpdate = (update: LobbyUpdate) => {
+            if (update.lobbyId !== targetLobby!.lobbyId) return;
+            if (update.players.some(p => p.playerId === getPlayerId())) {
+                if (this.codeInput) {
+                    this.codeInput.remove();
+                    this.codeInput = undefined;
+                }
+                this.scene.start('Lobby', {
+                    lobbyId: update.lobbyId,
+                    playerId,
+                    lobbyName: update.lobbyName ?? 'Lobby',
+                    host: update.host,
+                    players: update.players,
+                });
+                EventBus.off('lobby-update', onUpdate);
+                EventBus.off('error', onError as any);
+            }
+        };
+
+        const onError = (err: { code?: number; message?: string }) => {
+            // Show only if it relates to this lobby attempt
+            if (err && typeof err.message === 'string' && err.message.includes(targetLobby!.lobbyId)) {
+                this.showError('Failed to join lobby. It may no longer exist.');
+                EventBus.off('lobby-update', onUpdate);
+                EventBus.off('error', onError as any);
+            }
+        };
+
+        EventBus.on('lobby-update', onUpdate);
+        EventBus.on('error', onError as any);
+    }
+
+    private showError(msg: string, visible: boolean = true) {
+        if (!this.errorText) return;
+        this.errorText.setText(msg).setVisible(visible);
     }
 
     handleResize(gameSize: Phaser.Structs.Size) {
@@ -196,6 +255,7 @@ export class JoinLobby extends Scene {
         this.backButton.setPosition(centerX, height * 0.65);
 
         this.updateInputPosition();
+        this.errorText?.setPosition(centerX, height * 0.75);
 
     }
 }

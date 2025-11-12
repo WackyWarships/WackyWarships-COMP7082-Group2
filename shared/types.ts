@@ -10,6 +10,18 @@ export type PlayerId = string;
 export type LobbyId = string;
 export type ProtocolVersion = string;
 
+
+// Id + name
+export type HostInfo = {
+    hostId: PlayerId;
+    hostName: string;
+};
+
+export type PlayerInfo = {
+    playerId: PlayerId;
+    playerName: string;
+};
+
 // Weapon -------------------------------------------------------------------
 export type WeaponDef = {
     id: WeaponId;
@@ -22,13 +34,12 @@ export type WeaponDef = {
 
 // Lobby
 export type Lobby = {
-    hostId: PlayerId;
-    hostName: string;
+    host: HostInfo;
     lobbyId: LobbyId;
     lobbyName: string;
     settings?: Record<string, any>;
-    players: PlayerId[];
-};
+    players: PlayerInfo[];
+}
 
 // Client -> Server ---------------------------------------------------------
 export type SetUsernameEvent = {
@@ -57,6 +68,18 @@ export type LeaveLobbyEvent = {
     playerName: string;
 };
 
+// Host moderation ----------------------------------------------------------
+export type KickPlayerEvent = {
+    lobbyId: LobbyId;
+    targetPlayerId: PlayerId;
+    reason?: string;
+};
+
+export type DisbandLobbyEvent = {
+    lobbyId: LobbyId;
+    reason?: string;
+};
+
 export type StartGameEvent = {
     lobbyId: LobbyId;
 };
@@ -66,6 +89,8 @@ export type NextTurnEvent = {
     turnId: TurnId;
     currentPlayer: PlayerId;
 };
+
+// On your turn ------------------------------------------------------------
 
 export type ChooseWeaponEvent = {
     lobbyId: LobbyId;
@@ -159,10 +184,22 @@ export type Snapshot = {
 export type LobbyUpdate = {
     lobbyId: LobbyId;
     lobbyName: string;
-    hostId: PlayerId;
-    hostName: string;
-    players: PlayerId[];
+    host: HostInfo;
+    players: PlayerInfo[];
     settings?: Record<string, any>;
+};
+
+// Moderation notifications -------------------------------------------------
+export type PlayerKickedNotice = {
+    lobbyId: LobbyId;
+    targetPlayerId: PlayerId;
+    by: PlayerId;
+    reason?: string;
+};
+
+export type LobbyDisbandedNotice = {
+    lobbyId: LobbyId;
+    reason?: string;
 };
 
 // Group minigame start -----------------------------------------------------
@@ -265,6 +302,10 @@ export type ServerToClientEvents = {
     groupMinigameStart: (g: GroupMinigameStartEvent) => void;
     groupMinigameResolved: (g: GroupMinigameResolvedEvent) => void;
 
+    // Moderation
+    playerKicked: (n: PlayerKickedNotice) => void;
+    lobbyDisbanded: (n: LobbyDisbandedNotice) => void;
+
     playerDisconnected: (pd: PlayerDisconnectedEvent) => void;
     playerReconnected: (pr: PlayerReconnectedEvent) => void;
     reconnectResponse: (rr: ReconnectResponse) => void;
@@ -282,6 +323,10 @@ export type ClientToServerEvents = {
     createLobby: (payload: CreateLobbyEvent) => void;
     joinLobby: (payload: JoinLobbyEvent) => void;
     leaveLobby: (payload: LeaveLobbyEvent) => void;
+
+    // Moderation
+    kickPlayer: (payload: KickPlayerEvent) => void;
+    disbandLobby: (payload: DisbandLobbyEvent) => void;
 
     startGame: (payload: StartGameEvent) => void;
     nextTurn: (payload: NextTurnEvent) => void;
