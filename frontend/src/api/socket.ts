@@ -70,8 +70,7 @@ export function initSocket(token?: string) {
   socket.on('connect', (): void => {
     console.debug('socket connected', socket!.id);
 
-    // Harmless bootstrap: make sure backend associates our id->name
-    // (server expects playerName in SetUsernameEvent)
+    // Bootstrap association on the server (real username will be sent by EnterUsername scene)
     const payload: SetUsernameEvent = { playerId, playerName: playerId };
     (socket as any).emit('setUsername', payload);
   });
@@ -80,6 +79,14 @@ export function initSocket(token?: string) {
     console.warn('socket connect_error', err);
     emitBus('error', { code: 0, message: 'Failed to connect' });
   });
+
+  socket.on('turnStart', (evt: { turnId: number; playerId: string }) => {
+    (EventBus as any).emit('turn-start', evt);
+  });
+  socket.on('turnResolved', (evt: any) => {
+    (EventBus as any).emit('turn-resolved', evt);
+  });
+
 
   // -----------------------------------------------------------
   // Server → Client forwards
@@ -238,7 +245,7 @@ export function sendReconnectRequest(payload: ReconnectRequest): void {
   ensureSocket().emit('reconnectRequest', payload);
 }
 
-// Quick-match helpers (no lobby)
+// ====== Quick-match helpers (no lobby) ======
 export function sendDirectQueue(payload: { playerId: PlayerId }): void {
   (ensureSocket() as any).emit('directQueue', payload);
 }
@@ -256,13 +263,19 @@ export function sendDirectJoin(matchId: string, username: string): void {
   (ensureSocket() as any).emit('direct:join', { matchId, playerId, username });
 }
 
+// -----------------------------------------------------------
 // Accessors / cleanup
+// -----------------------------------------------------------
 export function getSocket(): Socket<ServerToClientEvents, ClientToServerEvents> | null {
   return socket;
 }
 export function closeSocket(): void {
   if (!socket) return;
-  try { socket.close(); } catch (e) { console.error('Error closing socket:', e); }
+  try {
+    socket.close();
+  } catch (e) {
+    console.error('Error closing socket:', e);
+  }
   socket = null;
 }
 export function getPlayerId(): PlayerId {
