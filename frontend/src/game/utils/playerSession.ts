@@ -1,19 +1,16 @@
-const LAST_LOBBY_KEY = 'lastLobbyId';
-const LAST_SCENE_KEY = 'lastScene';
+import type { PlayerSession } from 'shared/types';
 
-export function saveSession(lobbyId: string, scene: string) {
-    localStorage.setItem(LAST_LOBBY_KEY, lobbyId)
-    localStorage.setItem(LAST_SCENE_KEY, scene)
+const SESSION_KEY = 'playerSession';
+
+export function saveSession(session: PlayerSession): void {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
 }
 
-export function clearSession() {
-    localStorage.removeItem(LAST_LOBBY_KEY);
-    localStorage.removeItem(LAST_SCENE_KEY);
+export function getLastSession(): PlayerSession | null {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? (JSON.parse(raw) as PlayerSession) : null;
 }
 
-export function getLastSession() {
-    return {
-        lobbyId: localStorage.getItem(LAST_LOBBY_KEY),
-        scene: localStorage.getItem(LAST_SCENE_KEY)
-    }
+export function clearSession(): void {
+    localStorage.removeItem(SESSION_KEY);
 }
