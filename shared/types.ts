@@ -1,3 +1,5 @@
+// shared/types.ts
+
 // IDs & helpers ------------------------------------------------------------
 export type Timestamp = number;
 export type Seq = number;
@@ -25,10 +27,9 @@ export type WeaponDef = {
     id: WeaponId;
     name: string;
     baseDamage: number;
-    minigameType: 'timing' | 'pattern' | 'puzzle'; // This will possibly be changed
+    minigameType: 'timing' | 'pattern' | 'puzzle';
     params?: Record<string, any>;
     description?: string;
-    // Stuff to maybe add: minigameDifficulty
 };
 
 // Lobby
@@ -41,7 +42,6 @@ export type Lobby = {
 }
 
 // Client -> Server ---------------------------------------------------------
-
 export type SetUsernameEvent = {
     playerId: PlayerId;
     playerName: string;
@@ -58,14 +58,14 @@ export type CreateLobbyEvent = {
 export type JoinLobbyEvent = {
     lobbyId: LobbyId;
     playerId: PlayerId;
-    playerName: string; 
+    playerName: string;
     client?: { version?: string; platform?: string };
 };
 
 export type LeaveLobbyEvent = {
     lobbyId: LobbyId;
     playerId: PlayerId;
-    playerName: string; 
+    playerName: string;
 };
 
 // Host moderation ----------------------------------------------------------
@@ -101,7 +101,7 @@ export type ChooseWeaponEvent = {
     meta?: Record<string, any>;
 };
 
-export type MinigameInputCompact = [number, string, number?]; // [dtMs, actionCode, optValue]
+export type MinigameInputCompact = [number, string, number?];
 
 export type MinigameResultEvent = {
     turnId: TurnId;
@@ -124,12 +124,11 @@ export type GroupMinigameResultEvent = {
 };
 
 // Server -> Client ---------------------------------------------------------
-
 export type UsernameSetEvent = {
     playerId: PlayerId;
     playerName: string;
     restored?: boolean;
-}
+};
 
 export type PlayerState = {
     id: PlayerId;
@@ -223,7 +222,7 @@ export type GroupMinigameStartEvent = {
     meta?: Record<string, any>;
 };
 
-// Presence & reconnect ----------------------------------------------------
+// Presence & reconnect -----------------------------------------------------
 export type SessionId = string;
 
 export type ReconnectRequest = {
@@ -270,9 +269,22 @@ export type ResumeTurnEvent = {
     savedInputLog?: MinigameInputCompact[];
 };
 
-// Convenience ---------------------------------------------------------------
+// Convenience --------------------------------------------------------------
 export type ClientInput = MinigameResultEvent | GroupMinigameResultEvent | ChooseWeaponEvent;
 export type ServerSnapshot = Snapshot;
+
+// ===== Multiplayer: Direct-match additions (types only) ===================
+export type MatchId = string;
+
+export type DirectQueueEvent = { playerId: PlayerId };
+export type DirectMatchFoundEvent = {
+    matchId: MatchId;
+    players: PlayerId[];
+    starter: PlayerId;
+};
+export type DirectReadyEvent = { matchId: MatchId; playerId: PlayerId };
+export type DirectAttackEvent = { matchId: MatchId; playerId: PlayerId; weaponKey: string };
+export type DirectStateEvent = { matchId: MatchId; ok: boolean };
 
 // Socket.IO event maps -----------------------------------------------------
 export type ServerToClientEvents = {
@@ -298,11 +310,16 @@ export type ServerToClientEvents = {
     playerReconnected: (pr: PlayerReconnectedEvent) => void;
     reconnectResponse: (rr: ReconnectResponse) => void;
     resumeTurn: (r: ResumeTurnEvent) => void;
+
+    // ===== LUCAS CODED
+    directMatchFound: (e: DirectMatchFoundEvent) => void;
+    directAttack: (e: DirectAttackEvent) => void;
+    directState: (e: DirectStateEvent) => void;
 };
 
 export type ClientToServerEvents = {
     setUsername: (payload: SetUsernameEvent) => void;
-    
+
     createLobby: (payload: CreateLobbyEvent) => void;
     joinLobby: (payload: JoinLobbyEvent) => void;
     leaveLobby: (payload: LeaveLobbyEvent) => void;
@@ -317,4 +334,9 @@ export type ClientToServerEvents = {
     minigameResult: (payload: MinigameResultEvent) => void;
     groupMinigameResult: (payload: GroupMinigameResultEvent) => void;
     reconnectRequest: (payload: ReconnectRequest) => void;
+
+    // ===== LUCAS CODED
+    directQueue: (e: DirectQueueEvent) => void;
+    directReady: (e: DirectReadyEvent) => void;
+    directAttack: (e: DirectAttackEvent) => void;
 };

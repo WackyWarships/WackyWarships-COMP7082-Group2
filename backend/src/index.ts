@@ -9,6 +9,8 @@ import dotenv from "dotenv";
 import { getLobbyMap, setupSocket as setupLobbySocket } from "./lobby.js";
 import { setupSocket as setupPlayerUsernameSocket } from "./playerUsername.js";
 
+import { setupDirectSocket } from "./direct.js";
+
 import type {
     ServerToClientEvents,
     ClientToServerEvents,
@@ -57,9 +59,10 @@ if (isProd) {
 
 // socket.io
 io.on("connection", (socket) => {
-    console.log("New player connected:", socket.id);
-    setupPlayerUsernameSocket(io, socket);
-    setupLobbySocket(io, socket);
+  console.log("New player connected:", socket.id);
+  setupPlayerUsernameSocket(io, socket);
+  setupLobbySocket(io, socket);
+  setupDirectSocket(io, socket); 
 });
 
 // Start server
