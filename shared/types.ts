@@ -1,3 +1,5 @@
+// shared/types.ts
+
 // IDs & helpers ------------------------------------------------------------
 export type Timestamp = number;
 export type Seq = number;
@@ -8,29 +10,38 @@ export type PlayerId = string;
 export type LobbyId = string;
 export type ProtocolVersion = string;
 
+
+// Id + name
+export type HostInfo = {
+    hostId: PlayerId;
+    hostName: string;
+};
+
+export type PlayerInfo = {
+    playerId: PlayerId;
+    playerName: string;
+};
+
 // Weapon -------------------------------------------------------------------
 export type WeaponDef = {
     id: WeaponId;
     name: string;
     baseDamage: number;
-    minigameType: 'timing' | 'pattern' | 'puzzle'; // This will possibly be changed
+    minigameType: 'timing' | 'pattern' | 'puzzle';
     params?: Record<string, any>;
     description?: string;
-    // Stuff to maybe add: minigameDifficulty
 };
 
 // Lobby
 export type Lobby = {
-    hostId: PlayerId;
-    hostName: string; 
+    host: HostInfo;
     lobbyId: LobbyId;
     lobbyName: string;
     settings?: Record<string, any>;
-    players: PlayerId[];
+    players: PlayerInfo[];
 }
 
 // Client -> Server ---------------------------------------------------------
-
 export type SetUsernameEvent = {
     playerId: PlayerId;
     playerName: string;
@@ -47,14 +58,26 @@ export type CreateLobbyEvent = {
 export type JoinLobbyEvent = {
     lobbyId: LobbyId;
     playerId: PlayerId;
-    playerName: string; 
+    playerName: string;
     client?: { version?: string; platform?: string };
 };
 
 export type LeaveLobbyEvent = {
     lobbyId: LobbyId;
     playerId: PlayerId;
-    playerName: string; 
+    playerName: string;
+};
+
+// Host moderation ----------------------------------------------------------
+export type KickPlayerEvent = {
+    lobbyId: LobbyId;
+    targetPlayerId: PlayerId;
+    reason?: string;
+};
+
+export type DisbandLobbyEvent = {
+    lobbyId: LobbyId;
+    reason?: string;
 };
 
 export type StartGameEvent = {
@@ -67,6 +90,8 @@ export type NextTurnEvent = {
     currentPlayer: PlayerId;
 };
 
+// On your turn ------------------------------------------------------------
+
 export type ChooseWeaponEvent = {
     lobbyId: LobbyId;
     turnId: TurnId;
@@ -76,7 +101,7 @@ export type ChooseWeaponEvent = {
     meta?: Record<string, any>;
 };
 
-export type MinigameInputCompact = [number, string, number?]; // [dtMs, actionCode, optValue]
+export type MinigameInputCompact = [number, string, number?];
 
 export type MinigameResultEvent = {
     lobbyId: LobbyId;
@@ -101,12 +126,11 @@ export type GroupMinigameResultEvent = {
 };
 
 // Server -> Client ---------------------------------------------------------
-
 export type UsernameSetEvent = {
     playerId: PlayerId;
     playerName: string;
     restored?: boolean;
-}
+};
 
 export type PlayerState = {
     id: PlayerId;
@@ -160,9 +184,8 @@ export type Snapshot = {
 export type LobbyUpdate = {
     lobbyId: LobbyId;
     lobbyName: string;
-    hostId: PlayerId;
-    hostName: string; 
-    players: PlayerId[];
+    host: HostInfo;
+    players: PlayerInfo[];
     settings?: Record<string, any>;
 };
 
@@ -176,6 +199,19 @@ export type MinigameStartEvent = {
     timeLimitMs?: number;
     expectedDurationMs?: number;
     meta?: Record<string, any>;
+};
+
+// Moderation notifications -------------------------------------------------
+export type PlayerKickedNotice = {
+    lobbyId: LobbyId;
+    targetPlayerId: PlayerId;
+    by: PlayerId;
+    reason?: string;
+};
+
+export type LobbyDisbandedNotice = {
+    lobbyId: LobbyId;
+    reason?: string;
 };
 
 // Group minigame start -----------------------------------------------------
@@ -198,7 +234,7 @@ export type GroupMinigameStartEvent = {
     meta?: Record<string, any>;
 };
 
-// Presence & reconnect ----------------------------------------------------
+// Presence & reconnect -----------------------------------------------------
 export type SessionId = string;
 
 export type ReconnectRequest = {
@@ -245,9 +281,22 @@ export type ResumeTurnEvent = {
     savedInputLog?: MinigameInputCompact[];
 };
 
-// Convenience ---------------------------------------------------------------
+// Convenience --------------------------------------------------------------
 export type ClientInput = MinigameResultEvent | GroupMinigameResultEvent | ChooseWeaponEvent;
 export type ServerSnapshot = Snapshot;
+
+// ===== Multiplayer: Direct-match additions (types only) ===================
+export type MatchId = string;
+
+export type DirectQueueEvent = { playerId: PlayerId };
+export type DirectMatchFoundEvent = {
+    matchId: MatchId;
+    players: PlayerId[];
+    starter: PlayerId;
+};
+export type DirectReadyEvent = { matchId: MatchId; playerId: PlayerId };
+export type DirectAttackEvent = { matchId: MatchId; playerId: PlayerId; weaponKey: string };
+export type DirectStateEvent = { matchId: MatchId; ok: boolean };
 
 // Socket.IO event maps -----------------------------------------------------
 export type ServerToClientEvents = {
@@ -266,18 +315,31 @@ export type ServerToClientEvents = {
     groupMinigameStart: (g: GroupMinigameStartEvent) => void;
     groupMinigameResolved: (g: GroupMinigameResolvedEvent) => void;
 
+    // Moderation
+    playerKicked: (n: PlayerKickedNotice) => void;
+    lobbyDisbanded: (n: LobbyDisbandedNotice) => void;
+
     playerDisconnected: (pd: PlayerDisconnectedEvent) => void;
     playerReconnected: (pr: PlayerReconnectedEvent) => void;
     reconnectResponse: (rr: ReconnectResponse) => void;
     resumeTurn: (r: ResumeTurnEvent) => void;
+
+    // ===== LUCAS CODED
+    directMatchFound: (e: DirectMatchFoundEvent) => void;
+    directAttack: (e: DirectAttackEvent) => void;
+    directState: (e: DirectStateEvent) => void;
 };
 
 export type ClientToServerEvents = {
     setUsername: (payload: SetUsernameEvent) => void;
-    
+
     createLobby: (payload: CreateLobbyEvent) => void;
     joinLobby: (payload: JoinLobbyEvent) => void;
     leaveLobby: (payload: LeaveLobbyEvent) => void;
+
+    // Moderation
+    kickPlayer: (payload: KickPlayerEvent) => void;
+    disbandLobby: (payload: DisbandLobbyEvent) => void;
 
     startGame: (payload: StartGameEvent) => void;
     nextTurn: (payload: NextTurnEvent) => void;
@@ -285,4 +347,9 @@ export type ClientToServerEvents = {
     minigameResult: (payload: MinigameResultEvent) => void;
     groupMinigameResult: (payload: GroupMinigameResultEvent) => void;
     reconnectRequest: (payload: ReconnectRequest) => void;
+
+    // ===== LUCAS CODED
+    directQueue: (e: DirectQueueEvent) => void;
+    directReady: (e: DirectReadyEvent) => void;
+    directAttack: (e: DirectAttackEvent) => void;
 };
