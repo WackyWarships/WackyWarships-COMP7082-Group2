@@ -9,6 +9,8 @@ import type {
     MinigameResultEvent,
     GroupMinigameStartEvent,
     GroupMinigameResolvedEvent,
+    PlayerKickedNotice,
+    LobbyDisbandedNotice,
     PlayerDisconnectedEvent,
     PlayerReconnectedEvent,
     ReconnectResponse,
@@ -41,6 +43,10 @@ export type Events = {
     // Group
     'group-minigame-start': GroupMinigameStartEvent;
     'group-minigame-resolved': GroupMinigameResolvedEvent;
+
+    // Moderation
+    'player-kicked': PlayerKickedNotice;
+    'lobby-disbanded': LobbyDisbandedNotice;
 
     // Presence / reconnect
     'player-disconnected': PlayerDisconnectedEvent;

@@ -36,18 +36,18 @@ body {
 
 #game-container {
     width: min(100%, 1024px);
-    height: 100%;
     max-height: calc(100dvh - clamp(12px, 4vw, 40px) * 2);
     margin: 0 auto;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
+    aspect-ratio: 16/9;
 }
 
 #game-container canvas {
     width: 100% !important;
-    height: 100% !important;
+    height: auto !important;
     max-height: inherit !important;
     border-radius: 16px;
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);

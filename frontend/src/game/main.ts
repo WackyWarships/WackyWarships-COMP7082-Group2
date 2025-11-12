@@ -4,6 +4,7 @@ import { Preloader } from "./scenes/Preloader";
 import { EnterUsername } from "./scenes/EnterUsername";
 import { MainMenu } from "./scenes/MainMenu";
 import { CreateLobby } from "./scenes/CreateLobby";
+import { Lobby } from "./scenes/Lobby";
 import { Game } from "./scenes/Game";
 import { GameOver } from "./scenes/GameOver";
 import { FuelSortScene as MiniGameScene } from "./fuelSort/FuelSortScene";
@@ -20,6 +21,7 @@ const baseConfig: Phaser.Types.Core.GameConfig = {
         EnterUsername,
         MainMenu,
         CreateLobby,
+        Lobby,
         JoinLobby,
         MiniGameScene,
         Game,

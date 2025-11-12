@@ -16,6 +16,7 @@ export class EnterUsername extends Scene {
     title2!: GameObjects.Text;
     confirmButton!: GameObjects.Text;
     inputEl!: HTMLInputElement;
+    errorText!: GameObjects.Text;
 
     constructor() {
         super('EnterUsername');
@@ -52,7 +53,16 @@ export class EnterUsername extends Scene {
         }).setOrigin(0.5);
 
         // Input 
-        this.createInput(height * (1 / 2));
+        this.createInput(height * 0.5);
+
+        const errorY = Math.min(height * 0.75, height - 40);
+        this.errorText = this.add.text(width / 2, errorY, '', {
+            fontFamily: 'Arial',
+            fontSize: `${mobile ? 18 : 20}px`,
+            color: '#ff5555',
+            align: 'center',
+            wordWrap: { width: width * 0.8 },
+        }).setOrigin(0.5);
 
         // Confirm Button 
         const buttonStyle = {
@@ -107,46 +117,79 @@ export class EnterUsername extends Scene {
 
     //multiplayer
     submitUsername() {
-        const raw = this.inputEl.value.trim();
-        const username = raw || 'Player';                 /** default if empty */
-        savePlayerName(username);
-        this.inputEl.remove();
+      const playerName = this.inputEl.value.trim();
+      const playerId = getOrCreatePlayerId();
 
-        const playerId = getOrCreatePlayerId();
+      // Validation
+      if (playerName.length === 0) {
+        this.showError('Username cannot be empty.');
+        return;
+      }
+      const USERNAME_REGEX = /^[A-Za-z0-9 _-]{3,16}$/;
+      if (!USERNAME_REGEX.test(playerName)) {
+        this.showError('Only letters, numbers, spaces, "_" and "-" allowed (3–16 chars).');
+        return;
+      }
+      this.showError('');
 
-        // Listen ONCE for ack before emitting to avoid stacking handlers
-        const onAck = () => {
-            EventBus.off('username-set', onAck);
-            this.scene.start('MainMenu');
-        };
-        EventBus.on('username-set', onAck);
+      // Save locally and send to server
+      savePlayerName(playerName);
+      this.inputEl?.remove();
+      sendSetUsername({ playerId, playerName }); // main expects { playerId, playerName }
 
-        // FIX: SetUsernameEvent expects { playerId, playerName }
-        sendSetUsername({ playerId, playerName: username });
+      // Proceed once confirmed (no listener stacking)
+      EventBus.once('username-set', () => {
+        this.scene.start('MainMenu');
+      });
+    }
+
+
+    showError(msg: string) {
+        if (this.errorText) {
+            this.errorText.setText(msg);
+        }
     }
 
     handleResize(gameSize: Phaser.Structs.Size) {
         const { width, height } = gameSize;
         if (!this.scene.isActive()) return;
 
+        // Adjust background and camera
         resizeSceneBase(this, width, height);
         const { x: centerX } = getCenter(this.scale);
+        const mobile = isMobile(width);
+
+        // Responsive title sizes
         const titleSize = getResponsiveFontSize(width, height, 72, 56);
 
-        this.title1.setFontSize(titleSize);
-        this.title2.setFontSize(titleSize);
-        this.title1.setPosition(centerX, height * (1 / 6));
-        this.title2.setPosition(centerX, this.title1.y + this.title1.height);
-        this.confirmButton.setPosition(centerX, height * (5 / 6));
+        this.title1
+            .setFontSize(titleSize)
+            .setPosition(centerX, height * (1 / 6));
 
+        this.title2
+            .setFontSize(titleSize)
+            .setPosition(centerX, this.title1.y + this.title1.height);
+
+        // Confirm button position
+        this.confirmButton?.setPosition(centerX, height * (5 / 6));
+
+        // Keep input centered and aligned
         if (this.inputEl) {
             requestAnimationFrame(() => {
                 const rect = this.game.canvas.getBoundingClientRect();
                 const centerXOnScreen = rect.left + rect.width / 2;
                 const inputWidth = 240;
                 this.inputEl.style.left = `${centerXOnScreen - inputWidth / 2}px`;
-                this.inputEl.style.top = `${rect.top + height * (1 / 2) - 20}px`;
+                this.inputEl.style.top = `${rect.top + height * 0.5 - 20}px`;
             });
+        }
+
+        // Keep error text visible within viewport
+        if (this.errorText) {
+            const errorY = Math.min(height * 0.62, height - 40);
+            this.errorText
+                .setFontSize(mobile ? 18 : 20)
+                .setPosition(centerX, errorY);
         }
     }
 }
