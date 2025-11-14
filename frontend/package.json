@@ -24,7 +24,8 @@
         "dev": "node log.js dev & npx vite --config vite/config.dev.mjs",
         "build": "npx tsc -b && npx vite build --config vite/config.prod.mjs",
         "dev-nolog": "npx vite --config vite/config.dev.mjs",
-        "build-nolog": "npx vite build --config vite/config.prod.mjs"
+        "build-nolog": "npx vite build --config vite/config.prod.mjs",
+        "test": "vitest"
     },
     "dependencies": {
         "@lottiefiles/dotlottie-react": "^0.17.6",
@@ -44,10 +45,12 @@
     "devDependencies": {
         "@eslint/js": "^9.22.0",
         "@types/node": "^24.10.0",
+        "@vitest/coverage-v8": "^2.1.9",
         "eslint": "^9.22.0",
         "eslint-plugin-react-hooks": "^5.2.0",
         "eslint-plugin-react-refresh": "^0.4.19",
         "globals": "^16.0.0",
-        "typescript": "^5.9.3"
+        "typescript": "^5.9.3",
+        "vitest": "^2.1.9"
     }
 }

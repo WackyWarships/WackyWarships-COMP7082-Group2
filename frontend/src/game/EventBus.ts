@@ -14,6 +14,7 @@ import type {
     PlayerDisconnectedEvent,
     PlayerReconnectedEvent,
     ReconnectResponse,
+    MinigameStartEvent,
     ResumeTurnEvent,
     SetUsernameEvent
 } from 'shared/types';
@@ -37,7 +38,7 @@ export type Events = {
     'game-state': GameStateTurn;
 
     // Minigame (local aliases/acks)
-    'minigame-start': TurnStartEvent;
+    'minigame-start': MinigameStartEvent;
     'minigame-result-sent': MinigameResultEvent;
 
     // Group
