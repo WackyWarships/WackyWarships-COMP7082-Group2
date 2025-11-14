@@ -59,10 +59,10 @@ if (isProd) {
 
 // socket.io
 io.on("connection", (socket) => {
-  console.log("New player connected:", socket.id);
-  setupPlayerUsernameSocket(io, socket);
-  setupLobbySocket(io, socket);
-  setupDirectSocket(io, socket); 
+    console.log("New player connected:", socket.id);
+    setupPlayerUsernameSocket(io, socket);
+    setupLobbySocket(io, socket);
+    setupDirectSocket(io, socket);
 });
 
 // Start server
