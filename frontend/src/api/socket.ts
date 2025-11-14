@@ -31,6 +31,7 @@ import type {
   ResumeTurnEvent,
   StartGameEvent,
   NextTurnEvent,
+  MinigameStartEvent,
   PlayerId,
   PlayerKickedNotice,
   LobbyDisbandedNotice,
@@ -117,6 +118,11 @@ export function initSocket(token?: string) {
 
   socket.on('gameState', (gs: GameStateTurn): void => {
     emitBus('game-state', gs);
+  });
+
+  // Minigames
+  socket.on('minigameStart', (ms: MinigameStartEvent): void => {
+      EventBus.emit('minigame-start', ms);
   });
 
   // Group minigames
