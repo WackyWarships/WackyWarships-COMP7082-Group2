@@ -901,13 +901,13 @@ export class Game extends Phaser.Scene {
         EventBus.on('turn-start', onTurnStart as any);
         EventBus.on('turn-resolved', onTurnResolved as any);
         EventBus.on('minigame-start', onMinigameStart as any);
-        EventBus.on("game-ended", onGameEnded as any);
+        (EventBus as any).on("game-ended", onGameEnded as any);
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             EventBus.off('turn-start', onTurnStart as any);
             EventBus.off('turn-resolved', onTurnResolved as any);
             EventBus.off('minigame-start', onMinigameStart as any);
-            EventBus.off("game-ended", onGameEnded as any);   // ← ADD THIS LINE
+            (EventBus as any).off("game-ended", onGameEnded as any);   // ← ADD THIS LINE
         });
     }
 

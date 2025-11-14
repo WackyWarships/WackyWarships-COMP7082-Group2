@@ -334,12 +334,12 @@ export function setupSocket(
         io.in(lobby.lobbyId).socketsLeave(lobby.lobbyId);
     });
 
-    socket.on("playerExitGame", (payload: { lobbyId: string; playerId: string }) => {
+    (socket as any).on("playerExitGame", (payload: { lobbyId: string; playerId: string }) => {
         const lobby = lobbyIdToLobbyMap.get(payload.lobbyId);
         if (!lobby) return;
 
         // Tell both players the game ended
-        io.to(payload.lobbyId).emit("gameEnded", {
+        (io.to(payload.lobbyId) as any).emit("gameEnded", {
             lobbyId: payload.lobbyId,
             by: payload.playerId,
             reason: "Player returned to main menu",

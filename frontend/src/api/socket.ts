@@ -86,7 +86,7 @@ export function initSocket(token?: string) {
     // Server → Client forwards
     // -----------------------------------------------------------
 
-    socket.on('gameEnded', (evt: any): void => {
+    (socket as any).on('gameEnded', (evt: any): void => {
         emitBus('game-ended', evt);
     });
 
@@ -209,7 +209,7 @@ function ensureSocket(): Socket<ServerToClientEvents, ClientToServerEvents> {
 
 // ----- Player leaves an active game -----
 export function sendPlayerExitGame(payload: { lobbyId: string; playerId: PlayerId }): void {
-    ensureSocket().emit('playerExitGame', payload);
+    (ensureSocket() as any).emit('playerExitGame', payload);
 }
 
 // Lobby & identity

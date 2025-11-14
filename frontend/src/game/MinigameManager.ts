@@ -7,7 +7,6 @@
 import Phaser from 'phaser';
 import EventBus from './EventBus';
 import { sendMinigameResult } from '../api/socket';
-import type { MinigameResultEvent } from 'shared/types';
 
 // Keep this in sync with MinigameResultEvent["outcome"]
 export type MinigameResultOutcome = 'success' | 'failure';
@@ -156,7 +155,7 @@ export class MinigameManager {
                 return; // not our minigame
             }
 
-            EventBus.off('fuel-sort-complete', handler as any);
+            (EventBus as any).off('fuel-sort-complete', handler as any);
             this.active = false;
 
             // Stop the overlay scene; the main Game scene stays visible
@@ -177,7 +176,7 @@ export class MinigameManager {
             }
         };
 
-        EventBus.on('fuel-sort-complete', handler as any);
+        (EventBus as any).on('fuel-sort-complete', handler as any);
     }
 
     // --------------------------------------------
@@ -212,7 +211,13 @@ export class MinigameManager {
 
         // Note: MinigameResultEvent in shared/types doesn't have weaponId/damage yet;
         // those are harmless extra fields at runtime, but you can extend the type too.
-        const payload: MinigameResultEvent & {
+        const payload: {
+            lobbyId: string;
+            turnId: number;
+            playerId: string;
+            targetPlayerId: string;
+            outcome: MinigameResultOutcome;
+            score: number;
             weaponId?: string;
             damage?: number;
         } = {
@@ -226,7 +231,7 @@ export class MinigameManager {
             damage,
         };
 
-        
-        sendMinigameResult(payload);
+        sendMinigameResult(payload as any);
+
     }
 }
