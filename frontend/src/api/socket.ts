@@ -80,14 +80,6 @@ export function initSocket(token?: string) {
     emitBus('error', { code: 0, message: 'Failed to connect' });
   });
 
-  socket.on('turnStart', (evt: { turnId: number; playerId: string }) => {
-    (EventBus as any).emit('turn-start', evt);
-  });
-  socket.on('turnResolved', (evt: any) => {
-    (EventBus as any).emit('turn-resolved', evt);
-  });
-
-
   // -----------------------------------------------------------
   // Server → Client forwards
   // -----------------------------------------------------------
