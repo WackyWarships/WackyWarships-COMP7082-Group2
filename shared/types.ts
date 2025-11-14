@@ -10,7 +10,6 @@ export type PlayerId = string;
 export type LobbyId = string;
 export type ProtocolVersion = string;
 
-
 // Id + name -----------------------------------------------------------------
 export type HostInfo = {
     hostId: PlayerId;
@@ -27,14 +26,14 @@ export type WeaponDef = {
     id: WeaponId;
     name: string;
     baseDamage: number;
-    minigameType: 'timing' | 'pattern' | 'puzzle';
+    minigameType: "timing" | "pattern" | "puzzle";
     params?: Record<string, any>;
     description?: string;
 };
 
 // Player Session ----------------------------------------------------------
 export interface PlayerSession {
-    lobbyId: LobbyId;
+    lobbyId?: LobbyId | null;
     scene: string;
     lastKnownTurnId?: number;
     lastKnownSeq?: number;
@@ -48,7 +47,7 @@ export type Lobby = {
     lobbyName: string;
     settings?: Record<string, any>;
     players: PlayerInfo[];
-}
+};
 
 // Client -> Server ---------------------------------------------------------
 export type SetUsernameEvent = {
@@ -117,7 +116,7 @@ export type MinigameResultEvent = {
     turnId: TurnId;
     playerId: PlayerId;
     targetPlayerId: PlayerId;
-    outcome: 'success' | 'failure';
+    outcome: "success" | "failure";
     score?: number;
     durationMs?: number;
     inputLog?: MinigameInputCompact[];
@@ -227,7 +226,7 @@ export type LobbyDisbandedNotice = {
 export type GroupParticipant = {
     playerId: PlayerId;
     name?: string;
-    role?: 'player' | 'spectator';
+    role?: "player" | "spectator";
     params?: Record<string, any>;
 };
 
@@ -258,7 +257,7 @@ export type PlayerDisconnectedEvent = {
     lobbyId: LobbyId;
     playerId: PlayerId;
     sessionId?: SessionId;
-    reason?: 'network' | 'kicked' | 'timeout' | 'left' | string;
+    reason?: "network" | "kicked" | "timeout" | "left" | string;
     disconnectedAt?: Timestamp;
     expectedResumeWindowMs?: number;
 };
@@ -268,7 +267,7 @@ export type PlayerReconnectedEvent = {
     playerId: PlayerId;
     sessionId?: SessionId;
     resumedAt?: Timestamp;
-    resumedDuring?: 'turn' | 'group-minigame' | 'idle' | null;
+    resumedDuring?: "turn" | "group-minigame" | "idle" | null;
 };
 
 export type ReconnectResponse = {
@@ -291,7 +290,10 @@ export type ResumeTurnEvent = {
 };
 
 // Convenience --------------------------------------------------------------
-export type ClientInput = MinigameResultEvent | GroupMinigameResultEvent | ChooseWeaponEvent;
+export type ClientInput =
+    | MinigameResultEvent
+    | GroupMinigameResultEvent
+    | ChooseWeaponEvent;
 export type ServerSnapshot = Snapshot;
 
 // ===== Multiplayer: Direct-match additions (types only) ===================
@@ -304,7 +306,11 @@ export type DirectMatchFoundEvent = {
     starter: PlayerId;
 };
 export type DirectReadyEvent = { matchId: MatchId; playerId: PlayerId };
-export type DirectAttackEvent = { matchId: MatchId; playerId: PlayerId; weaponKey: string };
+export type DirectAttackEvent = {
+    matchId: MatchId;
+    playerId: PlayerId;
+    weaponKey: string;
+};
 export type DirectStateEvent = { matchId: MatchId; ok: boolean };
 
 // Socket.IO event maps -----------------------------------------------------
