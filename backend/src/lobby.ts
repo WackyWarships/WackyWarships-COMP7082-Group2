@@ -16,6 +16,8 @@ import type {
     ChooseWeaponEvent,
     TurnResolvedEvent,
     NextTurnEvent,
+    MinigameResultEvent,
+    MinigameStartEvent,
 } from '../../shared/types.js';
 
 const lobbyIdToLobbyMap = new Map<LobbyId, Lobby>();
@@ -176,16 +178,14 @@ export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvent
 
         if (lobby = lobbyIdToLobbyMap.get(payload.lobbyId)) {
             // Should be start minigame event once minigame is implemented       
-            const update: TurnResolvedEvent = {
-                turnId: payload.turnId,
+            const update: MinigameStartEvent = {
+                lobbyId: payload.lobbyId,
                 attackerId: payload.playerId,
                 defenderId: payload.targetPlayerId,
                 weaponId: payload.weaponId,
-                outcome: 'success',
-                damage: 5,
             };
 
-            io.to(lobby.lobbyId).emit('turnResolved', update);
+            io.to(lobby.lobbyId).emit('minigameStart', update);
         }
         else {
             socket.emit("error", { code: 404, message: `Lobby not found with id ${payload.lobbyId}.` });
@@ -202,6 +202,26 @@ export function setupSocket(io: Server<ClientToServerEvents, ServerToClientEvent
             };
 
             io.to(lobby.lobbyId).emit('turnStart', update);
+        }
+        else {
+            socket.emit("error", { code: 404, message: `Lobby not found with id ${payload.lobbyId}.` });
+        }
+    });
+
+    socket.on('minigameResult', (payload: MinigameResultEvent) => {
+        let lobby: Lobby | undefined = undefined;
+
+        if (lobby = lobbyIdToLobbyMap.get(payload.lobbyId)) {
+            const damageResult = payload.outcome == 'success' ? 10 : 5;
+            
+            const update: TurnResolvedEvent = {
+                turnId: payload.turnId,
+                attackerId: payload.playerId,
+                defenderId: payload.targetPlayerId,
+                damage: damageResult,
+            };
+
+            io.to(lobby.lobbyId).emit('turnResolved', update);
         }
         else {
             socket.emit("error", { code: 404, message: `Lobby not found with id ${payload.lobbyId}.` });
