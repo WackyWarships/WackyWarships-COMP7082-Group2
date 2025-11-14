@@ -35,9 +35,9 @@ export class JoinLobby extends Scene {
         const mobile = isMobile(width);
 
         // Background 
-        this.background = this.add.image(centerX, centerY, 'background')
-            .setDisplaySize(width, height)
-            .setOrigin(0.5);
+        this.background = this.add.image(centerX, centerY, 'spacebackground')
+          .setDisplaySize(height*0.46, height)
+          .setOrigin(0.5);
 
         // Title 
         const titleFontSize = getResponsiveFontSize(width, height, 56, 44);

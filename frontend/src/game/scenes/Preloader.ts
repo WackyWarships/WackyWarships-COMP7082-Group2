@@ -34,8 +34,11 @@ export class Preloader extends Scene
 
         this.load.image('logo', 'logo.png');
         this.load.image('star', 'star.png');
-        this.load.image('battleshipP', 'battleshipP.png');
-        this.load.image('battleshipE', 'battleshipE.png');
+        this.load.image('redship', 'redship.png');
+        this.load.image('blueship', 'blueship.png');
+        this.load.image('laser', 'laser.png');
+        this.load.image('rockets', 'rockets.png');
+        this.load.image('spacebackground', 'spacebackground.png');
     }
 
     create ()

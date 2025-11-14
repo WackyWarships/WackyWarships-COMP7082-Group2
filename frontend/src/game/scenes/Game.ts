@@ -333,8 +333,8 @@ export class Game extends Phaser.Scene {
     const { x: centerX, y: centerY } = getCenter(this.scale);
 
     // background
-    if (this.textureExists('background')) {
-      this.background = this.add.image(centerX, centerY, 'background').setOrigin(0.5).setDisplaySize(W, H);
+    if (this.textureExists('spacebackground')) {
+      this.background = this.add.image(centerX, centerY, 'spacebackground').setOrigin(0.5).setDisplaySize(W, H);
     } else {
       this.cameras.main.setBackgroundColor(0x082a47);
     }
@@ -348,8 +348,8 @@ export class Game extends Phaser.Scene {
     const bottomY = H * 0.80;
 
     // Enemy battleship
-    if (this.textureExists('battleshipP')) {
-      const img = this.add.image(W / 2, topY, 'battleshipP').setOrigin(0.5);
+    if (this.textureExists('blueship')) {
+      const img = this.add.image(W / 2, topY, 'blueship').setOrigin(0.5);
       this.sizeShipByHeight(img, H, 0.09);
       this.enemy = img;
     } else {
@@ -357,8 +357,8 @@ export class Game extends Phaser.Scene {
     }
 
     // Player battleship
-    if (this.textureExists('battleshipE')) {
-      const img = this.add.image(W / 2, bottomY, 'battleshipE').setOrigin(0.5);
+    if (this.textureExists('redship')) {
+      const img = this.add.image(W / 2, bottomY, 'redship').setOrigin(0.5);
       this.sizeShipByHeight(img, H, 0.11);
       this.player = img;
     } else {
