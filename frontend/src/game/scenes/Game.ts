@@ -86,9 +86,7 @@ export class Game extends Phaser.Scene {
     private offState?: () => void;
 
     // Lobby
-
     private lobbyId?: string;
-    private playerId: string = getPlayerId();
     private currentTurnId: number = 0;
 
     /** de-dup incoming server attacks */
@@ -109,9 +107,6 @@ export class Game extends Phaser.Scene {
 
         if (data?.lobbyId) {
             this.lobbyId = data.lobbyId;
-        }
-        if (data?.playerId) {
-            this.playerId = data.playerId;
         }
         if (data?.turnStart) {
             this.currentTurnId = data.turnStart.turnId;
