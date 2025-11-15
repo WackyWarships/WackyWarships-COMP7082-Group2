@@ -5,7 +5,7 @@ import { ANIMATION_CONFIG, getColorValue, ColorType, TUBE_CONFIG } from '../conf
 // Animation configuration for tilting
 const TILT_CONFIG = {
   ANGLE: -80, // Tilt angle in degrees
-  DURATION: 200, // Duration of tilt animation in ms
+  DURATION: 150, // Duration of tilt animation in ms
   POUR_OFFSET_X: 3, // X offset for pour position when tilted
   POUR_OFFSET_Y: -15, // Y offset for pour position when tilted
 };

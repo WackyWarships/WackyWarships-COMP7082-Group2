@@ -108,9 +108,9 @@ describe('ConfigurationManager', () => {
       expect(processed).toHaveProperty('difficulty')
       expect(processed.tubes).toHaveLength(4)
       expect(processed.colors).toMatchObject({
-        primary: '#ff4da6',
-        secondary: '#4bf77a',
-        tertiary: '#8b5cff'
+        primary: '#ff1493',
+        secondary: '#32cd32',
+        tertiary: '#8a2be2'
       })
     })
 
