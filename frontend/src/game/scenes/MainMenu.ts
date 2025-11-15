@@ -30,13 +30,13 @@ export class MainMenu extends Scene {
         const mobile = isMobile(width);
 
         // Background
-        this.background = this.add.image(centerX, centerY, 'background')
-            .setDisplaySize(width, height)
+        this.background = this.add.image(centerX, centerY, 'spacebackground')
+            .setDisplaySize(height*0.46, height)
             .setOrigin(0.5);
 
         // Title
-        const fontSizeTop = getResponsiveFontSize(width, height, 72, 56);
-        const fontSizeBottom = getResponsiveFontSize(width, height, 72, 56);
+        const fontSizeTop = getResponsiveFontSize(width, height, 50, 32);
+        const fontSizeBottom = getResponsiveFontSize(width, height, 50, 32);
 
         this.titleTop = this.add.text(centerX, height * 0.12, 'Wacky', {
             fontFamily: 'Arial Black',
@@ -79,7 +79,7 @@ export class MainMenu extends Scene {
             backgroundColor: '#1e90ff',
             padding: { x: 20, y: 10 },
             align: 'center' as const,
-            fixedWidth: mobile ? 260 : 300,
+            fixedWidth: mobile ? 190 : 250,
         };
 
         const makeButton = (
@@ -108,18 +108,18 @@ export class MainMenu extends Scene {
         makeButton('Create Lobby', -90, 'CreateLobby');
         makeButton('Join Lobby', -30, 'JoinLobby');
         makeButton('How to Play', 30, 'HowToPlay');
-        makeButton('Settings', 90, 'Settings');
-        makeButton('Credits', 150, 'Credits');
-        makeButton('Play Mini-Game', 210, () => {
-            this.scene.start('FuelSortGame', { difficulty: 'easy' });
-        });
-        makeButton('Change Username', 270, () => {
+        //makeButton('Settings', 90, 'Settings');
+        //makeButton('Credits', 150, 'Credits');
+        // makeButton('Play Mini-Game', 210, () => {
+        //     this.scene.start('FuelSortGame', { difficulty: 'easy' });
+        // });
+        makeButton('Change Username', 90, () => {
             clearPlayerName();
             this.scene.start('EnterUsername');
         });
 
         // === Start Battle -> quick-match (minimal addition) ===
-        const startBtn = makeButton('Start Battle', 330, () => this.startQuickMatch(startBtn));
+        const startBtn = makeButton('Start Battle', 150, () => this.startQuickMatch(startBtn));
 
         // Handle resizing
         this.scale.on('resize', this.handleResize, this);

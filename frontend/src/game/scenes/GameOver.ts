@@ -12,16 +12,16 @@ type ResultData = {
 };
 
 const ENEMY_SPRITES = {
-    normal: 'battleshipP',
-    damaged: 'battleshipP_dmg',
-    critical: 'battleshipP_crit',
-    destroyed: 'battleshipP_destroyed', // NEW
+    normal: 'blueship',
+    damaged: 'blueship_dmg',
+    critical: 'blueship_crit',
+    destroyed: 'blueship_destroyed', // NEW
 };
 const PLAYER_SPRITES = {
-    normal: 'battleshipE',
-    damaged: 'battleshipE_dmg',
-    critical: 'battleshipE_crit',
-    destroyed: 'battleshipE_destroyed', // NEW
+    normal: 'redship',
+    damaged: 'redship_dmg',
+    critical: 'redship_crit',
+    destroyed: 'redship_destroyed', // NEW
 };
 
 export class GameOver extends Scene {
@@ -126,9 +126,9 @@ export class GameOver extends Scene {
         this.finalPlayerHP = data.playerHP ?? 0;
         this.finalEnemyHP = data.enemyHP ?? 0;
 
-        this.background = this.add.image(centerX, centerY, 'background')
+        this.background = this.add.image(centerX, centerY, 'spacebackground')
             .setOrigin(0.5)
-            .setDisplaySize(width, height)
+            .setDisplaySize(height*0.46, height)
             .setTint(0x222222);
 
         const titleSize = getResponsiveFontSize(width, height, 48, 36);

@@ -32,14 +32,14 @@ function pickOpponentId(allIds: string[], me: string): string | undefined {
 
 // Sprite keys (adjust if needed)
 const ENEMY_SPRITES = {
-    normal: 'battleshipP',
-    damaged: 'battleshipP_dmg',
-    critical: 'battleshipP_crit',
+    normal: 'blueship',
+    damaged: 'blueship_dmg',
+    critical: 'blueship_crit',
 };
 const PLAYER_SPRITES = {
-    normal: 'battleshipE',
-    damaged: 'battleshipE_dmg',
-    critical: 'battleshipE_crit',
+    normal: 'redship',
+    damaged: 'redship_dmg',
+    critical: 'redship_crit',
 };
 
 export class Game extends Phaser.Scene {
@@ -376,23 +376,23 @@ export class Game extends Phaser.Scene {
         if (this.textureExists('explosion')) {
             // Simple image fade/scale (works whether 'explosion' is a single frame or spritesheet main frame)
             const s = this.add.image(x, y, 'explosion').setOrigin(0.5).setDepth(300);
-            s.setScale(0.6);
+            s.setScale(0.1);
             this.tweens.add({
                 targets: s,
                 duration: this.EXPLOSION_MS,
                 alpha: 0,
-                scale: 1.2,
+                scale: 0.2,
                 onComplete: () => s.destroy(),
             });
         } else {
             // Fallback: bright flash circle
             const c = this.add.circle(x, y, 20, 0xfff2a8, 1).setDepth(300);
-            c.setScale(0.8);
+            c.setScale(0.1);
             this.tweens.add({
                 targets: c,
                 duration: this.EXPLOSION_MS,
                 alpha: 0,
-                scale: 2.0,
+                scale: 0.2,
                 onComplete: () => c.destroy(),
             });
         }
@@ -531,8 +531,8 @@ export class Game extends Phaser.Scene {
         const { x: centerX, y: centerY } = getCenter(this.scale);
 
         // background
-        if (this.textureExists('background')) {
-            this.background = this.add.image(centerX, centerY, 'background').setOrigin(0.5).setDisplaySize(W, H);
+        if (this.textureExists('spacebackground')) {
+            this.background = this.add.image(centerX, centerY, 'spacebackground').setOrigin(0.5).setDisplaySize(H*0.46, H);
         } else {
             this.cameras.main.setBackgroundColor(0x082a47);
         }
@@ -592,7 +592,7 @@ export class Game extends Phaser.Scene {
         this.tweens.add({ targets: this.enemy, y: topY + 10, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
 
         // HP bars
-        const barW = 220, barH = 16, gap = 32;
+        const barW = 220, barH = 16, gap = 60;
         this.enemyHPBar = this.makeHPBar(W / 2, topY - gap, barW, barH, 0xff3b3b);
         this.playerHPBar = this.makeHPBar(W / 2, bottomY + gap, barW, barH, 0x27d35a);
         this.enemyHPBar.set(1);
@@ -652,7 +652,7 @@ export class Game extends Phaser.Scene {
             .setOrigin(0.5);
 
         const whoW = 220, whoH = 48;
-        this.turnLabelGlass = this.drawGlass(W / 2, H * 0.11, whoW, whoH, 0.28);
+        this.turnLabelGlass = this.drawGlass(W / 2, H / 2, whoW, whoH, 0.28);
         const whoFont = getResponsiveFontSize(W, H, 26, 20);
         this.turnLabelText = this.add
             .text(this.turnLabelGlass.x, this.turnLabelGlass.y, 'YOUR TURN', {
@@ -1007,7 +1007,7 @@ export class Game extends Phaser.Scene {
         const topY = H * 0.2;
         const bottomY = H * 0.8;
 
-        if (this.background) this.background.setPosition(W / 2, H / 2).setDisplaySize(W, H);
+        if (this.background) this.background.setPosition(W / 2, H / 2).setDisplaySize(W*0.46, H);
         (this.homeBtn as any)?.setPosition(pad + 24, pad + 24);
 
         (this.enemy as any)?.setPosition(W / 2, topY);
@@ -1033,7 +1033,7 @@ export class Game extends Phaser.Scene {
         this.turnBadgeText?.setFontSize(badgeFont).setPosition(this.turnBadgeGlass.x, this.turnBadgeGlass.y);
 
         const whoW = 220, whoH = 48;
-        this.turnLabelGlass?.setPosition(W / 2, H * 0.11).setSize(whoW, whoH);
+        this.turnLabelGlass?.setPosition(W / 2, H / 2).setSize(whoW, whoH);
         const whoFont = getResponsiveFontSize(W, H, 26, 20);
         this.turnLabelText?.setFontSize(whoFont).setPosition(this.turnLabelGlass.x, this.turnLabelGlass.y);
     }

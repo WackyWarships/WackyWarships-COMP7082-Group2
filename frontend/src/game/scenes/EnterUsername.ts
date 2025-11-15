@@ -29,8 +29,8 @@ export class EnterUsername extends Scene {
 
         // Background
         this.background = this.add
-            .image(centerX, height / 2, 'background')
-            .setDisplaySize(width, height)
+            .image(centerX, height / 2, 'spacebackground')
+            .setDisplaySize(height*0.46, height)
             .setOrigin(0.5);
 
         // Titles

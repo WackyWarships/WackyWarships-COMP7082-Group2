@@ -65,8 +65,8 @@ export class Lobby extends Scene {
 
         // Background
         this.background = this.add
-            .image(centerX, centerY, 'background')
-            .setDisplaySize(width, height)
+            .image(centerX, centerY, 'spacebackground')
+            .setDisplaySize(height*0.46, height)
             .setOrigin(0.5);
 
         // Title
