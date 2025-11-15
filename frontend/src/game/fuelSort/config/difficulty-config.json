@@ -19,8 +19,8 @@
       },
       "tubeConfiguration": [
         ["primary", "secondary", "primary", "tertiary"],
-        ["tertiary", "primary", "secondary", "secondary"],
-        ["secondary", "tertiary", "tertiary", "primary"],
+        ["tertiary", "primary", "secondary", "tertiary"],
+        ["secondary", "primary", "tertiary", "secondary"],
         []
       ]
     },
@@ -28,9 +28,9 @@
       "id": "medium",
       "name": "Medium Mode",
       "description": "Balanced challenge for intermediate players",
-      "totalTubes": 6,
+      "totalTubes": 5,
       "filledTubes": 4,
-      "emptyTubes": 2,
+      "emptyTubes": 1,
       "targetScore": 4000,
       "timeLimit": 40,
       "maxUndos": 3,
@@ -45,7 +45,6 @@
         ["quaternary", "tertiary", "primary", "secondary"],
         ["secondary", "primary", "tertiary", "quaternary"],
         ["tertiary", "quaternary", "secondary", "primary"],
-        [],
         []
       ]
     },
@@ -57,7 +56,7 @@
       "filledTubes": 5,
       "emptyTubes": 1,
       "targetScore": 8000,
-      "timeLimit": 50,
+      "timeLimit": 40,
       "maxUndos": 1,
       "colorPalette": {
         "primary": "#ff4da6",
