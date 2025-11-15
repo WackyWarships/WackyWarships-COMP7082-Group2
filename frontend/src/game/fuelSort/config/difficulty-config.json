@@ -13,9 +13,9 @@
       "timeLimit": 30,
       "maxUndos": 5,
       "colorPalette": {
-        "primary": "#ff4da6",
-        "secondary": "#4bf77a", 
-        "tertiary": "#8b5cff"
+        "primary": "#ff1493",
+        "secondary": "#32cd32", 
+        "tertiary": "#8a2be2"
       },
       "tubeConfiguration": [
         ["primary", "secondary", "primary", "tertiary"],
@@ -35,10 +35,10 @@
       "timeLimit": 40,
       "maxUndos": 3,
       "colorPalette": {
-        "primary": "#ff4da6",
-        "secondary": "#4bf77a",
-        "tertiary": "#8b5cff",
-        "quaternary": "#3fb6ff"
+        "primary": "#ff1493",
+        "secondary": "#32cd32",
+        "tertiary": "#8a2be2",
+        "quaternary": "#00bfff"
       },
       "tubeConfiguration": [
         ["primary", "secondary", "quaternary", "tertiary"],
@@ -59,11 +59,11 @@
       "timeLimit": 40,
       "maxUndos": 1,
       "colorPalette": {
-        "primary": "#ff4da6",
-        "secondary": "#4bf77a",
-        "tertiary": "#8b5cff",
-        "quaternary": "#3fb6ff",
-        "quinary": "#ffd23f"
+        "primary": "#ff1493",
+        "secondary": "#32cd32",
+        "tertiary": "#8a2be2",
+        "quaternary": "#00bfff",
+        "quinary": "#ffd700"
       },
       "tubeConfiguration": [
         ["primary", "quinary", "tertiary", "secondary"],
