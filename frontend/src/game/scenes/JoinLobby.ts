@@ -40,8 +40,8 @@ export class JoinLobby extends Scene {
           .setOrigin(0.5);
 
         // Title 
-        const titleFontSize = getResponsiveFontSize(width, height, 56, 44);
-        this.title = this.add.text(centerX, height * 0.15, 'Join Lobby', {
+        const titleFontSize = getResponsiveFontSize(width, height, 52, 30);
+        this.title = this.add.text(centerX, height * 0.15, 'Join\nLobby', {
             fontFamily: 'Arial Black',
             fontSize: `${titleFontSize}px`,
             color: '#ffffff',
@@ -61,7 +61,7 @@ export class JoinLobby extends Scene {
             backgroundColor: '#1e90ff',
             padding: { x: 20, y: 10 },
             align: 'center',
-            fixedWidth: mobile ? 240 : 300,
+            fixedWidth: mobile ? 190 : 250,
         };
 
         this.joinButton = this.add.text(centerX, height * 0.55, 'Join', buttonStyle)

@@ -26,8 +26,6 @@ export class Preloader extends Scene {
         this.load.setPath('assets');
 
         // --- Existing ---
-        this.load.image('logo', 'logo.png');
-        this.load.image('star', 'star.png');
         this.load.image('laser', 'laser.png');
         this.load.image('rockets', 'rockets.png');
         this.load.image('spacebackground', 'spacebackground.png');

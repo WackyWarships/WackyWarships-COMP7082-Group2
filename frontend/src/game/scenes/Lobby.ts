@@ -70,7 +70,7 @@ export class Lobby extends Scene {
             .setOrigin(0.5);
 
         // Title
-        const titleSize = getResponsiveFontSize(width, height, 56, 44);
+        const titleSize = getResponsiveFontSize(width, height, 42, 20);
         this.title = this.add
             .text(centerX, height * 0.1, `Lobby: ${this.lobbyName}`, {
                 fontFamily: 'Arial Black',
@@ -279,7 +279,7 @@ export class Lobby extends Scene {
             const mobile = isMobile(width);
             if (this.playerId === this.hostId && !isHost && !isMe) {
                 const kick = this.add
-                    .text(centerX + (mobile ? 70 : 180), startY + idx * lineHeight, 'Kick', {
+                    .text(centerX + (mobile ? 70 : 70), startY + idx * lineHeight, 'Kick', {
                         fontFamily: 'Arial',
                         fontSize: `${Math.max(16, itemSize - 6)}px`,
                         color: '#ffffff',

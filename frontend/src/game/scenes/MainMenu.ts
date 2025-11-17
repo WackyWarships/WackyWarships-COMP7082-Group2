@@ -60,14 +60,14 @@ export class MainMenu extends Scene {
         const playerName = getStoredPlayerName();
         const usernameFontSize = getResponsiveFontSize(width, height, 28, 22);
 
-        this.usernameText = this.add.text(width - 20, 20, `Username: ${playerName}`, {
+        this.usernameText = this.add.text(width / 2, -80, `User: ${playerName}`, {
             fontFamily: 'Arial',
             fontSize: `${usernameFontSize}px`,
             color: '#ffffff',
             stroke: '#000000',
             strokeThickness: 4,
             align: 'right',
-        }).setOrigin(1, 0);
+        }).setOrigin(0.5, 1);
 
         // Menu Container
         this.menuContainer = this.add.container(centerX, height * 0.55);
@@ -191,8 +191,8 @@ export class MainMenu extends Scene {
 
         const { x: centerX } = getCenter(this.scale);
 
-        const fontSizeTop = getResponsiveFontSize(width, height, 72, 56);
-        const fontSizeBottom = getResponsiveFontSize(width, height, 72, 56);
+        const fontSizeTop = getResponsiveFontSize(width, height, 50, 32);
+        const fontSizeBottom = getResponsiveFontSize(width, height, 50, 32);
         const usernameFontSize = getResponsiveFontSize(width, height, 28, 22);
 
         this.titleTop.setFontSize(fontSizeTop);
@@ -205,6 +205,6 @@ export class MainMenu extends Scene {
 
         this.usernameText
             .setFontSize(usernameFontSize)
-            .setPosition(width - 20, 20);
+            .setPosition(width / 2, -80);
     }
 }

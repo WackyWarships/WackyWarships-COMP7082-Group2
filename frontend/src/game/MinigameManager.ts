@@ -191,11 +191,11 @@ export class MinigameManager {
         // - failure: always 5
         let damage: number;
         if (local.outcome !== 'success') {
-            damage = 5;
+            damage = 10;
         } else {
             switch (opts.weaponId) {
                 case 'W1':
-                    damage = 10;
+                    damage = 20;
                     break;
                 case 'W2':
                     damage = 40;
