@@ -10,7 +10,6 @@ export type PlayerId = string;
 export type LobbyId = string;
 export type ProtocolVersion = string;
 
-
 // Id + name
 export type HostInfo = {
     hostId: PlayerId;
@@ -39,7 +38,7 @@ export type Lobby = {
     lobbyName: string;
     settings?: Record<string, any>;
     players: PlayerInfo[];
-}
+};
 
 // Client -> Server ---------------------------------------------------------
 export type SetUsernameEvent = {
@@ -109,12 +108,10 @@ export type MinigameResultEvent = {
     playerId: PlayerId;
     targetPlayerId: PlayerId;
 
-    // === widened outcome union for minigame integration ==========
-    // - 'failure' kept for backward compat
-    // - 'timeout' / 'blocked' used by Fuel Sort integration
+    // widened outcome union for minigame integration
     outcome: 'success' | 'failure' | 'timeout' | 'blocked';
 
-    // === added for Fuel Sort damage wiring =======================
+    // Fuel Sort damage wiring
     weaponId: WeaponId;
     damage?: number;
 
@@ -163,8 +160,8 @@ export type TurnResolvedEvent = {
     defenderId: PlayerId;
     damage: number;
     defenderHp?: number;
-    weaponId?: WeaponId;              //handy
-    outcome?: 'success' | 'failure';  //for UI / logs
+    weaponId?: WeaponId;
+    outcome?: 'success' | 'failure';
     events?: Array<{ type: string; payload?: any }>;
     meta?: Record<string, any>;
 };
@@ -293,21 +290,51 @@ export type ResumeTurnEvent = {
 };
 
 // Convenience --------------------------------------------------------------
-export type ClientInput = MinigameResultEvent | GroupMinigameResultEvent | ChooseWeaponEvent;
+export type ClientInput =
+    | MinigameResultEvent
+    | GroupMinigameResultEvent
+    | ChooseWeaponEvent;
 export type ServerSnapshot = Snapshot;
 
 // ===== Multiplayer: Direct-match additions (types only) ===================
 export type MatchId = string;
 
+// Queue request
 export type DirectQueueEvent = { playerId: PlayerId };
+
+// Found event supports both basic + colon payloads
 export type DirectMatchFoundEvent = {
     matchId: MatchId;
-    players: PlayerId[];
     starter: PlayerId;
+    // queue-style
+    players?: PlayerId[];
+    // colon-style
+    host?: { playerId: PlayerId; username?: string };
+    guest?: { playerId: PlayerId; username?: string };
 };
+
+// Ready from one side
 export type DirectReadyEvent = { matchId: MatchId; playerId: PlayerId };
-export type DirectAttackEvent = { matchId: MatchId; playerId: PlayerId; weaponKey: string };
-export type DirectStateEvent = { matchId: MatchId; ok: boolean };
+
+// Direct state is a generic “patch” object keyed by matchId
+export type DirectStateEvent = { matchId: MatchId } & Record<string, any>;
+
+// Attack payload (used both C->S and S->C)
+export type DirectAttackEvent = {
+    matchId: MatchId;
+    playerId: PlayerId;
+    weaponKey: WeaponId;
+    outcome?: MinigameResultOutcome; // success / failure / timeout / blocked
+    score?: number;
+};
+
+// Game ended (for playerExitGame flow, etc.) -------------------------------
+export type GameEndedEvent = {
+    lobbyId: LobbyId;
+    winnerId?: PlayerId;
+    reason?: string;
+    by?: PlayerId;
+};
 
 // Socket.IO event maps -----------------------------------------------------
 export type ServerToClientEvents = {
@@ -335,9 +362,21 @@ export type ServerToClientEvents = {
     reconnectResponse: (rr: ReconnectResponse) => void;
     resumeTurn: (r: ResumeTurnEvent) => void;
 
+    // direct-match (no lobby)
     directMatchFound: (e: DirectMatchFoundEvent) => void;
-    directAttack: (e: DirectAttackEvent) => void;
+    directAttack: (payload: DirectAttackEvent) => void;
     directState: (e: DirectStateEvent) => void;
+
+    // Game lifecycle
+    gameEnded: (e: GameEndedEvent) => void;
+
+    // Legacy direct:* events (compat)
+    'direct:found': (e: DirectMatchFoundEvent) => void;
+    'direct:state': (e: DirectStateEvent) => void;
+    'direct:attack': (e: DirectAttackEvent) => void;
+    'direct:error': (
+        e: { code?: number; message?: string } | string | unknown
+    ) => void;
 };
 
 export type ClientToServerEvents = {
@@ -358,7 +397,37 @@ export type ClientToServerEvents = {
     groupMinigameResult: (payload: GroupMinigameResultEvent) => void;
     reconnectRequest: (payload: ReconnectRequest) => void;
 
+    // direct-match (no lobby) – camelCase
     directQueue: (e: DirectQueueEvent) => void;
     directReady: (e: DirectReadyEvent) => void;
     directAttack: (e: DirectAttackEvent) => void;
+    directExitGame: (payload: { matchId: string }) => void;
+
+    // Player leaves an active game
+    playerExitGame: (e: { lobbyId: LobbyId; playerId: PlayerId }) => void;
+
+    // Legacy / colon-style quick-match helpers
+    'direct:host': (e: {
+        matchId: MatchId;
+        playerId: PlayerId;
+        username: string;
+    }) => void;
+    'direct:join': (e: {
+        matchId: MatchId;
+        playerId: PlayerId;
+        username: string;
+    }) => void;
+    'direct:ready': (e: { matchId: MatchId; playerId: PlayerId }) => void;
+    'direct:attack': (e: DirectAttackEvent) => void;
+};
+
+// Result outcome helper (used by frontend Fuel Sort code, etc.)
+export type MinigameResultOutcome = MinigameResultEvent['outcome'];
+
+// Local-only UI event: Fuel Sort overlay completion -----------------------
+export type FuelSortCompleteEvent = {
+    lobbyId?: LobbyId;
+    turnId?: TurnId;
+    success: boolean;
+    score?: number | null;
 };

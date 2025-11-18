@@ -30,8 +30,8 @@ export class GameOver extends Scene {
     private stats!: Phaser.GameObjects.Text;
     private mainBtn!: Phaser.GameObjects.Text;
 
-    private enemySprite!: Phaser.GameObjects.GameObject;
-    private playerSprite!: Phaser.GameObjects.GameObject;
+    private enemySprite?: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle;
+    private playerSprite?: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle;
 
     private finalPlayerHP = 0;
     private finalEnemyHP = 0;
@@ -110,7 +110,7 @@ export class GameOver extends Scene {
 
         // gentle float
         this.tweens.add({
-            targets: [this.enemySprite as any, this.playerSprite as any],
+            targets: [this.enemySprite, this.playerSprite],
             y: '+=10',
             duration: 900,
             yoyo: true,
@@ -199,13 +199,13 @@ export class GameOver extends Scene {
         const playerY = height * 0.60;
 
         if (this.enemySprite) {
-            (this.enemySprite as any).setPosition(width * 0.28, enemyY);
+            this.enemySprite.setPosition(width * 0.28, enemyY);
             if (this.enemySprite instanceof Phaser.GameObjects.Image) {
                 this.sizeByHeight(this.enemySprite, height, 0.10);
             }
         }
         if (this.playerSprite) {
-            (this.playerSprite as any).setPosition(width * 0.72, playerY);
+            this.playerSprite.setPosition(width * 0.72, playerY);
             if (this.playerSprite instanceof Phaser.GameObjects.Image) {
                 this.sizeByHeight(this.playerSprite, height, 0.12);
             }
