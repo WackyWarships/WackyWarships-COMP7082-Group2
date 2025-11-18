@@ -145,8 +145,7 @@ export class MainMenu extends Scene {
             const pid = getPlayerId();
             sendDirectQueue({ playerId: pid });
 
-            // 2) wait for server to pair us, then launch Game with net data
-            // FIX: subscribe via wildcard and filter, then store a disposer
+            // 2) wait for server to pair us, then launch Game with the match payload
             const onDirectFound = (type: string, payload: any) => {
                 if (type !== 'direct-match-found') return;
                 const p = payload;
@@ -171,8 +170,9 @@ export class MainMenu extends Scene {
                 this.scene.start('Game', { net: { mode: 'direct', matchId, starter } });
             };
 
-            (EventBus as any).on('*', onDirectFound as any);
-            this.offDirectFound = () => (EventBus as any).off('*', onDirectFound as any);
+            EventBus.on('*', onDirectFound as any);
+
+            this.offDirectFound = () => EventBus.off('*', onDirectFound as any);
 
         } catch (e) {
             console.error('[MainMenu] quick-match error', e);
