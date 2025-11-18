@@ -13,17 +13,11 @@ import type {
     KickPlayerEvent,
     DisbandLobbyEvent,
     LobbyUpdate,
-    StartGameEvent,
-    TurnStartEvent,
-    ChooseWeaponEvent,
-    TurnResolvedEvent,
-    NextTurnEvent,
-    MinigameResultEvent,
-    MinigameStartEvent,
 } from "../../shared/types.js";
 
-const lobbyIdToLobbyMap = new Map<LobbyId, Lobby>();
-const playerToLobbyIdMap = new Map<PlayerId, LobbyId>();
+// Exported maps so multiplayer.ts can reuse them
+export const lobbyIdToLobbyMap = new Map<LobbyId, Lobby>();
+export const playerToLobbyIdMap = new Map<PlayerId, LobbyId>();
 
 export function getLobbyMap() {
     return lobbyIdToLobbyMap;
@@ -73,8 +67,7 @@ export function setupSocket(
             settings,
         };
 
-        console.log([...lobbyIdToLobbyMap.values()]);
-
+        console.log("[lobby] current lobbies:", [...lobbyIdToLobbyMap.values()]);
         io.to(lobbyId).emit("lobbyUpdate", update);
     });
 
@@ -165,110 +158,7 @@ export function setupSocket(
         io.to(lobby.lobbyId).emit("lobbyUpdate", update);
     });
 
-    // === MULTIPLAYER FLOW 
-
-    socket.on("startGame", (payload: StartGameEvent) => {
-        let lobby: Lobby | undefined = undefined;
-
-        if ((lobby = lobbyIdToLobbyMap.get(payload.lobbyId))) {
-            const update: TurnStartEvent = {
-                turnId: 0,
-                playerId: lobby.players[0].playerId,
-            };
-
-            io.to(lobby.lobbyId).emit("turnStart", update);
-        } else {
-            socket.emit("error", {
-                code: 404,
-                message: `Lobby not found with id ${payload.lobbyId}.`,
-            });
-        }
-    });
-
-    socket.on("chooseWeapon", (payload: ChooseWeaponEvent) => {
-        let lobby: Lobby | undefined = undefined;
-
-        if ((lobby = lobbyIdToLobbyMap.get(payload.lobbyId))) {
-            const update: MinigameStartEvent = {
-                lobbyId: payload.lobbyId,
-                attackerId: payload.playerId,
-                defenderId: payload.targetPlayerId,
-                weaponId: payload.weaponId,
-            };
-
-            io.to(lobby.lobbyId).emit("minigameStart", update);
-        } else {
-            socket.emit("error", {
-                code: 404,
-                message: `Lobby not found with id ${payload.lobbyId}.`,
-            });
-        }
-    });
-
-    socket.on("nextTurn", (payload: NextTurnEvent) => {
-        let lobby: Lobby | undefined = undefined;
-
-        if ((lobby = lobbyIdToLobbyMap.get(payload.lobbyId))) {
-            const update: TurnStartEvent = {
-                turnId: payload.turnId + 1,
-                playerId:
-                    lobby.players[0].playerId === payload.currentPlayer
-                        ? lobby.players[1].playerId
-                        : lobby.players[0].playerId,
-            };
-
-            io.to(lobby.lobbyId).emit("turnStart", update);
-        } else {
-            socket.emit("error", {
-                code: 404,
-                message: `Lobby not found with id ${payload.lobbyId}.`,
-            });
-        }
-    });
-
-    socket.on("minigameResult", (payload: MinigameResultEvent) => {
-        let lobby: Lobby | undefined = undefined;
-
-        if (!(lobby = lobbyIdToLobbyMap.get(payload.lobbyId))) {
-            socket.emit("error", {
-                code: 404,
-                message: `Lobby not found with id ${payload.lobbyId}.`,
-            });
-            return;
-        }
-
-        // 1) Damage based on weapon + success/fail
-        const weaponBaseDamage: Record<string, number> = {
-            W1: 10,   // easy
-            W2: 40,   // medium
-            W3: 80,   // hard
-        };
-
-        const base = weaponBaseDamage[payload.weaponId] ?? 10;
-        const isSuccess = payload.outcome === "success";
-        const damageResult = isSuccess ? base : 5;
-
-        // 2) Normalize outcome to match TurnResolvedEvent ('success' | 'failure' | undefined)
-        const normalizedOutcome: "success" | "failure" | undefined =
-            payload.outcome === "success"
-                ? "success"
-                : payload.outcome === "failure"
-                    ? "failure"
-                    : undefined; // 'fail' | 'timeout' | 'blocked' → undefined (treated as failure client-side)
-
-        const update: TurnResolvedEvent = {
-            turnId: payload.turnId,
-            attackerId: payload.playerId,
-            defenderId: payload.targetPlayerId,
-            weaponId: payload.weaponId,
-            outcome: normalizedOutcome,
-            damage: damageResult,
-        };
-
-        io.to(lobby.lobbyId).emit("turnResolved", update);
-    });
-
-    // === LOBBY MANAGEMENT
+    // === LOBBY MANAGEMENT =====================
 
     socket.on("kickPlayer", (payload: KickPlayerEvent) => {
         const lobby = lobbyIdToLobbyMap.get(payload.lobbyId);
@@ -281,7 +171,6 @@ export function setupSocket(
         }
 
         const hostId = lobby.host.hostId;
-
         if (payload.targetPlayerId === hostId) {
             socket.emit("error", {
                 code: 403,
@@ -333,24 +222,4 @@ export function setupSocket(
         lobbyIdToLobbyMap.delete(lobby.lobbyId);
         io.in(lobby.lobbyId).socketsLeave(lobby.lobbyId);
     });
-
-    (socket as any).on("playerExitGame", (payload: { lobbyId: string; playerId: string }) => {
-        const lobby = lobbyIdToLobbyMap.get(payload.lobbyId);
-        if (!lobby) return;
-
-        // Tell both players the game ended
-        (io.to(payload.lobbyId) as any).emit("gameEnded", {
-            lobbyId: payload.lobbyId,
-            by: payload.playerId,
-            reason: "Player returned to main menu",
-        });
-
-        // Optionally: fully remove lobby
-        for (const p of lobby.players) {
-            playerToLobbyIdMap.delete(p.playerId);
-        }
-        lobbyIdToLobbyMap.delete(payload.lobbyId);
-        io.in(payload.lobbyId).socketsLeave(payload.lobbyId);
-    });
-
 }

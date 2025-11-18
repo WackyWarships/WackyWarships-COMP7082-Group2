@@ -567,8 +567,8 @@ export class FuelSortScene extends Phaser.Scene {
         this.time.delayedCall(1500, () => {
             const finalScore = this.gameState.calculateScore();
 
-            if (this.asOverlay && this.overlayLobbyId != null && this.overlayTurnId != null) {
-                (EventBus as any).emit('fuel-sort-complete', {
+            if (this.asOverlay) {
+                    EventBus.emit('fuel-sort-complete', {
                     lobbyId: this.overlayLobbyId,
                     turnId: this.overlayTurnId,
                     success: true,
@@ -862,8 +862,8 @@ export class FuelSortScene extends Phaser.Scene {
         this.time.delayedCall(1200, () => {
             const finalScore = this.gameState.calculateScore();
 
-            if (this.asOverlay && this.overlayLobbyId != null && this.overlayTurnId != null) {
-                (EventBus as any).emit('fuel-sort-complete', {
+            if (this.asOverlay) {
+                EventBus.emit('fuel-sort-complete', {
                     lobbyId: this.overlayLobbyId,
                     turnId: this.overlayTurnId,
                     success: false,
@@ -931,12 +931,10 @@ export class FuelSortScene extends Phaser.Scene {
 
         this.time.delayedCall(800, () => {
             if (
-                this.asOverlay &&
-                this.overlayLobbyId != null &&
-                this.overlayTurnId != null
+                this.asOverlay
             ) {
                 const finalScore = this.gameState.calculateScore();
-                (EventBus as any).emit('fuel-sort-complete', {
+                    EventBus.emit('fuel-sort-complete', {
                     lobbyId: this.overlayLobbyId,
                     turnId: this.overlayTurnId,
                     success: false,   // <- counts as failed minigame

@@ -2,19 +2,20 @@
 // ================================================
 // === MULTIPLAYER MINIGAME INTEGRATION ===
 // Fuel Sort overlay + damage calculation bridge
+// (LOBBY MULTIPLAYER ONLY)
 // ================================================
 
 import Phaser from 'phaser';
 import EventBus from './EventBus';
 import { sendMinigameResult } from '../api/socket';
+import type {
+    MinigameResultEvent,
+    MinigameResultOutcome,
+    FuelSortCompleteEvent,
+} from 'shared/types';
 
-// Keep this in sync with MinigameResultEvent["outcome"]
-export type MinigameResultOutcome = 'success' | 'failure';
-
-/**
- * Difficulty IDs that exist in difficulty-config.json
- * (easy, medium, hard).
- */
+// Difficulty IDs that exist in difficulty-config.json
+// (easy, medium, hard).
 export type MinigameDifficultyId = 'easy' | 'medium' | 'hard';
 
 /**
@@ -27,8 +28,8 @@ export interface LaunchFuelSortOptions {
     turnId: number;
     attackerId: string;
     defenderId: string;
-    weaponId: string;          //'W1', 'W2', 'W3'
-    baseDamage: number;        // 10 / 40  / 80
+    weaponId: string;          // 'W1', 'W2', 'W3'
+    baseDamage: number;        // 10 / 40 / 80
     difficultyId: MinigameDifficultyId;
     role: MinigameRole;        // 'controller' -> plays; 'spectator' -> just watches
 }
@@ -68,7 +69,7 @@ export class MinigameManager {
     /**
      * Compute the damage for a given outcome.
      * - success  => full baseDamage
-     * - failure* => half (rounded down)
+     * - failure* => flat 5
      *
      * (* includes any non-success case the backend might add later)
      */
@@ -85,7 +86,7 @@ export class MinigameManager {
     }
 
     /**
-     * Launch the Fuel Sort scene as an overlay.
+     * Launch the Fuel Sort scene as an overlay (LOBBY ONLY).
      */
     public launchFuelSort(opts: LaunchFuelSortOptions): void {
         if (this.active) {
@@ -109,9 +110,9 @@ export class MinigameManager {
         this.scene.scene.bringToTop('FuelSortGame');
 
         if (opts.role === 'spectator') {
-            // 🔹 Spectator does NOT listen for local "fuel-sort-complete"
-            //     (they never solve the puzzle themselves).
-            //     Game.ts will forcibly close the overlay on TurnResolved.
+            // Spectator does NOT listen for local "fuel-sort-complete"
+            // (they never solve the puzzle themselves).
+            // Game.ts will show a banner instead.
             return;
         }
 
@@ -145,17 +146,12 @@ export class MinigameManager {
         // FuelSortScene will emit:
         // EventBus.emit('fuel-sort-complete', { lobbyId, turnId, success, score });
 
-        const handler = (payload: {
-            lobbyId: string;
-            turnId: number;
-            success: boolean;
-            score?: number;
-        }) => {
+        const handler = (payload: FuelSortCompleteEvent) => {
             if (payload.lobbyId !== opts.lobbyId || payload.turnId !== opts.turnId) {
                 return; // not our minigame
             }
 
-            (EventBus as any).off('fuel-sort-complete', handler as any);
+            EventBus.off('fuel-sort-complete', handler);
             this.active = false;
 
             // Stop the overlay scene; the main Game scene stays visible
@@ -176,7 +172,7 @@ export class MinigameManager {
             }
         };
 
-        (EventBus as any).on('fuel-sort-complete', handler as any);
+        EventBus.on('fuel-sort-complete', handler);
     }
 
     // --------------------------------------------
@@ -186,7 +182,7 @@ export class MinigameManager {
         opts: LaunchFuelSortOptions,
         local: LocalMinigameResult
     ) {
-        // Match Game.ts rules:
+        // Match Game.ts / backend rules:
         // - success:  W1 → 10, W2 → 40, W3 → 80
         // - failure: always 5
         let damage: number;
@@ -209,18 +205,8 @@ export class MinigameManager {
             }
         }
 
-        // Note: MinigameResultEvent in shared/types doesn't have weaponId/damage yet;
-        // those are harmless extra fields at runtime, but you can extend the type too.
-        const payload: {
-            lobbyId: string;
-            turnId: number;
-            playerId: string;
-            targetPlayerId: string;
-            outcome: MinigameResultOutcome;
-            score: number;
-            weaponId?: string;
-            damage?: number;
-        } = {
+        // Use shared MinigameResultEvent type
+        const payload: MinigameResultEvent = {
             lobbyId: opts.lobbyId,
             turnId: opts.turnId,
             playerId: opts.attackerId,
@@ -231,7 +217,6 @@ export class MinigameManager {
             damage,
         };
 
-        sendMinigameResult(payload as any);
-
+        sendMinigameResult(payload);
     }
 }

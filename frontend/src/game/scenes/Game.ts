@@ -8,11 +8,13 @@ import {
     sendDirectAttack,
     sendChooseWeapon,
     sendNextTurn,
-    sendPlayerExitGame
+    sendPlayerExitGame,
+    sendDirectExitGame,
 } from '../../api/socket';
 
 // === MINIGAME INTEGRATION ===
 import { MinigameManager, MinigameRole, MinigameDifficultyId } from '../MinigameManager';
+import { DirectMinigameManager } from '../DirectMinigameManager';
 
 // -------------------------------------
 // small helpers / types
@@ -78,10 +80,10 @@ export class Game extends Phaser.Scene {
     private playerHPBar!: HPBar;
 
     // Ships can be Image or Rectangle (fallback)
-    private enemy!: Phaser.GameObjects.GameObject;
-    private player!: Phaser.GameObjects.GameObject;
+    private enemy!: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle;
+    private player!: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle;
 
-    private homeBtn!: Phaser.GameObjects.GameObject;
+    private homeBtn!: Phaser.GameObjects.Container;
     private attackBtn!: Phaser.GameObjects.Text;
 
     private weaponNodes: {
@@ -123,8 +125,9 @@ export class Game extends Phaser.Scene {
     // explosion config
     private readonly EXPLOSION_MS = 1000;
 
-    // === MINIGAME MANAGER ===
-    private minigameManager?: MinigameManager;
+    // === MINIGAME MANAGERS ===
+    private minigameManager?: MinigameManager;              // lobby
+    private directMinigameManager?: DirectMinigameManager;  // direct
 
     // Spectator overlay when opponent is playing a minigame
     private opponentMinigameOverlay?: Phaser.GameObjects.Container;
@@ -318,7 +321,6 @@ export class Game extends Phaser.Scene {
         const curIdx = this.weapons.findIndex((w) => w.key === current);
         return table[Math.min(Math.max(curIdx, 0), table.length - 1)] || 10;
     }
-
 
     private selectWeapon(i: number) {
         this.currentWeaponIndex = i;
@@ -522,7 +524,6 @@ export class Game extends Phaser.Scene {
         }
     }
 
-
     // -------------------------------------
     // create
     // -------------------------------------
@@ -552,6 +553,8 @@ export class Game extends Phaser.Scene {
                         lobbyId: this.lobbyId,
                         playerId: this.meId,
                     });
+                } else if (this.netMode === 'direct' && this.matchId) {
+                    sendDirectExitGame(this.matchId);
                 }
                 this.scene.start('MainMenu');
             });
@@ -623,8 +626,9 @@ export class Game extends Phaser.Scene {
         // weapon selector
         this.buildWeaponUI();
 
-        // === MINIGAME MANAGER INIT ===
-        this.minigameManager = new MinigameManager(this);
+        // === MINIGAME MANAGERS INIT ===
+        this.minigameManager = new MinigameManager(this);              // lobby
+        this.directMinigameManager = new DirectMinigameManager(this);  // direct
 
         // attack button
         this.attackBtn = this.add
@@ -682,6 +686,23 @@ export class Game extends Phaser.Scene {
         this.scale.on('resize', this.onResize, this);
         EventBus.emit('current-scene-ready', this);
 
+        // === GAME-ENDED (DIRECT) ===
+        // Lobby mode already handles this in wireLobby().
+        // Here we hook the same event for direct matches.
+        const onAnyGameEnded = (evt: { lobbyId: string; by: string; reason: string }) => {
+            if (this.netMode !== 'direct') return;
+            if (!this.matchId) return;
+            if (evt.lobbyId !== this.matchId) return;
+
+            // Both players get this via socket.io -> EventBus, so both go home.
+            this.scene.start('MainMenu');
+        };
+        EventBus.on('game-ended', onAnyGameEnded as any);
+
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            EventBus.off('game-ended', onAnyGameEnded as any);
+        });
+
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanup());
         this.events.once(Phaser.Scenes.Events.DESTROY, () => this.cleanup());
     }
@@ -693,6 +714,8 @@ export class Game extends Phaser.Scene {
         this.offAttack && this.offAttack();
         this.offState && this.offState();
         this.hideOpponentMinigameBanner();
+        this.minigameManager?.forceCloseCurrent();
+        this.directMinigameManager?.forceCloseCurrent();
     }
 
     // -------------------------------------
@@ -703,15 +726,24 @@ export class Game extends Phaser.Scene {
 
         const onDirectAttack = (type: string, payload: any) => {
             if (type !== 'direct-attack') return;
-            const ev = payload;
+            const ev = payload as {
+                matchId: string;
+                playerId: string;
+                weaponKey: string;
+                damage?: number;
+                attackId?: string;
+            };
             if (!ev || ev.matchId !== this.matchId) return;
 
             if (ev.attackId && this.seenAttackIds.has(ev.attackId)) return;
             if (ev.attackId) this.seenAttackIds.add(ev.attackId);
 
             const weap = this.weapons.find((x) => x.key === ev.weaponKey) || this.weapons[0];
-            // Canonical damage: 10, 40, 80 (ignore server number)
-            const dmg = this.damageForWeapon(weap.key);
+
+            // Prefer server-authoritative damage; fall back to local table
+            const dmg = typeof ev.damage === 'number'
+                ? ev.damage
+                : this.damageForWeapon(weap.key);
 
             const { height: H2, width: W2 } = this.scale;
             const topY2 = H2 * 0.2, bottomY2 = H2 * 0.8;
@@ -730,6 +762,7 @@ export class Game extends Phaser.Scene {
                     this.cameras.main.shake(180, 0.006); // 180ms, small amplitude
 
                     if (shotFromTop) {
+                        // Opponent hit ME
                         this.playerHP = Math.max(0, this.playerHP - dmg);
                         this.playerHPBar.set(this.playerHP / this.playerHPMax);
                         this.updateHPTexts();
@@ -741,6 +774,7 @@ export class Game extends Phaser.Scene {
                         this.nextTurnBadge();
                         this.startPlayerTurn();
                     } else {
+                        // I hit opponent
                         this.enemyHP = Math.max(0, this.enemyHP - dmg);
                         this.totalDamage += dmg;
                         this.enemyHPBar.set(this.enemyHP / this.enemyHPMax);
@@ -796,7 +830,7 @@ export class Game extends Phaser.Scene {
 
             // --- DAMAGE LOGIC ---
             // Prefer what the server tells us.
-            // Backend should already be doing:
+            // Backend already does:
             //   success: W1=10, W2=40, W3=80
             //   failure: 5
             let dmg: number;
@@ -865,7 +899,6 @@ export class Game extends Phaser.Scene {
         };
 
         // === MINIGAME START ===
-        // Listen for backend 'minigameStart' bridged via EventBus as 'minigame-start'
         const onMinigameStart = (evt: {
             lobbyId: string;
             attackerId: string;
@@ -891,23 +924,24 @@ export class Game extends Phaser.Scene {
                 role
             );
         };
-        // --- END DAMAGE LOGIC ---
+
         const onGameEnded = (evt: { lobbyId: string; by: string; reason: string }) => {
             if (!this.lobbyId || evt.lobbyId !== this.lobbyId) return;
 
             // Go back to main menu on disconnect
             this.scene.start("MainMenu");
         };
+
         EventBus.on('turn-start', onTurnStart as any);
         EventBus.on('turn-resolved', onTurnResolved as any);
         EventBus.on('minigame-start', onMinigameStart as any);
-        (EventBus as any).on("game-ended", onGameEnded as any);
+        EventBus.on("game-ended", onGameEnded as any);
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             EventBus.off('turn-start', onTurnStart as any);
             EventBus.off('turn-resolved', onTurnResolved as any);
             EventBus.off('minigame-start', onMinigameStart as any);
-            (EventBus as any).off("game-ended", onGameEnded as any);   // ← ADD THIS LINE
+            EventBus.off("game-ended", onGameEnded as any);
         });
     }
 
@@ -915,7 +949,7 @@ export class Game extends Phaser.Scene {
     // input → attack
     // -------------------------------------
     private doAttack() {
-        // lobby path (authoritative)
+        // lobby path (authoritative + lobby minigame)
         if (this.netMode === 'lobby') {
             if (!this.isPlayerTurn || !this.lobbyId) return;
 
@@ -936,7 +970,7 @@ export class Game extends Phaser.Scene {
             // 2) Disable attack button while minigame is running
             this.setAttackEnabled(false);
 
-            // 3) Immediately launch Fuel Sort locally for the controller
+            // 3) Immediately launch Fuel Sort locally for the controller (LOBBY)
             this.launchFuelSortForTurn(
                 this.meId,
                 targetId,
@@ -949,14 +983,58 @@ export class Game extends Phaser.Scene {
             return;
         }
 
-        // direct/local
-        if (!this.isPlayerTurn || this.coolingDown || this.enemyHP <= 0 || this.playerHP <= 0) return;
-
-        this.coolingDown = true;
-        this.time.delayedCall(this.cooldownMs, () => (this.coolingDown = false));
+        // shared pre-checks for direct/local
+        if (!this.isPlayerTurn || this.enemyHP <= 0 || this.playerHP <= 0) return;
 
         const w = this.weapons[this.currentWeaponIndex];
         this.shotsFired++;
+
+        // ---------- DIRECT MODE: use DirectMinigameManager ----------
+        if (this.netMode === 'direct' && this.matchId) {
+            if (this.coolingDown) return;
+            this.coolingDown = true;
+            this.setAttackEnabled(false);
+
+            // Map weapon to difficulty
+            let difficultyId: MinigameDifficultyId;
+            switch (w.key) {
+                case 'W1':
+                    difficultyId = 'easy';
+                    break;
+                case 'W2':
+                    difficultyId = 'medium';
+                    break;
+                case 'W3':
+                    difficultyId = 'hard';
+                    break;
+                default:
+                    difficultyId = 'easy';
+            }
+
+            if (this.directMinigameManager) {
+                this.directMinigameManager.launchFuelSort({
+                    matchId: this.matchId,
+                    weaponId: w.key,
+                    difficultyId,
+                    onComplete: () => {
+                        // Minigame finished; cooldown is cleared here.
+                        this.coolingDown = false;
+                    },
+                });
+            } else {
+                // Fallback: no minigame manager -> send a basic "success" attack
+                sendDirectAttack(this.matchId, w.key, 'success', 0);
+                this.coolingDown = false;
+            }
+
+            return;
+        }
+
+        // ---------- LOCAL OFFLINE ----------
+        if (this.coolingDown) return;
+
+        this.coolingDown = true;
+        this.time.delayedCall(this.cooldownMs, () => (this.coolingDown = false));
 
         const { width: W, height: H } = this.scale;
         const topY = H * 0.2;
@@ -975,22 +1053,18 @@ export class Game extends Phaser.Scene {
                 this.showExplosion(impactX, impactY);
                 this.cameras.main.shake(180, 0.006); // 180ms, small amplitude
 
-                if (this.netMode === 'direct' && this.matchId) {
-                    sendDirectAttack(this.matchId, w.key);
-                } else {
-                    // local
-                    this.enemyHP = Math.max(0, this.enemyHP - w.dmg);
-                    this.totalDamage += w.dmg;
-                    this.enemyHPBar.set(this.enemyHP / this.enemyHPMax);
-                    this.updateHPTexts();
-                    this.updateShipVisuals();
-                    if (this.enemyHP === 0) {
-                        this.endRound(true);
-                        return;
-                    }
-                    this.nextTurnBadge();
-                    this.startEnemyTurn();
+                // purely local damage
+                this.enemyHP = Math.max(0, this.enemyHP - w.dmg);
+                this.totalDamage += w.dmg;
+                this.enemyHPBar.set(this.enemyHP / this.enemyHPMax);
+                this.updateHPTexts();
+                this.updateShipVisuals();
+                if (this.enemyHP === 0) {
+                    this.endRound(true);
+                    return;
                 }
+                this.nextTurnBadge();
+                this.startEnemyTurn();
             },
         });
     }
@@ -1008,13 +1082,18 @@ export class Game extends Phaser.Scene {
         const bottomY = H * 0.8;
 
         if (this.background) this.background.setPosition(W / 2, H / 2).setDisplaySize(W, H);
-        (this.homeBtn as any)?.setPosition(pad + 24, pad + 24);
+        this.homeBtn.setPosition(pad + 24, pad + 24);
 
-        (this.enemy as any)?.setPosition(W / 2, topY);
-        (this.player as any)?.setPosition(W / 2, bottomY);
+        if (this.enemy instanceof Phaser.GameObjects.Image) {
+            this.enemy.setPosition(W / 2, topY);
+        }
 
-        if (this.enemy instanceof Phaser.GameObjects.Image) this.sizeShipByHeight(this.enemy as any, H, 0.09);
-        if (this.player instanceof Phaser.GameObjects.Image) this.sizeShipByHeight(this.player as any, H, 0.11);
+        if (this.player instanceof Phaser.GameObjects.Image) {
+            this.player.setPosition(W / 2, bottomY);
+        }
+
+        if (this.enemy instanceof Phaser.GameObjects.Image) this.sizeShipByHeight(this.enemy, H, 0.09);
+        if (this.player instanceof Phaser.GameObjects.Image) this.sizeShipByHeight(this.player, H, 0.11);
 
         const gap = 32;
         this.enemyHPBar?.setPosition(W / 2, topY - gap);

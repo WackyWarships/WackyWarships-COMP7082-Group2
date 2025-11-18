@@ -7,6 +7,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 import { getLobbyMap, setupSocket as setupLobbySocket } from "./lobby.js";
+import { setupMultiplayerSocket } from "./multiplayer.js";
 import { setupSocket as setupPlayerUsernameSocket } from "./playerUsername.js";
 
 import { setupDirectSocket } from "./direct.js";
@@ -92,6 +93,7 @@ io.on("connection", (socket) => {
     setupPlayerUsernameSocket(io, socket);
     setupLobbySocket(io, socket);
     setupDirectSocket(io, socket);
+    setupMultiplayerSocket(io, socket);
 });
 
 // Start server

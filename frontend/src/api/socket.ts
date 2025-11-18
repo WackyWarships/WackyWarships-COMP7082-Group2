@@ -36,6 +36,11 @@ import type {
     PlayerId,
     PlayerKickedNotice,
     LobbyDisbandedNotice,
+    DirectMatchFoundEvent,
+    DirectAttackEvent,
+    DirectStateEvent,
+    GameEndedEvent,
+    MinigameResultOutcome,  
 } from 'shared/types';
 
 // -----------------------------------------
@@ -49,9 +54,16 @@ const BACKEND_URL =
 let socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
 const playerId: PlayerId = getOrCreatePlayerId();
 
+// EventBus wrapper
+type EventBusLike = {
+    emit: (type: string, payload?: unknown) => void;
+};
+const eventBus: EventBusLike = EventBus as unknown as EventBusLike;
+
 // Small helper to forward to EventBus
-const emitBus = (type: string, payload?: any) =>
-    (EventBus as any).emit(type, payload);
+const emitBus = (type: string, payload?: unknown) => {
+    eventBus.emit(type, payload);
+};
 
 // -----------------------------------------------------------
 // Socket initialization
@@ -74,7 +86,7 @@ export function initSocket(token?: string) {
 
         // Bootstrap association on the server (real username will be sent by EnterUsername scene)
         const payload: SetUsernameEvent = { playerId, playerName: playerId };
-        (socket as any).emit('setUsername', payload);
+        socket!.emit('setUsername', payload);
     });
 
     socket.on('connect_error', (err: unknown): void => {
@@ -86,7 +98,7 @@ export function initSocket(token?: string) {
     // Server → Client forwards
     // -----------------------------------------------------------
 
-    (socket as any).on('gameEnded', (evt: any): void => {
+    socket.on('gameEnded', (evt: GameEndedEvent): void => {
         emitBus('game-ended', evt);
     });
 
@@ -95,7 +107,7 @@ export function initSocket(token?: string) {
         emitBus('snapshot', snapshot);
     });
 
-    socket.on('ack', (ack: unknown): void => {
+    socket.on('ack', (ack: { seq: number }): void => {
         emitBus('ack', ack);
     });
 
@@ -109,7 +121,7 @@ export function initSocket(token?: string) {
     });
 
     // Errors
-    socket.on('error', (err: unknown): void => {
+    socket.on('error', (err: { code: number; message: string }): void => {
         emitBus('error', err);
     });
 
@@ -132,7 +144,7 @@ export function initSocket(token?: string) {
     // - Game.ts listens on EventBus "minigame-start"
     // =======================================================
     socket.on('minigameStart', (ms: MinigameStartEvent): void => {
-        EventBus.emit('minigame-start', ms);
+        emitBus('minigame-start', ms);
     });
 
     // Group minigames
@@ -146,11 +158,11 @@ export function initSocket(token?: string) {
 
     // Moderation / notices
     socket.on('playerKicked', (n: PlayerKickedNotice): void => {
-        emitBus('player-kicked', n as any);
+        emitBus('player-kicked', n);
     });
 
     socket.on('lobbyDisbanded', (n: LobbyDisbandedNotice): void => {
-        emitBus('lobby-disbanded', n as any);
+        emitBus('lobby-disbanded', n);
     });
 
     // Presence / reconnect
@@ -172,29 +184,34 @@ export function initSocket(token?: string) {
 
     // ====== Quick-match (no lobby) ======
     // New camelCase events
-    (socket as any).on('directMatchFound', (payload: any): void => {
+    socket.on('directMatchFound', (payload: DirectMatchFoundEvent): void => {
         emitBus('direct-match-found', payload);
     });
-    (socket as any).on('directState', (payload: any): void => {
+
+    socket.on('directState', (payload: DirectStateEvent): void => {
         emitBus('direct-state', payload);
     });
-    (socket as any).on('directAttack', (payload: any): void => {
+
+    socket.on('directAttack', (payload: DirectAttackEvent): void => {
         emitBus('direct-attack', payload);
     });
 
     // Legacy direct:* events (compat)
-    (socket as any).on('direct:found', (payload: any): void => {
+    socket.on('direct:found', (payload: DirectMatchFoundEvent): void => {
         emitBus('direct-match-found', payload);
     });
-    (socket as any).on('direct:state', (payload: any): void => {
+    socket.on('direct:state', (payload: DirectStateEvent): void => {
         emitBus('direct-state', payload);
     });
-    (socket as any).on('direct:attack', (payload: any): void => {
+    socket.on('direct:attack', (payload: DirectAttackEvent): void => {
         emitBus('direct-attack', payload);
     });
-    (socket as any).on('direct:error', (payload: any): void => {
-        emitBus('error', payload);
-    });
+    socket.on(
+        'direct:error',
+        (payload: { code?: number; message?: string } | string | unknown): void => {
+            emitBus('error', payload);
+        }
+    );
 
     return socket;
 }
@@ -209,7 +226,7 @@ function ensureSocket(): Socket<ServerToClientEvents, ClientToServerEvents> {
 
 // ----- Player leaves an active game -----
 export function sendPlayerExitGame(payload: { lobbyId: string; playerId: PlayerId }): void {
-    (ensureSocket() as any).emit('playerExitGame', payload);
+    ensureSocket().emit('playerExitGame', payload);
 }
 
 // Lobby & identity
@@ -248,7 +265,7 @@ export function sendChooseWeapon(payload: ChooseWeaponEvent): void {
 }
 
 // =======================================================
-// fuel sort minigame result → backend
+// Fuel Sort minigame result → backend
 // =======================================================
 export function sendMinigameResult(payload: MinigameResultEvent): void {
     ensureSocket().emit('minigameResult', payload);
@@ -265,20 +282,34 @@ export function sendReconnectRequest(payload: ReconnectRequest): void {
 
 // ====== Quick-match helpers (no lobby) ======
 export function sendDirectQueue(payload: { playerId: PlayerId }): void {
-    (ensureSocket() as any).emit('directQueue', payload);
+    ensureSocket().emit('directQueue', payload);
 }
 export function sendDirectReady(matchId: string): void {
-    (ensureSocket() as any).emit('directReady', { matchId, playerId });
+    ensureSocket().emit('directReady', { matchId, playerId });
 }
-export function sendDirectAttack(matchId: string, weaponKey: string): void {
-    (ensureSocket() as any).emit('directAttack', { matchId, playerId, weaponKey });
+export function sendDirectAttack(
+    matchId: string,
+    weaponKey: string,
+    outcome?: MinigameResultOutcome,
+    score?: number
+): void {
+    ensureSocket().emit('directAttack', {
+        matchId,
+        playerId,
+        weaponKey,
+        outcome,
+        score,
+    });
+}
+export function sendDirectExitGame(matchId: string): void {
+    ensureSocket().emit('directExitGame', { matchId });
 }
 // Legacy helpers (compat)
 export function sendDirectHost(matchId: string, username: string): void {
-    (ensureSocket() as any).emit('direct:host', { matchId, playerId, username });
+    ensureSocket().emit('direct:host', { matchId, playerId, username });
 }
 export function sendDirectJoin(matchId: string, username: string): void {
-    (ensureSocket() as any).emit('direct:join', { matchId, playerId, username });
+    ensureSocket().emit('direct:join', { matchId, playerId, username });
 }
 
 // -----------------------------------------------------------
