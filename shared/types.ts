@@ -108,7 +108,16 @@ export type MinigameResultEvent = {
     turnId: TurnId;
     playerId: PlayerId;
     targetPlayerId: PlayerId;
-    outcome: 'success' | 'failure';
+
+    // === widened outcome union for minigame integration ==========
+    // - 'failure' kept for backward compat
+    // - 'timeout' / 'blocked' used by Fuel Sort integration
+    outcome: 'success' | 'failure' | 'timeout' | 'blocked';
+
+    // === added for Fuel Sort damage wiring =======================
+    weaponId: WeaponId;
+    damage?: number;
+
     score?: number;
     durationMs?: number;
     inputLog?: MinigameInputCompact[];
@@ -154,6 +163,8 @@ export type TurnResolvedEvent = {
     defenderId: PlayerId;
     damage: number;
     defenderHp?: number;
+    weaponId?: WeaponId;              //handy
+    outcome?: 'success' | 'failure';  //for UI / logs
     events?: Array<{ type: string; payload?: any }>;
     meta?: Record<string, any>;
 };
@@ -324,7 +335,6 @@ export type ServerToClientEvents = {
     reconnectResponse: (rr: ReconnectResponse) => void;
     resumeTurn: (r: ResumeTurnEvent) => void;
 
-    // ===== LUCAS CODED
     directMatchFound: (e: DirectMatchFoundEvent) => void;
     directAttack: (e: DirectAttackEvent) => void;
     directState: (e: DirectStateEvent) => void;
@@ -348,7 +358,6 @@ export type ClientToServerEvents = {
     groupMinigameResult: (payload: GroupMinigameResultEvent) => void;
     reconnectRequest: (payload: ReconnectRequest) => void;
 
-    // ===== LUCAS CODED
     directQueue: (e: DirectQueueEvent) => void;
     directReady: (e: DirectReadyEvent) => void;
     directAttack: (e: DirectAttackEvent) => void;
