@@ -57,6 +57,26 @@ if (isProd) {
     });
 }
 
+// Auth middleware for socket
+io.use(async (socket, next) => {
+    try {
+        const authUrl = process.env.AUTH_SERVICE_URL || "http://localhost:3002/auth";
+        const response = await fetch(authUrl);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.authenticated) {
+                next();
+            } else {
+                next(new Error("Authentication failed"));
+            }
+        } else {
+            next(new Error("Auth service unavailable"));
+        }
+    } catch (error) {
+        next(new Error("Auth service error"));
+    }
+});
+
 // socket.io
 io.on("connection", (socket) => {
     console.log("New player connected:", socket.id);
