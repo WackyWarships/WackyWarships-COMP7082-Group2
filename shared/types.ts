@@ -10,7 +10,7 @@ export type PlayerId = string;
 export type LobbyId = string;
 export type ProtocolVersion = string;
 
-// Id + name
+// Id + name -----------------------------------------------------------------
 export type HostInfo = {
     hostId: PlayerId;
     hostName: string;
@@ -26,12 +26,21 @@ export type WeaponDef = {
     id: WeaponId;
     name: string;
     baseDamage: number;
-    minigameType: 'timing' | 'pattern' | 'puzzle';
+    minigameType: "timing" | "pattern" | "puzzle";
     params?: Record<string, any>;
     description?: string;
 };
 
-// Lobby
+// Player Session ----------------------------------------------------------
+export interface PlayerSession {
+    lobbyId?: LobbyId | null;
+    scene: string;
+    lastKnownTurnId?: number;
+    lastKnownSeq?: number;
+    timestamp?: number;
+}
+
+// Lobby -------------------------------------------------------------------
 export type Lobby = {
     host: HostInfo;
     lobbyId: LobbyId;
@@ -109,7 +118,7 @@ export type MinigameResultEvent = {
     targetPlayerId: PlayerId;
 
     // widened outcome union for minigame integration
-    outcome: 'success' | 'failure' | 'timeout' | 'blocked';
+    outcome: "success" | "failure" | "timeout" | "blocked";
 
     // Fuel Sort damage wiring
     weaponId: WeaponId;
@@ -161,7 +170,7 @@ export type TurnResolvedEvent = {
     damage: number;
     defenderHp?: number;
     weaponId?: WeaponId;
-    outcome?: 'success' | 'failure';
+    outcome?: "success" | "failure";
     events?: Array<{ type: string; payload?: any }>;
     meta?: Record<string, any>;
 };
@@ -226,7 +235,7 @@ export type LobbyDisbandedNotice = {
 export type GroupParticipant = {
     playerId: PlayerId;
     name?: string;
-    role?: 'player' | 'spectator';
+    role?: "player" | "spectator";
     params?: Record<string, any>;
 };
 
@@ -257,7 +266,7 @@ export type PlayerDisconnectedEvent = {
     lobbyId: LobbyId;
     playerId: PlayerId;
     sessionId?: SessionId;
-    reason?: 'network' | 'kicked' | 'timeout' | 'left' | string;
+    reason?: "network" | "kicked" | "timeout" | "left" | string;
     disconnectedAt?: Timestamp;
     expectedResumeWindowMs?: number;
 };
@@ -267,7 +276,7 @@ export type PlayerReconnectedEvent = {
     playerId: PlayerId;
     sessionId?: SessionId;
     resumedAt?: Timestamp;
-    resumedDuring?: 'turn' | 'group-minigame' | 'idle' | null;
+    resumedDuring?: "turn" | "group-minigame" | "idle" | null;
 };
 
 export type ReconnectResponse = {
@@ -371,10 +380,10 @@ export type ServerToClientEvents = {
     gameEnded: (e: GameEndedEvent) => void;
 
     // Legacy direct:* events (compat)
-    'direct:found': (e: DirectMatchFoundEvent) => void;
-    'direct:state': (e: DirectStateEvent) => void;
-    'direct:attack': (e: DirectAttackEvent) => void;
-    'direct:error': (
+    "direct:found": (e: DirectMatchFoundEvent) => void;
+    "direct:state": (e: DirectStateEvent) => void;
+    "direct:attack": (e: DirectAttackEvent) => void;
+    "direct:error": (
         e: { code?: number; message?: string } | string | unknown
     ) => void;
 };
@@ -407,22 +416,22 @@ export type ClientToServerEvents = {
     playerExitGame: (e: { lobbyId: LobbyId; playerId: PlayerId }) => void;
 
     // Legacy / colon-style quick-match helpers
-    'direct:host': (e: {
+    "direct:host": (e: {
         matchId: MatchId;
         playerId: PlayerId;
         username: string;
     }) => void;
-    'direct:join': (e: {
+    "direct:join": (e: {
         matchId: MatchId;
         playerId: PlayerId;
         username: string;
     }) => void;
-    'direct:ready': (e: { matchId: MatchId; playerId: PlayerId }) => void;
-    'direct:attack': (e: DirectAttackEvent) => void;
+    "direct:ready": (e: { matchId: MatchId; playerId: PlayerId }) => void;
+    "direct:attack": (e: DirectAttackEvent) => void;
 };
 
 // Result outcome helper (used by frontend Fuel Sort code, etc.)
-export type MinigameResultOutcome = MinigameResultEvent['outcome'];
+export type MinigameResultOutcome = MinigameResultEvent["outcome"];
 
 // Local-only UI event: Fuel Sort overlay completion -----------------------
 export type FuelSortCompleteEvent = {

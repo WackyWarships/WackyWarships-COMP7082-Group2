@@ -1,14 +1,15 @@
 // src/game/scenes/EnterUsername.ts
-import { Scene, GameObjects } from 'phaser';
-import { savePlayerName, getOrCreatePlayerId } from '../utils/playerUsername';
-import { sendSetUsername } from '../../api/socket';
-import EventBus from '../EventBus';
+import { Scene, GameObjects } from "phaser";
+import { savePlayerName, getOrCreatePlayerId } from "../utils/playerUsername";
+import { sendSetUsername } from "../../api/socket";
+import EventBus from "../EventBus";
+import { saveSession } from "../utils/playerSession";
 import {
     getCenter,
     isMobile,
     getResponsiveFontSize,
     resizeSceneBase,
-} from '../utils/layout';
+} from "../utils/layout";
 
 export class EnterUsername extends Scene {
     background!: GameObjects.Image;
@@ -19,7 +20,7 @@ export class EnterUsername extends Scene {
     errorText!: GameObjects.Text;
 
     constructor() {
-        super('EnterUsername');
+        super("EnterUsername");
     }
 
     create() {
@@ -27,33 +28,39 @@ export class EnterUsername extends Scene {
         const { x: centerX } = getCenter(this.scale);
         const mobile = isMobile(width);
 
+        saveSession({
+            lobbyId: null,
+            scene: "EnterUsername",
+            timestamp: Date.now(),
+        });
+
         // Background
         this.background = this.add
-            .image(centerX, height / 2, 'background')
+            .image(centerX, height / 2, "background")
             .setDisplaySize(width, height)
             .setOrigin(0.5);
 
         // Titles
         const titleSize = getResponsiveFontSize(width, height, 72, 56);
         this.title1 = this.add
-            .text(centerX, height * (1 / 6), 'Enter Your', {
-                fontFamily: 'Arial Black',
+            .text(centerX, height * (1 / 6), "Enter Your", {
+                fontFamily: "Arial Black",
                 fontSize: `${titleSize}px`,
-                color: '#ffffff',
-                stroke: '#000000',
+                color: "#ffffff",
+                stroke: "#000000",
                 strokeThickness: 8,
-                align: 'center',
+                align: "center",
             })
             .setOrigin(0.5);
 
         this.title2 = this.add
-            .text(centerX, this.title1.y + this.title1.height, 'Username!', {
-                fontFamily: 'Arial Black',
+            .text(centerX, this.title1.y + this.title1.height, "Username!", {
+                fontFamily: "Arial Black",
                 fontSize: `${titleSize}px`,
-                color: '#ffffff',
-                stroke: '#000000',
+                color: "#ffffff",
+                stroke: "#000000",
                 strokeThickness: 8,
-                align: 'center',
+                align: "center",
             })
             .setOrigin(0.5);
 
@@ -63,11 +70,11 @@ export class EnterUsername extends Scene {
         // Error line (hidden by default)
         const errorY = Math.min(height * 0.75, height - 40);
         this.errorText = this.add
-            .text(width / 2, errorY, '', {
-                fontFamily: 'Arial',
+            .text(width / 2, errorY, "", {
+                fontFamily: "Arial",
                 fontSize: `${mobile ? 18 : 20}px`,
-                color: '#ff5555',
-                align: 'center',
+                color: "#ff5555",
+                align: "center",
                 wordWrap: { width: width * 0.8 },
             })
             .setOrigin(0.5)
@@ -75,31 +82,31 @@ export class EnterUsername extends Scene {
 
         // Confirm button
         const buttonStyle = {
-            fontFamily: 'Arial',
+            fontFamily: "Arial",
             fontSize: `${mobile ? 26 : 32}px`,
-            color: '#ffffff',
-            backgroundColor: '#1e90ff',
+            color: "#ffffff",
+            backgroundColor: "#1e90ff",
             padding: { x: 20, y: 10 },
-            align: 'center' as const,
+            align: "center" as const,
             fixedWidth: mobile ? 220 : 260,
         };
 
         this.confirmButton = this.add
-            .text(centerX, height * (5 / 6), 'Confirm', buttonStyle)
+            .text(centerX, height * (5 / 6), "Confirm", buttonStyle)
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true })
-            .on('pointerdown', () => this.submitUsername())
-            .on('pointerover', () =>
-                this.confirmButton.setStyle({ backgroundColor: '#63b3ff' }),
+            .on("pointerdown", () => this.submitUsername())
+            .on("pointerover", () =>
+                this.confirmButton.setStyle({ backgroundColor: "#63b3ff" })
             )
-            .on('pointerout', () =>
-                this.confirmButton.setStyle({ backgroundColor: '#1e90ff' }),
+            .on("pointerout", () =>
+                this.confirmButton.setStyle({ backgroundColor: "#1e90ff" })
             );
 
         // Resize + cleanup
-        this.scale.on('resize', this.handleResize, this);
+        this.scale.on("resize", this.handleResize, this);
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-            this.scale.off('resize', this.handleResize, this);
+            this.scale.off("resize", this.handleResize, this);
             if (this.inputEl) this.inputEl.remove();
         });
     }
@@ -109,43 +116,43 @@ export class EnterUsername extends Scene {
         const centerXOnScreen = rect.left + rect.width / 2;
         const inputWidth = 240;
 
-        this.inputEl = document.createElement('input');
-        this.inputEl.type = 'text';
-        this.inputEl.placeholder = 'Your username here';
+        this.inputEl = document.createElement("input");
+        this.inputEl.type = "text";
+        this.inputEl.placeholder = "Your username here";
 
         Object.assign(this.inputEl.style, {
-            position: 'absolute',
+            position: "absolute",
             left: `${centerXOnScreen - inputWidth / 2}px`,
             top: `${rect.top + inputY - 20}px`,
             width: `${inputWidth}px`,
-            padding: '10px',
-            fontSize: '18px',
-            textAlign: 'center',
-            borderRadius: '6px',
-            border: '2px solid #1e90ff',
-            boxSizing: 'border-box',
+            padding: "10px",
+            fontSize: "18px",
+            textAlign: "center",
+            borderRadius: "6px",
+            border: "2px solid #1e90ff",
+            boxSizing: "border-box",
         } as CSSStyleDeclaration);
 
         document.body.appendChild(this.inputEl);
     }
 
     private submitUsername() {
-        const playerName = (this.inputEl?.value ?? '').trim();
+        const playerName = (this.inputEl?.value ?? "").trim();
         const playerId = getOrCreatePlayerId();
 
         // Validation
         if (playerName.length === 0) {
-            this.showError('Username cannot be empty.');
+            this.showError("Username cannot be empty.");
             return;
         }
         const USERNAME_REGEX = /^[A-Za-z0-9 _-]{3,16}$/;
         if (!USERNAME_REGEX.test(playerName)) {
             this.showError(
-                'Only letters, numbers, spaces, "_" and "-" allowed (3–16 chars).',
+                'Only letters, numbers, spaces, "_" and "-" allowed (3–16 chars).'
             );
             return;
         }
-        this.showError('');
+        this.showError("");
 
         // Save locally and send to server
         savePlayerName(playerName);
@@ -153,10 +160,10 @@ export class EnterUsername extends Scene {
 
         // One-time wait for ack (use on/off instead of once)
         const onAck = () => {
-            EventBus.off('username-set', onAck);
-            this.scene.start('MainMenu');
+            EventBus.off("username-set", onAck);
+            this.scene.start("MainMenu");
         };
-        EventBus.on('username-set', onAck);
+        EventBus.on("username-set", onAck);
 
         // SetUsernameEvent expects { playerId, playerName }
         sendSetUsername({ playerId, playerName });
@@ -175,7 +182,9 @@ export class EnterUsername extends Scene {
         const { x: centerX } = getCenter(this.scale);
         const titleSize = getResponsiveFontSize(width, height, 72, 56);
 
-        this.title1.setFontSize(titleSize).setPosition(centerX, height * (1 / 6));
+        this.title1
+            .setFontSize(titleSize)
+            .setPosition(centerX, height * (1 / 6));
         this.title2
             .setFontSize(titleSize)
             .setPosition(centerX, this.title1.y + this.title1.height);
@@ -186,7 +195,9 @@ export class EnterUsername extends Scene {
                 const rect = this.game.canvas.getBoundingClientRect();
                 const centerXOnScreen = rect.left + rect.width / 2;
                 const inputWidth = 240;
-                this.inputEl.style.left = `${centerXOnScreen - inputWidth / 2}px`;
+                this.inputEl.style.left = `${
+                    centerXOnScreen - inputWidth / 2
+                }px`;
                 this.inputEl.style.top = `${rect.top + height * 0.5 - 20}px`;
             });
         }

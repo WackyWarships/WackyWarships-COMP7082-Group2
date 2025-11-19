@@ -1,21 +1,15 @@
-import { Scene } from 'phaser';
-import EventBus from '../EventBus';
+import { Scene } from "phaser";
+import EventBus from "../EventBus";
 import {
     getCenter,
     isMobile,
     getResponsiveFontSize,
-    resizeSceneBase
-} from '../utils/layout';
-import { getStoredPlayerName } from '../utils/playerUsername';
-import {
-    sendJoinLobby,
-    getPlayerId
-} from '../../api/socket';
-import {
-    JoinLobbyEvent,
-    LobbyUpdate,
-    Lobby
-} from 'shared/types';
+    resizeSceneBase,
+} from "../utils/layout";
+import { getStoredPlayerName } from "../utils/playerUsername";
+import { sendJoinLobby, getPlayerId } from "../../api/socket";
+import { saveSession } from "../utils/playerSession";
+import { JoinLobbyEvent, LobbyUpdate, Lobby } from "shared/types";
 
 export class JoinLobby extends Scene {
     background!: Phaser.GameObjects.Image;
@@ -26,7 +20,7 @@ export class JoinLobby extends Scene {
     errorText?: Phaser.GameObjects.Text;
 
     constructor() {
-        super('JoinLobby');
+        super("JoinLobby");
     }
 
     create() {
@@ -34,96 +28,118 @@ export class JoinLobby extends Scene {
         const { x: centerX, y: centerY } = getCenter(this.scale);
         const mobile = isMobile(width);
 
-        // Background 
-        this.background = this.add.image(centerX, centerY, 'background')
+        saveSession({
+            lobbyId: null,
+            scene: "JoinLobby",
+            timestamp: Date.now(),
+        });
+
+        // Background
+        this.background = this.add
+            .image(centerX, centerY, "background")
             .setDisplaySize(width, height)
             .setOrigin(0.5);
 
-        // Title 
+        // Title
         const titleFontSize = getResponsiveFontSize(width, height, 56, 44);
-        this.title = this.add.text(centerX, height * 0.15, 'Join Lobby', {
-            fontFamily: 'Arial Black',
-            fontSize: `${titleFontSize}px`,
-            color: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 8,
-            align: 'center',
-        }).setOrigin(0.5);
+        this.title = this.add
+            .text(centerX, height * 0.15, "Join Lobby", {
+                fontFamily: "Arial Black",
+                fontSize: `${titleFontSize}px`,
+                color: "#ffffff",
+                stroke: "#000000",
+                strokeThickness: 8,
+                align: "center",
+            })
+            .setOrigin(0.5);
 
-        // Input Field 
+        // Input Field
         this.joinCodeInput();
 
-        // Buttons 
+        // Buttons
         const buttonStyle = {
-            fontFamily: 'Arial',
+            fontFamily: "Arial",
             fontSize: `${mobile ? 26 : 34}px`,
-            color: '#ffffff',
-            backgroundColor: '#1e90ff',
+            color: "#ffffff",
+            backgroundColor: "#1e90ff",
             padding: { x: 20, y: 10 },
-            align: 'center',
+            align: "center",
             fixedWidth: mobile ? 240 : 300,
         };
 
-        this.joinButton = this.add.text(centerX, height * 0.55, 'Join', buttonStyle)
+        this.joinButton = this.add
+            .text(centerX, height * 0.55, "Join", buttonStyle)
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true })
-            .on('pointerdown', () => this.handleJoinClick())
-            .on('pointerover', () => this.joinButton.setStyle({ backgroundColor: '#63b3ff' }))
-            .on('pointerout', () => this.joinButton.setStyle({ backgroundColor: '#1e90ff' }));
+            .on("pointerdown", () => this.handleJoinClick())
+            .on("pointerover", () =>
+                this.joinButton.setStyle({ backgroundColor: "#63b3ff" })
+            )
+            .on("pointerout", () =>
+                this.joinButton.setStyle({ backgroundColor: "#1e90ff" })
+            );
 
-        this.backButton = this.add.text(centerX, height * 0.65, 'Back', {
-            ...buttonStyle,
-            backgroundColor: '#5555ff',
-        })
+        this.backButton = this.add
+            .text(centerX, height * 0.65, "Back", {
+                ...buttonStyle,
+                backgroundColor: "#5555ff",
+            })
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true })
-            .on('pointerdown', () => this.scene.start('MainMenu'))
-            .on('pointerover', () => this.backButton.setStyle({ backgroundColor: '#7a7aff' }))
-            .on('pointerout', () => this.backButton.setStyle({ backgroundColor: '#5555ff' }));
+            .on("pointerdown", () => this.scene.start("MainMenu"))
+            .on("pointerover", () =>
+                this.backButton.setStyle({ backgroundColor: "#7a7aff" })
+            )
+            .on("pointerout", () =>
+                this.backButton.setStyle({ backgroundColor: "#5555ff" })
+            );
 
         // Error message (hidden by default)
-        this.errorText = this.add.text(centerX, height * 0.75, '', {
-            fontFamily: 'Arial',
-            fontSize: '18px',
-            color: '#ff6b6b',
-            stroke: '#000000',
-            strokeThickness: 4,
-            align: 'center',
-        }).setOrigin(0.5).setVisible(false);
+        this.errorText = this.add
+            .text(centerX, height * 0.75, "", {
+                fontFamily: "Arial",
+                fontSize: "18px",
+                color: "#ff6b6b",
+                stroke: "#000000",
+                strokeThickness: 4,
+                align: "center",
+            })
+            .setOrigin(0.5)
+            .setVisible(false);
 
-        // Handle resizing 
-        this.scale.on('resize', this.handleResize, this);
+        // Handle resizing
+        this.scale.on("resize", this.handleResize, this);
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-            this.scale.off('resize', this.handleResize, this);
+            this.scale.off("resize", this.handleResize, this);
             this.codeInput?.remove();
             this.codeInput = undefined;
         });
 
-        EventBus.emit('current-scene-ready', this);
+        EventBus.emit("current-scene-ready", this);
     }
 
-    // Input creation 
+    // Input creation
     joinCodeInput() {
-        this.codeInput = document.createElement('input');
-        this.codeInput.type = 'text';
-        this.codeInput.placeholder = 'Enter lobby code...';
+        this.codeInput = document.createElement("input");
+        this.codeInput.type = "text";
+        this.codeInput.placeholder = "Enter lobby code...";
 
         Object.assign(this.codeInput.style, {
-            position: 'absolute',
-            background: 'white',
-            color: 'black',
-            border: '2px solid #1e90ff',
-            borderRadius: '6px',
-            padding: '4px 8px',
-            width: '240px',
-            height: '32px',
-            fontSize: '18px',
-            outline: 'none',
-            textAlign: 'center',
-            zIndex: '10',
-            pointerEvents: 'auto',
-            transform: 'translate(-50%, -50%)',
+            position: "absolute",
+            background: "white",
+            color: "black",
+            border: "2px solid #1e90ff",
+            borderRadius: "6px",
+            padding: "4px 8px",
+            width: "240px",
+            height: "32px",
+            fontSize: "18px",
+            outline: "none",
+            textAlign: "center",
+            zIndex: "10",
+            pointerEvents: "auto",
+            transform: "translate(-50%, -50%)",
         });
 
         document.body.appendChild(this.codeInput);
@@ -131,7 +147,7 @@ export class JoinLobby extends Scene {
         this.updateInputPosition();
     }
 
-    // Correct input placement relative to canvas 
+    // Correct input placement relative to canvas
     private updateInputPosition() {
         if (!this.codeInput) return;
 
@@ -150,14 +166,14 @@ export class JoinLobby extends Scene {
     async handleJoinClick() {
         const partialCode = this.codeInput?.value?.trim();
         if (!partialCode || partialCode.length < 1) {
-            this.showError('Please enter a lobby code.');
+            this.showError("Please enter a lobby code.");
             return;
         }
 
         const playerId = getPlayerId();
         const playerName = getStoredPlayerName();
         if (!playerName) {
-            this.scene.start('EnterUsername');
+            this.scene.start("EnterUsername");
             return;
         }
 
@@ -165,74 +181,79 @@ export class JoinLobby extends Scene {
         let targetLobby: Lobby | undefined;
         try {
             console.log("[JoinLobby] Fetching lobbies from /api/lobbies...");
-            const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+            const backendUrl = import.meta.env.VITE_BACKEND_URL || "";
             const res = await fetch(`${backendUrl}/api/lobbies`);
 
             console.log("[JoinLobby] Response status:", res.status);
 
             if (!res.ok) {
                 console.error("[JoinLobby] Fetch failed. Response not OK.");
-                throw new Error('Failed to fetch lobbies');
+                throw new Error("Failed to fetch lobbies");
             }
 
             const lobbies = (await res.json()) as Lobby[];
             console.log("[JoinLobby] Received lobbies:", lobbies);
 
-            targetLobby = lobbies.find(l => l.lobbyId.startsWith(partialCode));
+            targetLobby = lobbies.find((l) =>
+                l.lobbyId.startsWith(partialCode)
+            );
             console.log("[JoinLobby] Matching lobby:", targetLobby);
-
         } catch (e) {
             console.error("[JoinLobby] Error fetching lobbies:", e);
-            this.showError('Unable to check lobby code. Try again.');
+            this.showError("Unable to check lobby code. Try again.");
             return;
         }
 
         if (!targetLobby) {
-            this.showError('Lobby code not found.');
+            this.showError("Lobby code not found.");
             return;
         }
 
         const payload: JoinLobbyEvent = {
             lobbyId: targetLobby.lobbyId,
             playerId: playerId,
-            playerName: playerName
+            playerName: playerName,
         };
 
         // Clear any previous error
-        this.showError('', false);
+        this.showError("", false);
 
         sendJoinLobby(payload);
 
         const onUpdate = (update: LobbyUpdate) => {
             if (update.lobbyId !== targetLobby!.lobbyId) return;
-            if (update.players.some(p => p.playerId === getPlayerId())) {
+            if (update.players.some((p) => p.playerId === getPlayerId())) {
                 if (this.codeInput) {
                     this.codeInput.remove();
                     this.codeInput = undefined;
                 }
-                this.scene.start('Lobby', {
+                this.scene.start("Lobby", {
                     lobbyId: update.lobbyId,
                     playerId,
-                    lobbyName: update.lobbyName ?? 'Lobby',
+                    lobbyName: update.lobbyName ?? "Lobby",
                     host: update.host,
                     players: update.players,
                 });
-                EventBus.off('lobby-update', onUpdate);
-                EventBus.off('error', onError as any);
+                EventBus.off("lobby-update", onUpdate);
+                EventBus.off("error", onError as any);
             }
         };
 
         const onError = (err: { code?: number; message?: string }) => {
             // Show only if it relates to this lobby attempt
-            if (err && typeof err.message === 'string' && err.message.includes(targetLobby!.lobbyId)) {
-                this.showError('Failed to join lobby. It may no longer exist.');
-                EventBus.off('lobby-update', onUpdate);
-                EventBus.off('error', onError as any);
+            if (
+                err &&
+                typeof err.message === "string" &&
+                err.message.includes(targetLobby!.lobbyId)
+            ) {
+                this.showError("Failed to join lobby. It may no longer exist.");
+                EventBus.off("lobby-update", onUpdate);
+                EventBus.off("error", onError as any);
             }
         };
 
-        EventBus.on('lobby-update', onUpdate);
-        EventBus.on('error', onError as any);
+        EventBus.on("lobby-update", onUpdate);
+        EventBus.on("error", onError as any);
     }
 
     private showError(msg: string, visible: boolean = true) {
@@ -256,6 +277,5 @@ export class JoinLobby extends Scene {
 
         this.updateInputPosition();
         this.errorText?.setPosition(centerX, height * 0.75);
-
     }
 }

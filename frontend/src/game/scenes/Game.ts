@@ -1,7 +1,11 @@
 // src/game/scenes/Game.ts
-import Phaser from 'phaser';
-import EventBus from '../EventBus';
-import { getCenter, getResponsiveFontSize, resizeSceneBase } from '../utils/layout';
+import Phaser from "phaser";
+import EventBus from "../EventBus";
+import {
+    getCenter,
+    getResponsiveFontSize,
+    resizeSceneBase,
+} from "../utils/layout";
 import {
     getPlayerId,
     sendDirectReady,
@@ -10,11 +14,16 @@ import {
     sendNextTurn,
     sendPlayerExitGame,
     sendDirectExitGame,
-} from '../../api/socket';
+} from "../../api/socket";
+import { saveSession } from "../utils/playerSession";
 
 // === MINIGAME INTEGRATION ===
-import { MinigameManager, MinigameRole, MinigameDifficultyId } from '../MinigameManager';
-import { DirectMinigameManager } from '../DirectMinigameManager';
+import {
+    MinigameManager,
+    MinigameRole,
+    MinigameDifficultyId,
+} from "../MinigameManager";
+import { DirectMinigameManager } from "../DirectMinigameManager";
 
 // -------------------------------------
 // small helpers / types
@@ -34,14 +43,14 @@ function pickOpponentId(allIds: string[], me: string): string | undefined {
 
 // Sprite keys (adjust if needed)
 const ENEMY_SPRITES = {
-    normal: 'battleshipP',
-    damaged: 'battleshipP_dmg',
-    critical: 'battleshipP_crit',
+    normal: "battleshipP",
+    damaged: "battleshipP_dmg",
+    critical: "battleshipP_crit",
 };
 const PLAYER_SPRITES = {
-    normal: 'battleshipE',
-    damaged: 'battleshipE_dmg',
-    critical: 'battleshipE_crit',
+    normal: "battleshipE",
+    damaged: "battleshipE_dmg",
+    critical: "battleshipE_crit",
 };
 
 export class Game extends Phaser.Scene {
@@ -56,11 +65,11 @@ export class Game extends Phaser.Scene {
 
     private weapons: Weapon[] = [
         // Easy
-        { key: 'W1', color: 0x6ec1ff, dmg: 10, speed: 900 },
+        { key: "W1", color: 0x6ec1ff, dmg: 10, speed: 900 },
         // Medium
-        { key: 'W2', color: 0x8be27e, dmg: 40, speed: 900 },
+        { key: "W2", color: 0x8be27e, dmg: 40, speed: 900 },
         // Hard
-        { key: 'W3', color: 0xf6b26b, dmg: 80, speed: 900 },
+        { key: "W3", color: 0xf6b26b, dmg: 80, speed: 900 },
     ];
     private currentWeaponIndex = 0;
 
@@ -93,16 +102,18 @@ export class Game extends Phaser.Scene {
     }[] = [];
     private weaponRelayout?: () => void;
 
+    // Modern UI
     private turnBadgeText!: Phaser.GameObjects.Text;
     private turnBadgeGlass!: Phaser.GameObjects.Rectangle;
     private turnLabelText!: Phaser.GameObjects.Text;
     private turnLabelGlass!: Phaser.GameObjects.Rectangle;
 
+    // HP numbers
     private enemyHPText!: Phaser.GameObjects.Text;
     private playerHPText!: Phaser.GameObjects.Text;
 
     // ====== networking modes ======
-    private netMode: 'local' | 'direct' | 'lobby' = 'local';
+    private netMode: "local" | "direct" | "lobby" = "local";
 
     // direct (quick-match)
     private matchId?: string;
@@ -112,7 +123,7 @@ export class Game extends Phaser.Scene {
 
     // lobby
     private lobbyId?: string;
-    private turnId = 0; // authoritative turn id from server
+    private turnId = 0;
     private starterId?: string; // who starts the game (server decides)
     private opponentId?: string; // optional: derived if players list passed in
 
@@ -126,14 +137,14 @@ export class Game extends Phaser.Scene {
     private readonly EXPLOSION_MS = 1000;
 
     // === MINIGAME MANAGERS ===
-    private minigameManager?: MinigameManager;              // lobby
-    private directMinigameManager?: DirectMinigameManager;  // direct
+    private minigameManager?: MinigameManager; // lobby
+    private directMinigameManager?: DirectMinigameManager; // direct
 
     // Spectator overlay when opponent is playing a minigame
     private opponentMinigameOverlay?: Phaser.GameObjects.Container;
 
     constructor() {
-        super('Game');
+        super("Game");
     }
 
     // -------------------------------------
@@ -144,7 +155,7 @@ export class Game extends Phaser.Scene {
         if (!data?.net && (data?.lobbyId || data?.starterId || data?.turnId)) {
             data = {
                 net: {
-                    mode: 'lobby',
+                    mode: "lobby",
                     lobbyId: data.lobbyId,
                     starterId: data.starterId,
                     turnId: data.turnId ?? 0,
@@ -155,23 +166,25 @@ export class Game extends Phaser.Scene {
         // ------------------------------------------------------------------
 
         // direct (no lobby)
-        if (data?.net?.mode === 'direct') {
-            this.netMode = 'direct';
+        if (data?.net?.mode === "direct") {
+            this.netMode = "direct";
             this.matchId = data.net.matchId;
             this.starterId = data.net.starter;
             this.turnId = 0;
         }
 
         // lobby
-        if (data?.net?.mode === 'lobby') {
-            this.netMode = 'lobby';
+        if (data?.net?.mode === "lobby") {
+            this.netMode = "lobby";
             this.lobbyId = data.net.lobbyId;
             this.starterId = data.net.starterId; // whose turn the server announced first
             this.turnId = data.net.turnId ?? 0;
 
             // if Lobby scene passes players, we can pick an opponent id now
             if (Array.isArray(data?.net?.players)) {
-                const ids: string[] = data.net.players.map((p: any) => p.playerId);
+                const ids: string[] = data.net.players.map(
+                    (p: any) => p.playerId
+                );
                 this.opponentId = pickOpponentId(ids, this.meId);
             }
         }
@@ -208,16 +221,30 @@ export class Game extends Phaser.Scene {
         return this.textures && this.textures.exists(key);
     }
 
-    private sizeShipByHeight(img: Phaser.GameObjects.Image, screenH: number, percentH: number) {
+    private sizeShipByHeight(
+        img: Phaser.GameObjects.Image,
+        screenH: number,
+        percentH: number
+    ) {
         const baseH = img.height || 1;
         const targetH = screenH * percentH;
         img.setScale(targetH / baseH);
     }
 
-    private makeHPBar(x: number, y: number, width: number, height: number, fillColor: number): HPBar {
-        const bg = this.add.rectangle(x, y, width, height, 0x000000, 0.45).setOrigin(0.5);
+    private makeHPBar(
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        fillColor: number
+    ): HPBar {
+        const bg = this.add
+            .rectangle(x, y, width, height, 0x000000, 0.45)
+            .setOrigin(0.5);
         bg.setStrokeStyle(2, 0xffffff, 0.65);
-        const fill = this.add.rectangle(x - width / 2, y, width, height, fillColor).setOrigin(0, 0.5);
+        const fill = this.add
+            .rectangle(x - width / 2, y, width, height, fillColor)
+            .setOrigin(0, 0.5);
         return {
             width,
             height,
@@ -239,7 +266,9 @@ export class Game extends Phaser.Scene {
         duration: number;
         onImpact?: () => void;
     }) {
-        const b = this.add.circle(opts.fromX, opts.fromY, 6, opts.color).setDepth(50);
+        const b = this.add
+            .circle(opts.fromX, opts.fromY, 6, opts.color)
+            .setDepth(50);
         this.tweens.add({
             targets: b,
             y: opts.toY,
@@ -275,14 +304,20 @@ export class Game extends Phaser.Scene {
                 .setStrokeStyle(2, 0x88aaff, 0.9)
                 .setDepth(200)
                 .setInteractive({ useHandCursor: true })
-                .on('pointerdown', (p: Phaser.Input.Pointer) => {
+                .on("pointerdown", (p: Phaser.Input.Pointer) => {
                     p.event?.stopPropagation();
                     this.selectWeapon(i);
                 });
 
-            const ring = this.add.circle(x, y, r + 3, 0x000000, 0).setStrokeStyle(4, 0xffffff, 1).setDepth(201).setVisible(false);
+            const ring = this.add
+                .circle(x, y, r + 3, 0x000000, 0)
+                .setStrokeStyle(4, 0xffffff, 1)
+                .setDepth(201)
+                .setVisible(false);
 
-            const chip = this.add.circle(x, y, 8, this.weapons[i].color).setDepth(202);
+            const chip = this.add
+                .circle(x, y, 8, this.weapons[i].color)
+                .setDepth(202);
 
             this.weaponNodes.push({ circle, ring, chip });
         }
@@ -306,9 +341,12 @@ export class Game extends Phaser.Scene {
     // Map any weapon to canonical damage 10,40,80
     private damageForWeapon(weaponKeyOrId: string): number {
         const byKey: Record<string, number> = {
-            W1: 10, w1: 10,
-            W2: 40, w2: 40,
-            W3: 80, w3: 80,
+            W1: 10,
+            w1: 10,
+            W2: 40,
+            w2: 40,
+            W3: 80,
+            w3: 80,
         };
 
         if (weaponKeyOrId in byKey) return byKey[weaponKeyOrId];
@@ -326,23 +364,41 @@ export class Game extends Phaser.Scene {
         this.currentWeaponIndex = i;
         this.refreshWeaponHighlight();
     }
+
     private refreshWeaponHighlight() {
-        this.weaponNodes.forEach((n, i) => n.ring.setVisible(i === this.currentWeaponIndex));
+        this.weaponNodes.forEach((n, i) =>
+            n.ring.setVisible(i === this.currentWeaponIndex)
+        );
     }
 
-    private drawGlass(x: number, y: number, w: number, h: number, alpha = 0.28) {
-        const glass = this.add.rectangle(x, y, w, h, alpha ? 0xffffff : 0xffffff, alpha).setOrigin(0.5);
+    // ---------- modern UI helpers ----------
+    private drawGlass(
+        x: number,
+        y: number,
+        w: number,
+        h: number,
+        alpha = 0.28
+    ) {
+        const glass = this.add
+            .rectangle(x, y, w, h, 0xffffff, alpha)
+            .setOrigin(0.5);
         glass.setStrokeStyle(2, 0xffffff, 0.45);
         return glass;
     }
 
     private updateHPTexts() {
-        if (this.enemyHPText) this.enemyHPText.setText(`${this.enemyHP} / ${this.enemyHPMax}`);
-        if (this.playerHPText) this.playerHPText.setText(`${this.playerHP} / ${this.playerHPMax}`);
+        if (this.enemyHPText)
+            this.enemyHPText.setText(`${this.enemyHP} / ${this.enemyHPMax}`);
+        if (this.playerHPText)
+            this.playerHPText.setText(`${this.playerHP} / ${this.playerHPMax}`);
     }
 
     // ---------- new: ship visual state by HP ----------
-    private spriteFor(hp: number, max: number, keys: { normal: string; damaged: string; critical: string }) {
+    private spriteFor(
+        hp: number,
+        max: number,
+        keys: { normal: string; damaged: string; critical: string }
+    ) {
         const pct = (hp / max) * 100;
         if (pct < 20) return keys.critical;
         if (pct < 70) return keys.damaged;
@@ -365,19 +421,30 @@ export class Game extends Phaser.Scene {
 
     private updateShipVisuals() {
         // Enemy ship visuals
-        const enemyKey = this.spriteFor(this.enemyHP, this.enemyHPMax, ENEMY_SPRITES);
+        const enemyKey = this.spriteFor(
+            this.enemyHP,
+            this.enemyHPMax,
+            ENEMY_SPRITES
+        );
         this.swapTextureIfAvailable(this.enemy, enemyKey, 0.09);
 
         // Player ship visuals
-        const playerKey = this.spriteFor(this.playerHP, this.playerHPMax, PLAYER_SPRITES);
+        const playerKey = this.spriteFor(
+            this.playerHP,
+            this.playerHPMax,
+            PLAYER_SPRITES
+        );
         this.swapTextureIfAvailable(this.player, playerKey, 0.11);
     }
 
     // ---------- new: explosion effect ----------
     private showExplosion(x: number, y: number) {
-        if (this.textureExists('explosion')) {
+        if (this.textureExists("explosion")) {
             // Simple image fade/scale (works whether 'explosion' is a single frame or spritesheet main frame)
-            const s = this.add.image(x, y, 'explosion').setOrigin(0.5).setDepth(300);
+            const s = this.add
+                .image(x, y, "explosion")
+                .setOrigin(0.5)
+                .setDepth(300);
             s.setScale(0.6);
             this.tweens.add({
                 targets: s,
@@ -407,19 +474,21 @@ export class Game extends Phaser.Scene {
         this.attackBtn.setAlpha(enabled ? 1 : 0.4);
         this.attackBtn.removeAllListeners();
         if (enabled) {
-            this.attackBtn.setInteractive({ useHandCursor: true }).once('pointerdown', () => this.doAttack());
+            this.attackBtn
+                .setInteractive({ useHandCursor: true })
+                .once("pointerdown", () => this.doAttack());
         } else {
             this.attackBtn.disableInteractive();
         }
     }
     private startPlayerTurn() {
         this.isPlayerTurn = true;
-        this.turnLabelText.setText('YOUR TURN').setColor('#ffffff');
+        this.turnLabelText.setText("YOUR TURN").setColor("#ffffff");
         this.setAttackEnabled(true);
     }
     private startEnemyTurn() {
         this.isPlayerTurn = false;
-        this.turnLabelText.setText('ENEMY TURN').setColor('#ff6969');
+        this.turnLabelText.setText("ENEMY TURN").setColor("#ff6969");
         this.setAttackEnabled(false);
     }
     private nextTurnBadge() {
@@ -450,22 +519,32 @@ export class Game extends Phaser.Scene {
             .setStrokeStyle(2, 0xffffff, 0.65);
 
         const title = this.add
-            .text(W / 2, H / 2 - panelH * 0.2, 'Opponent is playing Fuel Sort…', {
-                fontFamily: 'Arial Black',
-                fontSize: '22px',
-                color: '#ffffff',
-                stroke: '#000000',
-                strokeThickness: 4,
-            })
+            .text(
+                W / 2,
+                H / 2 - panelH * 0.2,
+                "Opponent is playing Fuel Sort…",
+                {
+                    fontFamily: "Arial Black",
+                    fontSize: "22px",
+                    color: "#ffffff",
+                    stroke: "#000000",
+                    strokeThickness: 4,
+                }
+            )
             .setOrigin(0.5);
 
         const body = this.add
-            .text(W / 2, H / 2 + panelH * 0.05, 'Waiting for minigame result…', {
-                fontFamily: 'Arial',
-                fontSize: '18px',
-                color: '#d0d4ff',
-                align: 'center',
-            })
+            .text(
+                W / 2,
+                H / 2 + panelH * 0.05,
+                "Waiting for minigame result…",
+                {
+                    fontFamily: "Arial",
+                    fontSize: "18px",
+                    color: "#d0d4ff",
+                    align: "center",
+                }
+            )
             .setOrigin(0.5);
 
         container.add([backdrop, panel, title, body]);
@@ -492,21 +571,21 @@ export class Game extends Phaser.Scene {
         // Explicit difficulty per weapon
         let difficultyId: MinigameDifficultyId;
         switch (weaponId) {
-            case 'W1':
-                difficultyId = 'easy';
+            case "W1":
+                difficultyId = "easy";
                 break;
-            case 'W2':
-                difficultyId = 'medium';
+            case "W2":
+                difficultyId = "medium";
                 break;
-            case 'W3':
-                difficultyId = 'hard';
+            case "W3":
+                difficultyId = "hard";
                 break;
             default:
                 difficultyId = MinigameManager.difficultyForDamage(baseDamage);
                 break;
         }
 
-        if (role === 'controller') {
+        if (role === "controller") {
             if (!this.minigameManager) return;
             this.minigameManager.launchFuelSort({
                 lobbyId: this.lobbyId,
@@ -531,93 +610,160 @@ export class Game extends Phaser.Scene {
         const { width: W, height: H } = this.scale;
         const { x: centerX, y: centerY } = getCenter(this.scale);
 
+        // Save session (for refresh/reconnect)
+        if (this.netMode === "lobby" && this.lobbyId) {
+            saveSession({
+                lobbyId: this.lobbyId,
+                scene: "Game",
+                timestamp: Date.now(),
+                lastKnownTurnId: this.turnId,
+            });
+        } else if (this.netMode === "direct" && this.matchId) {
+            saveSession({
+                lobbyId: this.matchId, // treat matchId like a lobby
+                scene: "Game",
+                timestamp: Date.now(),
+            });
+        }
+
         // background
-        if (this.textureExists('background')) {
-            this.background = this.add.image(centerX, centerY, 'background').setOrigin(0.5).setDisplaySize(W, H);
+        if (this.textureExists("background")) {
+            this.background = this.add
+                .image(centerX, centerY, "background")
+                .setOrigin(0.5)
+                .setDisplaySize(W, H);
         } else {
             this.cameras.main.setBackgroundColor(0x082a47);
         }
 
         const pad = 24;
         // FIXED-SIZE HOME BUTTON (never gets stretched again)
-        const raw = this.add.image(0, 0, 'home').setOrigin(0.5);
+        const raw = this.add.image(0, 0, "home").setOrigin(0.5);
         raw.setDisplaySize(32, 32); // fixed size forever
 
         this.homeBtn = this.add
             .container(pad + 24, pad + 24, [raw])
             .setSize(32, 32)
             .setInteractive({ useHandCursor: true })
-            .on('pointerdown', () => {
-                if (this.netMode === 'lobby' && this.lobbyId) {
+            .on("pointerdown", () => {
+                if (this.netMode === "lobby" && this.lobbyId) {
                     sendPlayerExitGame({
                         lobbyId: this.lobbyId,
                         playerId: this.meId,
                     });
-                } else if (this.netMode === 'direct' && this.matchId) {
+                } else if (this.netMode === "direct" && this.matchId) {
                     sendDirectExitGame(this.matchId);
                 }
-                this.scene.start('MainMenu');
+                this.scene.start("MainMenu");
             });
 
         const topY = H * 0.2;
         const bottomY = H * 0.8;
 
         // enemy (start with appropriate sprite for full HP -> normal)
-        const enemyStartKey = this.spriteFor(this.enemyHP, this.enemyHPMax, ENEMY_SPRITES);
+        const enemyStartKey = this.spriteFor(
+            this.enemyHP,
+            this.enemyHPMax,
+            ENEMY_SPRITES
+        );
         if (this.textureExists(enemyStartKey)) {
-            const img = this.add.image(W / 2, topY, enemyStartKey).setOrigin(0.5);
+            const img = this.add
+                .image(W / 2, topY, enemyStartKey)
+                .setOrigin(0.5);
             this.sizeShipByHeight(img, H, 0.09);
             this.enemy = img;
         } else if (this.textureExists(ENEMY_SPRITES.normal)) {
-            const img = this.add.image(W / 2, topY, ENEMY_SPRITES.normal).setOrigin(0.5);
+            const img = this.add
+                .image(W / 2, topY, ENEMY_SPRITES.normal)
+                .setOrigin(0.5);
             this.sizeShipByHeight(img, H, 0.09);
             this.enemy = img;
         } else {
-            this.enemy = this.add.rectangle(W / 2, topY, 120, 40, 0xff5555).setOrigin(0.5);
+            this.enemy = this.add
+                .rectangle(W / 2, topY, 120, 40, 0xff5555)
+                .setOrigin(0.5);
         }
 
         // player
-        const playerStartKey = this.spriteFor(this.playerHP, this.playerHPMax, PLAYER_SPRITES);
+        const playerStartKey = this.spriteFor(
+            this.playerHP,
+            this.playerHPMax,
+            PLAYER_SPRITES
+        );
         if (this.textureExists(playerStartKey)) {
-            const img = this.add.image(W / 2, bottomY, playerStartKey).setOrigin(0.5);
+            const img = this.add
+                .image(W / 2, bottomY, playerStartKey)
+                .setOrigin(0.5);
             this.sizeShipByHeight(img, H, 0.11);
             this.player = img;
         } else if (this.textureExists(PLAYER_SPRITES.normal)) {
-            const img = this.add.image(W / 2, bottomY, PLAYER_SPRITES.normal).setOrigin(0.5);
+            const img = this.add
+                .image(W / 2, bottomY, PLAYER_SPRITES.normal)
+                .setOrigin(0.5);
             this.sizeShipByHeight(img, H, 0.11);
             this.player = img;
         } else {
-            this.player = this.add.rectangle(W / 2, bottomY, 120, 40, 0x55ff88).setOrigin(0.5);
+            this.player = this.add
+                .rectangle(W / 2, bottomY, 120, 40, 0x55ff88)
+                .setOrigin(0.5);
         }
 
         // idle motion
-        this.tweens.add({ targets: this.player, y: bottomY - 10, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-        this.tweens.add({ targets: this.enemy, y: topY + 10, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+        this.tweens.add({
+            targets: this.player,
+            y: bottomY - 10,
+            duration: 900,
+            yoyo: true,
+            repeat: -1,
+            ease: "Sine.inOut",
+        });
+        this.tweens.add({
+            targets: this.enemy,
+            y: topY + 10,
+            duration: 900,
+            yoyo: true,
+            repeat: -1,
+            ease: "Sine.inOut",
+        });
 
         // HP bars
-        const barW = 220, barH = 16, gap = 32;
-        this.enemyHPBar = this.makeHPBar(W / 2, topY - gap, barW, barH, 0xff3b3b);
-        this.playerHPBar = this.makeHPBar(W / 2, bottomY + gap, barW, barH, 0x27d35a);
+        const barW = 220,
+            barH = 16,
+            gap = 32;
+        this.enemyHPBar = this.makeHPBar(
+            W / 2,
+            topY - gap,
+            barW,
+            barH,
+            0xff3b3b
+        );
+        this.playerHPBar = this.makeHPBar(
+            W / 2,
+            bottomY + gap,
+            barW,
+            barH,
+            0x27d35a
+        );
         this.enemyHPBar.set(1);
         this.playerHPBar.set(1);
 
         // HP labels
         const hpFont = getResponsiveFontSize(W, H, 18, 14);
         this.enemyHPText = this.add
-            .text(W / 2, topY - gap - 20, '', {
-                fontFamily: 'Arial Black',
+            .text(W / 2, topY - gap - 20, "", {
+                fontFamily: "Arial Black",
                 fontSize: `${hpFont}px`,
-                color: '#ffffff',
-                stroke: '#000000',
+                color: "#ffffff",
+                stroke: "#000000",
                 strokeThickness: 4,
             })
             .setOrigin(0.5);
         this.playerHPText = this.add
-            .text(W / 2, bottomY + gap + 20, '', {
-                fontFamily: 'Arial Black',
+            .text(W / 2, bottomY + gap + 20, "", {
+                fontFamily: "Arial Black",
                 fontSize: `${hpFont}px`,
-                color: '#ffffff',
-                stroke: '#000000',
+                color: "#ffffff",
+                stroke: "#000000",
                 strokeThickness: 4,
             })
             .setOrigin(0.5);
@@ -627,43 +773,55 @@ export class Game extends Phaser.Scene {
         this.buildWeaponUI();
 
         // === MINIGAME MANAGERS INIT ===
-        this.minigameManager = new MinigameManager(this);              // lobby
-        this.directMinigameManager = new DirectMinigameManager(this);  // direct
+        this.minigameManager = new MinigameManager(this); // lobby
+        this.directMinigameManager = new DirectMinigameManager(this); // direct
 
         // attack button
         this.attackBtn = this.add
-            .text(W - 140, bottomY - 10, 'ATTACK', {
-                fontFamily: 'Arial Black',
-                fontSize: '18px',
-                color: '#ffffff',
-                stroke: '#000000',
+            .text(W - 140, bottomY - 10, "ATTACK", {
+                fontFamily: "Arial Black",
+                fontSize: "18px",
+                color: "#ffffff",
+                stroke: "#000000",
                 strokeThickness: 6,
             })
             .setOrigin(1, 0.5);
 
         // turn badge + label
-        const badgeW = 140, badgeH = 40;
-        this.turnBadgeGlass = this.drawGlass(W - (pad + badgeW / 2), pad + 24, badgeW, badgeH);
+        const badgeW = 140,
+            badgeH = 40;
+        this.turnBadgeGlass = this.drawGlass(
+            W - (pad + badgeW / 2),
+            pad + 24,
+            badgeW,
+            badgeH
+        );
         const badgeFont = getResponsiveFontSize(W, H, 20, 16);
         this.turnBadgeText = this.add
-            .text(this.turnBadgeGlass.x, this.turnBadgeGlass.y, `Turn: ${this.turnNumber}`, {
-                fontFamily: 'Arial Black',
-                fontSize: `${badgeFont}px`,
-                color: '#ffffff',
-                stroke: '#000000',
-                strokeThickness: 4,
-            })
+            .text(
+                this.turnBadgeGlass.x,
+                this.turnBadgeGlass.y,
+                `Turn: ${this.turnNumber}`,
+                {
+                    fontFamily: "Arial Black",
+                    fontSize: `${badgeFont}px`,
+                    color: "#ffffff",
+                    stroke: "#000000",
+                    strokeThickness: 4,
+                }
+            )
             .setOrigin(0.5);
 
-        const whoW = 220, whoH = 48;
+        const whoW = 220,
+            whoH = 48;
         this.turnLabelGlass = this.drawGlass(W / 2, H * 0.11, whoW, whoH, 0.28);
         const whoFont = getResponsiveFontSize(W, H, 26, 20);
         this.turnLabelText = this.add
-            .text(this.turnLabelGlass.x, this.turnLabelGlass.y, 'YOUR TURN', {
-                fontFamily: 'Arial Black',
+            .text(this.turnLabelGlass.x, this.turnLabelGlass.y, "YOUR TURN", {
+                fontFamily: "Arial Black",
                 fontSize: `${whoFont}px`,
-                color: '#ffffff',
-                stroke: '#000000',
+                color: "#ffffff",
+                stroke: "#000000",
                 strokeThickness: 6,
             })
             .setOrigin(0.5);
@@ -673,9 +831,9 @@ export class Game extends Phaser.Scene {
         else this.startEnemyTurn();
 
         // networking hooks
-        if (this.netMode === 'direct' && this.matchId) {
+        if (this.netMode === "direct" && this.matchId) {
             this.wireDirect();
-        } else if (this.netMode === 'lobby' && this.lobbyId) {
+        } else if (this.netMode === "lobby" && this.lobbyId) {
             this.wireLobby();
         } else {
             // local solo test
@@ -683,24 +841,28 @@ export class Game extends Phaser.Scene {
         }
 
         // resize / cleanup
-        this.scale.on('resize', this.onResize, this);
-        EventBus.emit('current-scene-ready', this);
+        this.scale.on("resize", this.onResize, this);
+        EventBus.emit("current-scene-ready", this);
 
         // === GAME-ENDED (DIRECT) ===
         // Lobby mode already handles this in wireLobby().
         // Here we hook the same event for direct matches.
-        const onAnyGameEnded = (evt: { lobbyId: string; by: string; reason: string }) => {
-            if (this.netMode !== 'direct') return;
+        const onAnyGameEnded = (evt: {
+            lobbyId: string;
+            by: string;
+            reason: string;
+        }) => {
+            if (this.netMode !== "direct") return;
             if (!this.matchId) return;
             if (evt.lobbyId !== this.matchId) return;
 
             // Both players get this via socket.io -> EventBus, so both go home.
-            this.scene.start('MainMenu');
+            this.scene.start("MainMenu");
         };
-        EventBus.on('game-ended', onAnyGameEnded as any);
+        EventBus.on("game-ended", onAnyGameEnded as any);
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-            EventBus.off('game-ended', onAnyGameEnded as any);
+            EventBus.off("game-ended", onAnyGameEnded as any);
         });
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanup());
@@ -709,7 +871,7 @@ export class Game extends Phaser.Scene {
 
     private cleanup() {
         this.enemyTurnTimer?.remove();
-        this.scale.off('resize', this.onResize, this);
+        this.scale.off("resize", this.onResize, this);
         this.attackBtn?.removeAllListeners();
         this.offAttack && this.offAttack();
         this.offState && this.offState();
@@ -725,7 +887,7 @@ export class Game extends Phaser.Scene {
         if (this.matchId) sendDirectReady(this.matchId);
 
         const onDirectAttack = (type: string, payload: any) => {
-            if (type !== 'direct-attack') return;
+            if (type !== "direct-attack") return;
             const ev = payload as {
                 matchId: string;
                 playerId: string;
@@ -738,15 +900,19 @@ export class Game extends Phaser.Scene {
             if (ev.attackId && this.seenAttackIds.has(ev.attackId)) return;
             if (ev.attackId) this.seenAttackIds.add(ev.attackId);
 
-            const weap = this.weapons.find((x) => x.key === ev.weaponKey) || this.weapons[0];
+            const weap =
+                this.weapons.find((x) => x.key === ev.weaponKey) ||
+                this.weapons[0];
 
             // Prefer server-authoritative damage; fall back to local table
-            const dmg = typeof ev.damage === 'number'
-                ? ev.damage
-                : this.damageForWeapon(weap.key);
+            const dmg =
+                typeof ev.damage === "number"
+                    ? ev.damage
+                    : this.damageForWeapon(weap.key);
 
             const { height: H2, width: W2 } = this.scale;
-            const topY2 = H2 * 0.2, bottomY2 = H2 * 0.8;
+            const topY2 = H2 * 0.2,
+                bottomY2 = H2 * 0.8;
             const shotFromTop = ev.playerId !== this.meId;
 
             this.flyBullet({
@@ -791,8 +957,8 @@ export class Game extends Phaser.Scene {
             });
         };
 
-        EventBus.on('*', onDirectAttack as any);
-        this.offAttack = () => EventBus.off('*', onDirectAttack as any);
+        EventBus.on("*", onDirectAttack as any);
+        this.offAttack = () => EventBus.off("*", onDirectAttack as any);
     }
 
     // -------------------------------------
@@ -813,10 +979,9 @@ export class Game extends Phaser.Scene {
             attackerId: string;
             defenderId: string;
             weaponId?: string;
-            outcome?: 'success' | 'failure' | 'blocked' | 'timeout';
+            outcome?: "success" | "failure" | "blocked" | "timeout";
             damage?: number;
         }) => {
-            if (res.turnId !== this.turnId) return; // stale echo
             if (this.resolvedTurnIds.has(res.turnId)) return;
             this.resolvedTurnIds.add(res.turnId);
 
@@ -825,7 +990,7 @@ export class Game extends Phaser.Scene {
 
             // Try to find the weapon, but it's only used for color and fallback damage
             const weap =
-                this.weapons.find((w) => w.key === (res.weaponId ?? '')) ||
+                this.weapons.find((w) => w.key === (res.weaponId ?? "")) ||
                 this.weapons[0];
 
             // --- DAMAGE LOGIC ---
@@ -835,13 +1000,13 @@ export class Game extends Phaser.Scene {
             //   failure: 5
             let dmg: number;
 
-            if (typeof res.damage === 'number' && res.damage > 0) {
+            if (typeof res.damage === "number" && res.damage > 0) {
                 dmg = res.damage;
             } else {
                 // Fallback if backend hasn't been updated yet:
                 // success -> full base, fail/blocked/timeout -> 5
                 const base = this.damageForWeapon(weap.key);
-                if (res.outcome && res.outcome !== 'success') {
+                if (res.outcome && res.outcome !== "success") {
                     dmg = 5;
                 } else {
                     dmg = base;
@@ -909,11 +1074,11 @@ export class Game extends Phaser.Scene {
             if (!this.minigameManager) return;
 
             const role: MinigameRole =
-                evt.attackerId === this.meId ? 'controller' : 'spectator';
+                evt.attackerId === this.meId ? "controller" : "spectator";
 
             // Attacker already launches locally in doAttack; we only need
             // the server event for spectators / defender.
-            if (role === 'controller') {
+            if (role === "controller") {
                 return;
             }
 
@@ -925,22 +1090,26 @@ export class Game extends Phaser.Scene {
             );
         };
 
-        const onGameEnded = (evt: { lobbyId: string; by: string; reason: string }) => {
+        const onGameEnded = (evt: {
+            lobbyId: string;
+            by: string;
+            reason: string;
+        }) => {
             if (!this.lobbyId || evt.lobbyId !== this.lobbyId) return;
 
             // Go back to main menu on disconnect
             this.scene.start("MainMenu");
         };
 
-        EventBus.on('turn-start', onTurnStart as any);
-        EventBus.on('turn-resolved', onTurnResolved as any);
-        EventBus.on('minigame-start', onMinigameStart as any);
+        EventBus.on("turn-start", onTurnStart as any);
+        EventBus.on("turn-resolved", onTurnResolved as any);
+        EventBus.on("minigame-start", onMinigameStart as any);
         EventBus.on("game-ended", onGameEnded as any);
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-            EventBus.off('turn-start', onTurnStart as any);
-            EventBus.off('turn-resolved', onTurnResolved as any);
-            EventBus.off('minigame-start', onMinigameStart as any);
+            EventBus.off("turn-start", onTurnStart as any);
+            EventBus.off("turn-resolved", onTurnResolved as any);
+            EventBus.off("minigame-start", onMinigameStart as any);
             EventBus.off("game-ended", onGameEnded as any);
         });
     }
@@ -950,13 +1119,13 @@ export class Game extends Phaser.Scene {
     // -------------------------------------
     private doAttack() {
         // lobby path (authoritative + lobby minigame)
-        if (this.netMode === 'lobby') {
+        if (this.netMode === "lobby") {
             if (!this.isPlayerTurn || !this.lobbyId) return;
 
             const w = this.weapons[this.currentWeaponIndex];
 
             // defenderId is required by your server payload but not used to compute turns.
-            const targetId = this.opponentId ?? 'opponent';
+            const targetId = this.opponentId ?? "opponent";
 
             // 1) Tell backend which weapon we chose
             sendChooseWeapon({
@@ -975,7 +1144,7 @@ export class Game extends Phaser.Scene {
                 this.meId,
                 targetId,
                 w.key,
-                'controller'
+                "controller"
             );
 
             // Defender (other client) will start their spectator overlay
@@ -984,13 +1153,14 @@ export class Game extends Phaser.Scene {
         }
 
         // shared pre-checks for direct/local
-        if (!this.isPlayerTurn || this.enemyHP <= 0 || this.playerHP <= 0) return;
+        if (!this.isPlayerTurn || this.enemyHP <= 0 || this.playerHP <= 0)
+            return;
 
         const w = this.weapons[this.currentWeaponIndex];
         this.shotsFired++;
 
         // ---------- DIRECT MODE: use DirectMinigameManager ----------
-        if (this.netMode === 'direct' && this.matchId) {
+        if (this.netMode === "direct" && this.matchId) {
             if (this.coolingDown) return;
             this.coolingDown = true;
             this.setAttackEnabled(false);
@@ -998,17 +1168,17 @@ export class Game extends Phaser.Scene {
             // Map weapon to difficulty
             let difficultyId: MinigameDifficultyId;
             switch (w.key) {
-                case 'W1':
-                    difficultyId = 'easy';
+                case "W1":
+                    difficultyId = "easy";
                     break;
-                case 'W2':
-                    difficultyId = 'medium';
+                case "W2":
+                    difficultyId = "medium";
                     break;
-                case 'W3':
-                    difficultyId = 'hard';
+                case "W3":
+                    difficultyId = "hard";
                     break;
                 default:
-                    difficultyId = 'easy';
+                    difficultyId = "easy";
             }
 
             if (this.directMinigameManager) {
@@ -1023,7 +1193,7 @@ export class Game extends Phaser.Scene {
                 });
             } else {
                 // Fallback: no minigame manager -> send a basic "success" attack
-                sendDirectAttack(this.matchId, w.key, 'success', 0);
+                sendDirectAttack(this.matchId, w.key, "success", 0);
                 this.coolingDown = false;
             }
 
@@ -1034,7 +1204,10 @@ export class Game extends Phaser.Scene {
         if (this.coolingDown) return;
 
         this.coolingDown = true;
-        this.time.delayedCall(this.cooldownMs, () => (this.coolingDown = false));
+        this.time.delayedCall(
+            this.cooldownMs,
+            () => (this.coolingDown = false)
+        );
 
         const { width: W, height: H } = this.scale;
         const topY = H * 0.2;
@@ -1081,7 +1254,8 @@ export class Game extends Phaser.Scene {
         const topY = H * 0.2;
         const bottomY = H * 0.8;
 
-        if (this.background) this.background.setPosition(W / 2, H / 2).setDisplaySize(W, H);
+        if (this.background)
+            this.background.setPosition(W / 2, H / 2).setDisplaySize(W, H);
         this.homeBtn.setPosition(pad + 24, pad + 24);
 
         if (this.enemy instanceof Phaser.GameObjects.Image) {
@@ -1092,29 +1266,43 @@ export class Game extends Phaser.Scene {
             this.player.setPosition(W / 2, bottomY);
         }
 
-        if (this.enemy instanceof Phaser.GameObjects.Image) this.sizeShipByHeight(this.enemy, H, 0.09);
-        if (this.player instanceof Phaser.GameObjects.Image) this.sizeShipByHeight(this.player, H, 0.11);
+        if (this.enemy instanceof Phaser.GameObjects.Image)
+            this.sizeShipByHeight(this.enemy, H, 0.09);
+        if (this.player instanceof Phaser.GameObjects.Image)
+            this.sizeShipByHeight(this.player, H, 0.11);
 
         const gap = 32;
         this.enemyHPBar?.setPosition(W / 2, topY - gap);
         this.playerHPBar?.setPosition(W / 2, bottomY + gap);
 
         const hpFont = getResponsiveFontSize(W, H, 18, 14);
-        this.enemyHPText?.setFontSize(hpFont).setPosition(W / 2, topY - gap - 20);
-        this.playerHPText?.setFontSize(hpFont).setPosition(W / 2, bottomY + gap + 20);
+        this.enemyHPText
+            ?.setFontSize(hpFont)
+            .setPosition(W / 2, topY - gap - 20);
+        this.playerHPText
+            ?.setFontSize(hpFont)
+            .setPosition(W / 2, bottomY + gap + 20);
 
         this.weaponRelayout && this.weaponRelayout();
         this.attackBtn?.setPosition(W - 140, bottomY - 10);
 
-        const badgeW = 140, badgeH = 40;
-        this.turnBadgeGlass?.setPosition(W - (pad + badgeW / 2), pad + 24).setSize(badgeW, badgeH);
+        const badgeW = 140,
+            badgeH = 40;
+        this.turnBadgeGlass
+            ?.setPosition(W - (pad + badgeW / 2), pad + 24)
+            .setSize(badgeW, badgeH);
         const badgeFont = getResponsiveFontSize(W, H, 20, 16);
-        this.turnBadgeText?.setFontSize(badgeFont).setPosition(this.turnBadgeGlass.x, this.turnBadgeGlass.y);
+        this.turnBadgeText
+            ?.setFontSize(badgeFont)
+            .setPosition(this.turnBadgeGlass.x, this.turnBadgeGlass.y);
 
-        const whoW = 220, whoH = 48;
+        const whoW = 220,
+            whoH = 48;
         this.turnLabelGlass?.setPosition(W / 2, H * 0.11).setSize(whoW, whoH);
         const whoFont = getResponsiveFontSize(W, H, 26, 20);
-        this.turnLabelText?.setFontSize(whoFont).setPosition(this.turnLabelGlass.x, this.turnLabelGlass.y);
+        this.turnLabelText
+            ?.setFontSize(whoFont)
+            .setPosition(this.turnLabelGlass.x, this.turnLabelGlass.y);
     }
 
     // -------------------------------------
@@ -1122,8 +1310,8 @@ export class Game extends Phaser.Scene {
     // -------------------------------------
     private endRound(playerWon: boolean) {
         this.cleanup();
-        this.scene.start('GameOver', {
-            result: playerWon ? 'VICTORY' : 'DEFEAT',
+        this.scene.start("GameOver", {
+            result: playerWon ? "VICTORY" : "DEFEAT",
             playerHP: this.playerHP,
             enemyHP: this.enemyHP,
             shots: this.shotsFired,
