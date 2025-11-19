@@ -52,11 +52,11 @@ import type {
 } from "shared/types";
 
 // -----------------------------------------
-// Backend URL (env override -> same host:3000)
+// Backend URL (env override -> same origin)
 // -----------------------------------------
 const BACKEND_URL =
     (import.meta as any).env?.VITE_BACKEND_URL ??
-    `${window.location.protocol}//${window.location.hostname}:3000`;
+    window.location.origin;
 
 // -----------------------------------------------------------
 // Single socket + identity
