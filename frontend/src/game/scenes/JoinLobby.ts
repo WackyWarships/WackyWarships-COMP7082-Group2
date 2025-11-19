@@ -36,14 +36,14 @@ export class JoinLobby extends Scene {
 
         // Background
         this.background = this.add
-            .image(centerX, centerY, "background")
-            .setDisplaySize(width, height)
+            .image(centerX, centerY, "spacebackground")
+            .setDisplaySize(height * 0.46, height)
             .setOrigin(0.5);
 
         // Title
-        const titleFontSize = getResponsiveFontSize(width, height, 56, 44);
+        const titleFontSize = getResponsiveFontSize(width, height, 52, 30);
         this.title = this.add
-            .text(centerX, height * 0.15, "Join Lobby", {
+            .text(centerX, height * 0.15, "Join\nLobby", {
                 fontFamily: "Arial Black",
                 fontSize: `${titleFontSize}px`,
                 color: "#ffffff",
@@ -64,7 +64,7 @@ export class JoinLobby extends Scene {
             backgroundColor: "#1e90ff",
             padding: { x: 20, y: 10 },
             align: "center",
-            fixedWidth: mobile ? 240 : 300,
+            fixedWidth: mobile ? 190 : 250,
         };
 
         this.joinButton = this.add
@@ -131,7 +131,7 @@ export class JoinLobby extends Scene {
             color: "black",
             border: "2px solid #1e90ff",
             borderRadius: "6px",
-            padding: "4px 8px",
+            padding: "10px",
             width: "240px",
             height: "32px",
             fontSize: "18px",
@@ -139,7 +139,6 @@ export class JoinLobby extends Scene {
             textAlign: "center",
             zIndex: "10",
             pointerEvents: "auto",
-            transform: "translate(-50%, -50%)",
         });
 
         document.body.appendChild(this.codeInput);
@@ -153,13 +152,13 @@ export class JoinLobby extends Scene {
 
         const rect = this.game.canvas.getBoundingClientRect();
         const { height } = this.scale;
-        const { x: centerX } = getCenter(this.scale);
+        const centerXOnScreen = rect.left + rect.width / 2;
 
         const titleY = height * 0.15;
         const createBtnY = height * 0.55;
         const midY = titleY + (createBtnY - titleY) * 0.5;
 
-        this.codeInput.style.left = `${rect.left + centerX}px`;
+        this.codeInput.style.left = `${centerXOnScreen - 120}px`;
         this.codeInput.style.top = `${rect.top + midY}px`;
     }
 

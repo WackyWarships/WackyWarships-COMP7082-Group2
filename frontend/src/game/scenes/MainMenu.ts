@@ -38,13 +38,13 @@ export class MainMenu extends Scene {
 
         // Background
         this.background = this.add
-            .image(centerX, centerY, "background")
-            .setDisplaySize(width, height)
+            .image(centerX, centerY, "spacebackground")
+            .setDisplaySize(height * 0.46, height)
             .setOrigin(0.5);
 
         // Title
-        const fontSizeTop = getResponsiveFontSize(width, height, 72, 56);
-        const fontSizeBottom = getResponsiveFontSize(width, height, 72, 56);
+        const fontSizeTop = getResponsiveFontSize(width, height, 50, 32);
+        const fontSizeBottom = getResponsiveFontSize(width, height, 50, 32);
 
         this.titleTop = this.add
             .text(centerX, height * 0.12, "Wacky", {
@@ -73,7 +73,7 @@ export class MainMenu extends Scene {
         const usernameFontSize = getResponsiveFontSize(width, height, 28, 22);
 
         this.usernameText = this.add
-            .text(width - 20, 20, `Username: ${playerName}`, {
+            .text(width / 2, height - 100, `User: ${playerName}`, {
                 fontFamily: "Arial",
                 fontSize: `${usernameFontSize}px`,
                 color: "#ffffff",
@@ -81,7 +81,7 @@ export class MainMenu extends Scene {
                 strokeThickness: 4,
                 align: "right",
             })
-            .setOrigin(1, 0);
+            .setOrigin(0.5);
 
         // Menu Container
         this.menuContainer = this.add.container(centerX, height * 0.55);
@@ -93,7 +93,7 @@ export class MainMenu extends Scene {
             backgroundColor: "#1e90ff",
             padding: { x: 20, y: 10 },
             align: "center" as const,
-            fixedWidth: mobile ? 260 : 300,
+            fixedWidth: mobile ? 190 : 250,
         };
 
         const makeButton = (
@@ -126,19 +126,19 @@ export class MainMenu extends Scene {
         // Create all buttons
         makeButton("Create Lobby", -90, "CreateLobby");
         makeButton("Join Lobby", -30, "JoinLobby");
-        makeButton("How to Play", 30, "HowToPlay");
-        makeButton("Settings", 90, "Settings");
-        makeButton("Credits", 150, "Credits");
-        makeButton("Play Mini-Game", 210, () => {
-            this.scene.start("FuelSortGame", { difficulty: "easy" });
-        });
-        makeButton("Change Username", 270, () => {
+        // makeButton("How to Play", 30, "HowToPlay");
+        // makeButton("Settings", 90, "Settings");
+        // makeButton("Credits", 150, "Credits");
+        // makeButton("Play Mini-Game", 210, () => {
+        //     this.scene.start("FuelSortGame", { difficulty: "easy" });
+        // });
+        makeButton("Change User", 30, () => {
             clearPlayerName();
             this.scene.start("EnterUsername");
         });
 
         // === Start Battle -> quick-match (minimal addition) ===
-        const startBtn = makeButton("Start Battle", 330, () =>
+        const startBtn = makeButton("Start Battle", 90, () =>
             this.startQuickMatch(startBtn)
         );
 
@@ -218,8 +218,8 @@ export class MainMenu extends Scene {
 
         const { x: centerX } = getCenter(this.scale);
 
-        const fontSizeTop = getResponsiveFontSize(width, height, 72, 56);
-        const fontSizeBottom = getResponsiveFontSize(width, height, 72, 56);
+        const fontSizeTop = getResponsiveFontSize(width, height, 50, 32);
+        const fontSizeBottom = getResponsiveFontSize(width, height, 50, 32);
         const usernameFontSize = getResponsiveFontSize(width, height, 28, 22);
 
         this.titleTop.setFontSize(fontSizeTop);
@@ -232,6 +232,6 @@ export class MainMenu extends Scene {
 
         this.usernameText
             .setFontSize(usernameFontSize)
-            .setPosition(width - 20, 20);
+            .setPosition(width / 2, height - 100);
     }
 }

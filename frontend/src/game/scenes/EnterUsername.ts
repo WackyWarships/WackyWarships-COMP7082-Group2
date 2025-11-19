@@ -36,12 +36,12 @@ export class EnterUsername extends Scene {
 
         // Background
         this.background = this.add
-            .image(centerX, height / 2, "background")
-            .setDisplaySize(width, height)
+            .image(centerX, height / 2, "spacebackground")
+            .setDisplaySize(height * 0.46, height)
             .setOrigin(0.5);
 
         // Titles
-        const titleSize = getResponsiveFontSize(width, height, 72, 56);
+        const titleSize = getResponsiveFontSize(width, height, 50, 32);
         this.title1 = this.add
             .text(centerX, height * (1 / 6), "Enter Your", {
                 fontFamily: "Arial Black",
@@ -118,7 +118,7 @@ export class EnterUsername extends Scene {
 
         this.inputEl = document.createElement("input");
         this.inputEl.type = "text";
-        this.inputEl.placeholder = "Your username here";
+        this.inputEl.placeholder = "Your username...";
 
         Object.assign(this.inputEl.style, {
             position: "absolute",
@@ -180,7 +180,7 @@ export class EnterUsername extends Scene {
 
         resizeSceneBase(this, width, height);
         const { x: centerX } = getCenter(this.scale);
-        const titleSize = getResponsiveFontSize(width, height, 72, 56);
+        const titleSize = getResponsiveFontSize(width, height, 50, 32);
 
         this.title1
             .setFontSize(titleSize)

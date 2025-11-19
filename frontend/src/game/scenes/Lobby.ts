@@ -80,12 +80,12 @@ export class Lobby extends Scene {
 
         // Background
         this.background = this.add
-            .image(centerX, centerY, "background")
-            .setDisplaySize(width, height)
+            .image(centerX, centerY, "spacebackground")
+            .setDisplaySize(height * 0.46, height)
             .setOrigin(0.5);
 
         // Title
-        const titleSize = getResponsiveFontSize(width, height, 56, 44);
+        const titleSize = getResponsiveFontSize(width, height, 42, 20);
         this.title = this.add
             .text(centerX, height * 0.1, `Lobby: ${this.lobbyName}`, {
                 fontFamily: "Arial Black",
@@ -323,7 +323,7 @@ export class Lobby extends Scene {
 
             // Add kick button (only visible for host, not on mobile)
             const mobile = isMobile(width);
-            const offsetX = mobile ? 70 : 180;
+            const offsetX = mobile ? 70 : 70;
 
             if (this.playerId === this.hostId && !isHost && !isMe) {
                 const kick = this.add
