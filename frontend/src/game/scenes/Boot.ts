@@ -4,8 +4,7 @@ import {
     getStoredPlayerName,
     getOrCreatePlayerId,
 } from "../utils/playerUsername";
-import { getLastSession, saveSession } from "../utils/playerSession";
-import EventBus from "../EventBus";
+import { getLastSession } from "../utils/playerSession";
 
 export class Boot extends Scene {
     constructor() {
@@ -19,8 +18,6 @@ export class Boot extends Scene {
 
     create() {
         initSocket();
-
-        EventBus.on("turn-start", this.handleTurnStart);
 
         const session = getLastSession();
         const savedName = getStoredPlayerName();
@@ -43,7 +40,7 @@ export class Boot extends Scene {
                 case "Lobby":
                     return this.scene.start("Lobby", {
                         lobbyId: session.lobbyId,
-                        playerId: getOrCreatePlayerId(),
+                        playerId,
                     });
 
                 case "Game":
@@ -60,30 +57,6 @@ export class Boot extends Scene {
             this.scene.start("EnterUsername");
         }
     }
-
-    private handleTurnStart = (evt: any) => {
-        const session = getLastSession();
-        if (!session?.lobbyId) return;
-
-        const playerId = getOrCreatePlayerId();
-        const lobbyId = session.lobbyId;
-
-        // Save updated session
-        saveSession({
-            lobbyId,
-            scene: "Game",
-            timestamp: Date.now(),
-            lastKnownTurnId: evt.turnId,
-        });
-
-        // Start Game scene globally
-        this.scene.start("Game", {
-            lobbyId,
-            playerId,
-            turnStart: evt,
-        });
-    };
 }
 
 export default Boot;
-

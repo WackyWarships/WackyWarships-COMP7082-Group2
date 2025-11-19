@@ -7,7 +7,13 @@ import {
     resizeSceneBase,
 } from "../utils/layout";
 import { getStoredPlayerName } from "../utils/playerUsername";
-import type { LobbyUpdate, PlayerId, PlayerInfo, HostInfo } from "shared/types";
+import type {
+    LobbyUpdate,
+    PlayerId,
+    PlayerInfo,
+    HostInfo,
+    TurnStartEvent,
+} from "shared/types";
 import { saveSession } from "../utils/playerSession";
 import {
     sendStartGame,
@@ -104,7 +110,7 @@ export class Lobby extends Scene {
             })
             .setOrigin(0.5);
 
-        // Player List
+        // Player list header
         const listHeaderSize = getResponsiveFontSize(width, height, 28, 22);
         this.playersTitle = this.add
             .text(centerX, height * 0.3, "Players", {
@@ -117,7 +123,7 @@ export class Lobby extends Scene {
             })
             .setOrigin(0.5);
 
-        // Start Button
+        // Start (host only)
         const btnFontSize = `${mobile ? 26 : 32}px`;
         this.startButton = this.add
             .text(centerX, height * 0.85, "Start Game", {
@@ -188,13 +194,26 @@ export class Lobby extends Scene {
         this.leaveButton.setVisible(!isHostInitial).setActive(!isHostInitial);
         this.disbandButton.setVisible(isHostInitial).setActive(isHostInitial);
 
-        // Render any initial state passed in (e.g., first lobbyUpdate)
-        if (this.players.length > 0) {
-            this.renderPlayers();
-        }
+        // Render initial players if provided
+        if (this.players.length > 0) this.renderPlayers();
 
         // Subscribe to lobby updates
         EventBus.on("lobby-update", this.onLobbyUpdate);
+
+        // When server says the game starts, jump to Game scene
+        const onTurnStart = (evt: TurnStartEvent) => {
+            this.scene.start("Game", {
+                net: {
+                    mode: "lobby",
+                    lobbyId: this.lobbyId,
+                    starterId: evt.playerId,
+                    turnId: evt.turnId,
+                    // optional but helpful for opponent detection:
+                    players: this.players, // [{ playerId, playerName }, ...]
+                },
+            });
+        };
+        EventBus.on("turn-start", onTurnStart as any);
 
         // Moderation notices
         const onKicked = (n: any) => {
@@ -239,18 +258,15 @@ export class Lobby extends Scene {
         this.renderPlayers();
 
         const isHost = this.playerId === this.hostId;
+        const canStart = isHost && this.players.length >= 2;
 
-        if (this.startButton) {
-            this.startButton.setVisible(isHost).setActive(isHost);
-        }
+        this.startButton
+            ?.setVisible(isHost)
+            .setActive(canStart)
+            .setAlpha(canStart ? 1 : 0.5);
 
-        if (this.leaveButton) {
-            this.leaveButton.setVisible(!isHost).setActive(!isHost);
-        }
-
-        if (this.disbandButton) {
-            this.disbandButton.setVisible(isHost).setActive(isHost);
-        }
+        this.leaveButton?.setVisible(!isHost).setActive(!isHost);
+        this.disbandButton?.setVisible(isHost).setActive(isHost);
     };
 
     private renderPlayers() {
@@ -280,7 +296,6 @@ export class Lobby extends Scene {
             const isMe = pid === this.playerId;
             const icon = isHost ? "★ " : "• ";
 
-            // Use server name for everyone, but only label yourself with (You)
             const name = isMe
                 ? `${displayName} (You)`
                 : isHost
@@ -332,10 +347,18 @@ export class Lobby extends Scene {
                 this.kickButtons.push(kick);
             }
         });
+
+        // Refresh start state after list changes
+        if (this.startButton) {
+            const canStart =
+                this.playerId === this.hostId && this.players.length >= 2;
+            this.startButton.setActive(canStart).setAlpha(canStart ? 1 : 0.5);
+        }
     }
 
     private handleStartGame() {
         if (this.playerId !== this.hostId) return;
+        if (this.players.length < 2) return; // guard
         sendStartGame({ lobbyId: this.lobbyId });
     }
 

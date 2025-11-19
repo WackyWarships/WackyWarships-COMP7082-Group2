@@ -10,33 +10,66 @@ import {
     getPlayerId,
     sendDirectReady,
     sendDirectAttack,
+    sendChooseWeapon,
+    sendNextTurn,
+    sendPlayerExitGame,
+    sendDirectExitGame,
 } from "../../api/socket";
 import { saveSession } from "../utils/playerSession";
 
+// === MINIGAME INTEGRATION ===
+import {
+    MinigameManager,
+    MinigameRole,
+    MinigameDifficultyId,
+} from "../MinigameManager";
+import { DirectMinigameManager } from "../DirectMinigameManager";
+
+// -------------------------------------
+// small helpers / types
+// -------------------------------------
 type HPBar = {
     width: number;
     height: number;
     set: (pct: number) => void;
     setPosition: (nx: number, ny: number) => void;
 };
-
 type Weapon = { key: string; color: number; dmg: number; speed: number };
+
+// pick “the other” player for 2-player lobbies if a players list is provided
+function pickOpponentId(allIds: string[], me: string): string | undefined {
+    return allIds.find((id) => id !== me);
+}
+
+// Sprite keys (adjust if needed)
+const ENEMY_SPRITES = {
+    normal: "battleshipP",
+    damaged: "battleshipP_dmg",
+    critical: "battleshipP_crit",
+};
+const PLAYER_SPRITES = {
+    normal: "battleshipE",
+    damaged: "battleshipE_dmg",
+    critical: "battleshipE_crit",
+};
 
 export class Game extends Phaser.Scene {
     public camera!: Phaser.Cameras.Scene2D.Camera;
     public background!: Phaser.GameObjects.Image;
 
-    // ----- local state -----
+    // ----- local battle state -----
     private playerHPMax = 100;
     private enemyHPMax = 100;
     private playerHP = this.playerHPMax;
     private enemyHP = this.enemyHPMax;
 
     private weapons: Weapon[] = [
+        // Easy
         { key: "W1", color: 0x6ec1ff, dmg: 10, speed: 900 },
-        { key: "W2", color: 0x8be27e, dmg: 30, speed: 900 },
-        { key: "W3", color: 0xf6b26b, dmg: 50, speed: 900 },
-        { key: "W4", color: 0xd96df0, dmg: 80, speed: 900 },
+        // Medium
+        { key: "W2", color: 0x8be27e, dmg: 40, speed: 900 },
+        // Hard
+        { key: "W3", color: 0xf6b26b, dmg: 80, speed: 900 },
     ];
     private currentWeaponIndex = 0;
 
@@ -46,7 +79,7 @@ export class Game extends Phaser.Scene {
     private shotsFired = 0;
     private totalDamage = 0;
 
-    // TEMP turn-based
+    // turn UI/bookkeeping
     private isPlayerTurn = true;
     private turnNumber = 1;
     private enemyTurnTimer?: Phaser.Time.TimerEvent;
@@ -54,10 +87,12 @@ export class Game extends Phaser.Scene {
     // UI refs
     private enemyHPBar!: HPBar;
     private playerHPBar!: HPBar;
-    private enemy!: Phaser.GameObjects.GameObject;
-    private player!: Phaser.GameObjects.GameObject;
 
-    private homeBtn!: Phaser.GameObjects.GameObject;
+    // Ships can be Image or Rectangle (fallback)
+    private enemy!: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle;
+    private player!: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle;
+
+    private homeBtn!: Phaser.GameObjects.Container;
     private attackBtn!: Phaser.GameObjects.Text;
 
     private weaponNodes: {
@@ -77,45 +112,87 @@ export class Game extends Phaser.Scene {
     private enemyHPText!: Phaser.GameObjects.Text;
     private playerHPText!: Phaser.GameObjects.Text;
 
-    // ====== net/direct wiring ======
-    private netMode: "local" | "direct" = "local";
+    // ====== networking modes ======
+    private netMode: "local" | "direct" | "lobby" = "local";
+
+    // direct (quick-match)
     private matchId?: string;
-    private meId: string = getPlayerId();
-    private isStarter: boolean = false;
     private offAttack?: () => void;
     private offState?: () => void;
-
-    // Lobby
-    private lobbyId?: string;
-    private currentTurnId: number = 0;
-
-    /** de-dup incoming server attacks */
     private seenAttackIds = new Set<string>();
+
+    // lobby
+    private lobbyId?: string;
+    private turnId = 0;
+    private starterId?: string; // who starts the game (server decides)
+    private opponentId?: string; // optional: derived if players list passed in
+
+    // identity
+    private meId: string = getPlayerId();
+
+    // de-dupe: ensure we only process each server turn once on this client
+    private resolvedTurnIds = new Set<number>();
+
+    // explosion config
+    private readonly EXPLOSION_MS = 1000;
+
+    // === MINIGAME MANAGERS ===
+    private minigameManager?: MinigameManager; // lobby
+    private directMinigameManager?: DirectMinigameManager; // direct
+
+    // Spectator overlay when opponent is playing a minigame
+    private opponentMinigameOverlay?: Phaser.GameObjects.Container;
 
     constructor() {
         super("Game");
     }
 
-    // ---------- lifecycle ----------
+    // -------------------------------------
+    // lifecycle / init
+    // -------------------------------------
     init(data: any) {
-        // Direct Matchmaking
+        // --- compatibility shim: accept legacy flat payloads from Lobby ---
+        if (!data?.net && (data?.lobbyId || data?.starterId || data?.turnId)) {
+            data = {
+                net: {
+                    mode: "lobby",
+                    lobbyId: data.lobbyId,
+                    starterId: data.starterId,
+                    turnId: data.turnId ?? 0,
+                    players: data.players,
+                },
+            };
+        }
+        // ------------------------------------------------------------------
+
+        // direct (no lobby)
         if (data?.net?.mode === "direct") {
             this.netMode = "direct";
             this.matchId = data.net.matchId;
-            this.isStarter = data.net.starter === this.meId;
+            this.starterId = data.net.starter;
+            this.turnId = 0;
         }
 
-        if (data?.lobbyId) {
-            this.lobbyId = data.lobbyId;
-        }
-        if (data?.turnStart) {
-            this.currentTurnId = data.turnStart.turnId;
+        // lobby
+        if (data?.net?.mode === "lobby") {
+            this.netMode = "lobby";
+            this.lobbyId = data.net.lobbyId;
+            this.starterId = data.net.starterId; // whose turn the server announced first
+            this.turnId = data.net.turnId ?? 0;
+
+            // if Lobby scene passes players, we can pick an opponent id now
+            if (Array.isArray(data?.net?.players)) {
+                const ids: string[] = data.net.players.map(
+                    (p: any) => p.playerId
+                );
+                this.opponentId = pickOpponentId(ids, this.meId);
+            }
         }
 
         this.resetState();
     }
 
-    private resetState(): void {
+    private resetState() {
         this.playerHPMax = 100;
         this.enemyHPMax = 100;
         this.playerHP = this.playerHPMax;
@@ -126,46 +203,24 @@ export class Game extends Phaser.Scene {
         this.shotsFired = 0;
         this.totalDamage = 0;
 
-        this.isPlayerTurn = this.netMode === "direct" ? this.isStarter : true;
+        const iStart = this.starterId ? this.starterId === this.meId : true;
+        this.isPlayerTurn = iStart;
         this.turnNumber = 1;
 
         this.enemyTurnTimer?.remove();
         this.enemyTurnTimer = undefined;
 
         this.seenAttackIds.clear();
+        this.resolvedTurnIds.clear();
     }
 
-    // ---------- helpers ----------
+    // -------------------------------------
+    // tiny utilities
+    // -------------------------------------
     private textureExists(key: string) {
         return this.textures && this.textures.exists(key);
     }
 
-    private addSafeImage(
-        x: number,
-        y: number,
-        key: string,
-        {
-            w = 64,
-            h = 64,
-            label = key,
-        }: { w?: number; h?: number; label?: string } = {}
-    ) {
-        if (this.textureExists(key))
-            return this.add.image(x, y, key).setOrigin(0.5);
-        const rect = this.add
-            .rectangle(x, y, w, h, 0x000000, 0.4)
-            .setStrokeStyle(2, 0xffffff, 0.7)
-            .setOrigin(0.5);
-        this.add
-            .text(x, y, (label || key).toUpperCase(), {
-                fontSize: "10px",
-                color: "#fff",
-            })
-            .setOrigin(0.5);
-        return rect;
-    }
-
-    /** Scale ship to a percentage of screen height (keeps sprite aspect). */
     private sizeShipByHeight(
         img: Phaser.GameObjects.Image,
         screenH: number,
@@ -173,8 +228,7 @@ export class Game extends Phaser.Scene {
     ) {
         const baseH = img.height || 1;
         const targetH = screenH * percentH;
-        const s = targetH / baseH;
-        img.setScale(s);
+        img.setScale(targetH / baseH);
     }
 
     private makeHPBar(
@@ -228,7 +282,7 @@ export class Game extends Phaser.Scene {
 
     private buildWeaponUI() {
         const { width: W, height: H } = this.scale;
-        const count = 4;
+        const count = this.weapons.length;
         const r = 24;
         const gap = 14;
         const pad = 20;
@@ -284,6 +338,28 @@ export class Game extends Phaser.Scene {
         };
     }
 
+    // Map any weapon to canonical damage 10,40,80
+    private damageForWeapon(weaponKeyOrId: string): number {
+        const byKey: Record<string, number> = {
+            W1: 10,
+            w1: 10,
+            W2: 40,
+            w2: 40,
+            W3: 80,
+            w3: 80,
+        };
+
+        if (weaponKeyOrId in byKey) return byKey[weaponKeyOrId];
+
+        const idx = this.weapons.findIndex((w) => w.key === weaponKeyOrId);
+        const table = [10, 40, 80];
+        if (idx >= 0) return table[Math.min(idx, table.length - 1)];
+
+        const current = this.weapons[this.currentWeaponIndex]?.key;
+        const curIdx = this.weapons.findIndex((w) => w.key === current);
+        return table[Math.min(Math.max(curIdx, 0), table.length - 1)] || 10;
+    }
+
     private selectWeapon(i: number) {
         this.currentWeaponIndex = i;
         this.refreshWeaponHighlight();
@@ -317,91 +393,238 @@ export class Game extends Phaser.Scene {
             this.playerHPText.setText(`${this.playerHP} / ${this.playerHPMax}`);
     }
 
-    // ---------- temp turn system ----------
-    private startPlayerTurn() {
-        this.isPlayerTurn = true;
-        this.turnLabelText.setText("YOUR TURN").setColor("#ffffff");
-        this.setAttackEnabled(true);
+    // ---------- new: ship visual state by HP ----------
+    private spriteFor(
+        hp: number,
+        max: number,
+        keys: { normal: string; damaged: string; critical: string }
+    ) {
+        const pct = (hp / max) * 100;
+        if (pct < 20) return keys.critical;
+        if (pct < 70) return keys.damaged;
+        return keys.normal;
     }
 
-    private startEnemyTurn() {
-        this.isPlayerTurn = false;
-        this.turnLabelText.setText("ENEMY TURN").setColor("#ff6969");
-        this.setAttackEnabled(false);
+    private swapTextureIfAvailable(
+        obj: Phaser.GameObjects.GameObject,
+        desiredKey: string,
+        sizePctH: number
+    ) {
+        if (!(obj instanceof Phaser.GameObjects.Image)) return; // rectangles fallback -> ignore
+        if (!this.textureExists(desiredKey)) return; // missing texture, ignore
+        if (obj.texture.key === desiredKey) return; // already set
 
-        if (this.netMode === "local") {
-            this.enemyTurnTimer?.remove();
-            this.enemyTurnTimer = this.time.delayedCall(
-                700,
-                () => this.doEnemyAttack(),
-                undefined,
-                this
-            );
+        obj.setTexture(desiredKey);
+        // re-scale to match height percent
+        this.sizeShipByHeight(obj, this.scale.height, sizePctH);
+    }
+
+    private updateShipVisuals() {
+        // Enemy ship visuals
+        const enemyKey = this.spriteFor(
+            this.enemyHP,
+            this.enemyHPMax,
+            ENEMY_SPRITES
+        );
+        this.swapTextureIfAvailable(this.enemy, enemyKey, 0.09);
+
+        // Player ship visuals
+        const playerKey = this.spriteFor(
+            this.playerHP,
+            this.playerHPMax,
+            PLAYER_SPRITES
+        );
+        this.swapTextureIfAvailable(this.player, playerKey, 0.11);
+    }
+
+    // ---------- new: explosion effect ----------
+    private showExplosion(x: number, y: number) {
+        if (this.textureExists("explosion")) {
+            // Simple image fade/scale (works whether 'explosion' is a single frame or spritesheet main frame)
+            const s = this.add
+                .image(x, y, "explosion")
+                .setOrigin(0.5)
+                .setDepth(300);
+            s.setScale(0.6);
+            this.tweens.add({
+                targets: s,
+                duration: this.EXPLOSION_MS,
+                alpha: 0,
+                scale: 1.2,
+                onComplete: () => s.destroy(),
+            });
+        } else {
+            // Fallback: bright flash circle
+            const c = this.add.circle(x, y, 20, 0xfff2a8, 1).setDepth(300);
+            c.setScale(0.8);
+            this.tweens.add({
+                targets: c,
+                duration: this.EXPLOSION_MS,
+                alpha: 0,
+                scale: 2.0,
+                onComplete: () => c.destroy(),
+            });
         }
     }
 
+    // -------------------------------------
+    // turn helpers
+    // -------------------------------------
     private setAttackEnabled(enabled: boolean) {
         this.attackBtn.setAlpha(enabled ? 1 : 0.4);
         this.attackBtn.removeAllListeners();
         if (enabled) {
             this.attackBtn
                 .setInteractive({ useHandCursor: true })
-                .once("pointerdown", () => this.doLocalAttack());
+                .once("pointerdown", () => this.doAttack());
         } else {
             this.attackBtn.disableInteractive();
         }
     }
-
-    private nextTurn() {
+    private startPlayerTurn() {
+        this.isPlayerTurn = true;
+        this.turnLabelText.setText("YOUR TURN").setColor("#ffffff");
+        this.setAttackEnabled(true);
+    }
+    private startEnemyTurn() {
+        this.isPlayerTurn = false;
+        this.turnLabelText.setText("ENEMY TURN").setColor("#ff6969");
+        this.setAttackEnabled(false);
+    }
+    private nextTurnBadge() {
         this.turnNumber += 1;
         this.turnBadgeText.setText(`Turn: ${this.turnNumber}`);
     }
 
-    private doEnemyAttack() {
-        if (this.playerHP <= 0 || this.enemyHP <= 0) return;
-
-        const wIdx = Phaser.Math.Between(0, this.weapons.length - 1);
-        const w = this.weapons[wIdx];
-        const duration = Phaser.Math.Clamp(1000 * (300 / w.speed), 120, 600);
+    // -------------------------------------
+    // Opponent minigame banner (spectator)
+    // -------------------------------------
+    private showOpponentMinigameBanner() {
+        if (this.opponentMinigameOverlay) return;
 
         const { width: W, height: H } = this.scale;
-        const topY = H * 0.2;
-        const bottomY = H * 0.8;
 
-        this.flyBullet({
-            fromX: W / 2,
-            fromY: topY + 30,
-            toY: bottomY - 20,
-            color: w.color,
-            duration,
-            onImpact: () => {
-                this.playerHP = Math.max(0, this.playerHP - w.dmg);
-                this.playerHPBar.set(this.playerHP / this.playerHPMax);
-                this.updateHPTexts();
+        const container = this.add.container(0, 0).setDepth(1000);
 
-                if (this.playerHP === 0) {
-                    this.endRound(false);
-                    return;
+        const backdrop = this.add
+            .rectangle(W / 2, H / 2, W, H, 0x000000, 0.45)
+            .setOrigin(0.5);
+
+        const panelW = Math.min(W * 0.7, 520);
+        const panelH = Math.min(H * 0.25, 200);
+
+        const panel = this.add
+            .rectangle(W / 2, H / 2, panelW, panelH, 0x111522, 0.95)
+            .setOrigin(0.5)
+            .setStrokeStyle(2, 0xffffff, 0.65);
+
+        const title = this.add
+            .text(
+                W / 2,
+                H / 2 - panelH * 0.2,
+                "Opponent is playing Fuel Sort…",
+                {
+                    fontFamily: "Arial Black",
+                    fontSize: "22px",
+                    color: "#ffffff",
+                    stroke: "#000000",
+                    strokeThickness: 4,
                 }
+            )
+            .setOrigin(0.5);
 
-                this.nextTurn();
-                this.startPlayerTurn();
-            },
-        });
+        const body = this.add
+            .text(
+                W / 2,
+                H / 2 + panelH * 0.05,
+                "Waiting for minigame result…",
+                {
+                    fontFamily: "Arial",
+                    fontSize: "18px",
+                    color: "#d0d4ff",
+                    align: "center",
+                }
+            )
+            .setOrigin(0.5);
+
+        container.add([backdrop, panel, title, body]);
+        this.opponentMinigameOverlay = container;
     }
 
-    // ---------- create ----------
+    private hideOpponentMinigameBanner() {
+        if (this.opponentMinigameOverlay) {
+            this.opponentMinigameOverlay.destroy(true);
+            this.opponentMinigameOverlay = undefined;
+        }
+    }
+
+    private launchFuelSortForTurn(
+        attackerId: string,
+        defenderId: string,
+        weaponId: string,
+        role: MinigameRole
+    ) {
+        if (!this.lobbyId) return;
+
+        const baseDamage = this.damageForWeapon(weaponId);
+
+        // Explicit difficulty per weapon
+        let difficultyId: MinigameDifficultyId;
+        switch (weaponId) {
+            case "W1":
+                difficultyId = "easy";
+                break;
+            case "W2":
+                difficultyId = "medium";
+                break;
+            case "W3":
+                difficultyId = "hard";
+                break;
+            default:
+                difficultyId = MinigameManager.difficultyForDamage(baseDamage);
+                break;
+        }
+
+        if (role === "controller") {
+            if (!this.minigameManager) return;
+            this.minigameManager.launchFuelSort({
+                lobbyId: this.lobbyId,
+                turnId: this.turnId,
+                attackerId,
+                defenderId,
+                weaponId,
+                baseDamage,
+                difficultyId,
+                role,
+            });
+        } else {
+            // Spectator just sees a banner
+            this.showOpponentMinigameBanner();
+        }
+    }
+
+    // -------------------------------------
+    // create
+    // -------------------------------------
     create() {
-        console.log("[Game] netMode=", this.netMode, "matchId=", this.matchId);
         const { width: W, height: H } = this.scale;
         const { x: centerX, y: centerY } = getCenter(this.scale);
 
-        saveSession({
-            lobbyId: this.lobbyId!,
-            scene: "Game",
-            timestamp: Date.now(),
-            lastKnownTurnId: this.currentTurnId,
-        });
+        // Save session (for refresh/reconnect)
+        if (this.netMode === "lobby" && this.lobbyId) {
+            saveSession({
+                lobbyId: this.lobbyId,
+                scene: "Game",
+                timestamp: Date.now(),
+                lastKnownTurnId: this.turnId,
+            });
+        } else if (this.netMode === "direct" && this.matchId) {
+            saveSession({
+                lobbyId: this.matchId, // treat matchId like a lobby
+                scene: "Game",
+                timestamp: Date.now(),
+            });
+        }
 
         // background
         if (this.textureExists("background")) {
@@ -414,21 +637,44 @@ export class Game extends Phaser.Scene {
         }
 
         const pad = 24;
-        this.homeBtn = this.addSafeImage(pad + 24, pad + 24, "home", {
-            w: 56,
-            h: 32,
-            label: "home",
-        })
+        // FIXED-SIZE HOME BUTTON (never gets stretched again)
+        const raw = this.add.image(0, 0, "home").setOrigin(0.5);
+        raw.setDisplaySize(32, 32); // fixed size forever
+
+        this.homeBtn = this.add
+            .container(pad + 24, pad + 24, [raw])
+            .setSize(32, 32)
             .setInteractive({ useHandCursor: true })
-            .on("pointerdown", () => this.scene.start("MainMenu"));
+            .on("pointerdown", () => {
+                if (this.netMode === "lobby" && this.lobbyId) {
+                    sendPlayerExitGame({
+                        lobbyId: this.lobbyId,
+                        playerId: this.meId,
+                    });
+                } else if (this.netMode === "direct" && this.matchId) {
+                    sendDirectExitGame(this.matchId);
+                }
+                this.scene.start("MainMenu");
+            });
 
         const topY = H * 0.2;
         const bottomY = H * 0.8;
 
-        // Enemy battleship
-        if (this.textureExists("battleshipP")) {
+        // enemy (start with appropriate sprite for full HP -> normal)
+        const enemyStartKey = this.spriteFor(
+            this.enemyHP,
+            this.enemyHPMax,
+            ENEMY_SPRITES
+        );
+        if (this.textureExists(enemyStartKey)) {
             const img = this.add
-                .image(W / 2, topY, "battleshipP")
+                .image(W / 2, topY, enemyStartKey)
+                .setOrigin(0.5);
+            this.sizeShipByHeight(img, H, 0.09);
+            this.enemy = img;
+        } else if (this.textureExists(ENEMY_SPRITES.normal)) {
+            const img = this.add
+                .image(W / 2, topY, ENEMY_SPRITES.normal)
                 .setOrigin(0.5);
             this.sizeShipByHeight(img, H, 0.09);
             this.enemy = img;
@@ -438,10 +684,21 @@ export class Game extends Phaser.Scene {
                 .setOrigin(0.5);
         }
 
-        // Player battleship
-        if (this.textureExists("battleshipE")) {
+        // player
+        const playerStartKey = this.spriteFor(
+            this.playerHP,
+            this.playerHPMax,
+            PLAYER_SPRITES
+        );
+        if (this.textureExists(playerStartKey)) {
             const img = this.add
-                .image(W / 2, bottomY, "battleshipE")
+                .image(W / 2, bottomY, playerStartKey)
+                .setOrigin(0.5);
+            this.sizeShipByHeight(img, H, 0.11);
+            this.player = img;
+        } else if (this.textureExists(PLAYER_SPRITES.normal)) {
+            const img = this.add
+                .image(W / 2, bottomY, PLAYER_SPRITES.normal)
                 .setOrigin(0.5);
             this.sizeShipByHeight(img, H, 0.11);
             this.player = img;
@@ -450,10 +707,6 @@ export class Game extends Phaser.Scene {
                 .rectangle(W / 2, bottomY, 120, 40, 0x55ff88)
                 .setOrigin(0.5);
         }
-
-        // offsets
-        (this.enemy as Phaser.GameObjects.Image).setY(topY + 40);
-        (this.player as Phaser.GameObjects.Image).setY(bottomY - 40);
 
         // idle motion
         this.tweens.add({
@@ -516,10 +769,14 @@ export class Game extends Phaser.Scene {
             .setOrigin(0.5);
         this.updateHPTexts();
 
-        // Weapon selector
+        // weapon selector
         this.buildWeaponUI();
 
-        // Attack button
+        // === MINIGAME MANAGERS INIT ===
+        this.minigameManager = new MinigameManager(this); // lobby
+        this.directMinigameManager = new DirectMinigameManager(this); // direct
+
+        // attack button
         this.attackBtn = this.add
             .text(W - 140, bottomY - 10, "ATTACK", {
                 fontFamily: "Arial Black",
@@ -530,7 +787,7 @@ export class Game extends Phaser.Scene {
             })
             .setOrigin(1, 0.5);
 
-        // Turn badge
+        // turn badge + label
         const badgeW = 140,
             badgeH = 40;
         this.turnBadgeGlass = this.drawGlass(
@@ -555,7 +812,6 @@ export class Game extends Phaser.Scene {
             )
             .setOrigin(0.5);
 
-        // Who's turn
         const whoW = 220,
             whoH = 48;
         this.turnLabelGlass = this.drawGlass(W / 2, H * 0.11, whoW, whoH, 0.28);
@@ -570,102 +826,425 @@ export class Game extends Phaser.Scene {
             })
             .setOrigin(0.5);
 
-        // Start flow
-        this.startPlayerTurn();
+        // initial turn UI
+        if (this.isPlayerTurn) this.startPlayerTurn();
+        else this.startEnemyTurn();
 
-        // ====== wire direct mode listeners ======
+        // networking hooks
         if (this.netMode === "direct" && this.matchId) {
-            sendDirectReady(this.matchId);
-
-            // Subscribe via wildcard and filter event name; keep a disposer for cleanup.
-            const onDirectAttack = (type: string, payload: any) => {
-                if (type !== "direct-attack") return;
-                const ev = payload;
-                if (!ev || ev.matchId !== this.matchId) return;
-
-                if (ev.attackId && this.seenAttackIds.has(ev.attackId)) return;
-                if (ev.attackId) this.seenAttackIds.add(ev.attackId);
-
-                const weap =
-                    this.weapons.find((x) => x.key === ev.weaponKey) ||
-                    this.weapons[0];
-                const dmg = Number(ev?.damage ?? weap.dmg) || 0;
-
-                const { height: H2, width: W2 } = this.scale;
-                const topY2 = H2 * 0.2,
-                    bottomY2 = H2 * 0.8;
-
-                const shotFromTop = ev.playerId !== this.meId;
-
-                this.flyBullet({
-                    fromX: W2 / 2,
-                    fromY: shotFromTop ? topY2 + 30 : bottomY2 - 30,
-                    toY: shotFromTop ? bottomY2 - 20 : topY2 + 20,
-                    color: weap.color,
-                    duration: 300,
-                    onImpact: () => {
-                        if (shotFromTop) {
-                            this.playerHP = Math.max(0, this.playerHP - dmg);
-                            this.playerHPBar.set(
-                                this.playerHP / this.playerHPMax
-                            );
-                            this.updateHPTexts();
-                            if (this.playerHP === 0) {
-                                this.endRound(false);
-                                return;
-                            }
-                            this.nextTurn();
-                            this.startPlayerTurn();
-                        } else {
-                            this.enemyHP = Math.max(0, this.enemyHP - dmg);
-                            this.totalDamage += dmg;
-                            this.enemyHPBar.set(this.enemyHP / this.enemyHPMax);
-                            this.updateHPTexts();
-                            if (this.enemyHP === 0) {
-                                this.endRound(true);
-                                return;
-                            }
-                            this.nextTurn();
-                            this.startEnemyTurn();
-                        }
-                    },
-                });
-            };
-
-            EventBus.on("*", onDirectAttack as any);
-            this.offAttack = () => EventBus.off("*", onDirectAttack as any);
-
-            const onDirectState = (type: string, st: any) => {
-                if (type !== "direct-state") return;
-                if (!st || st.matchId !== this.matchId) return;
-                // (optional resync hook)
-            };
-
-            EventBus.on("*", onDirectState as any);
-            this.offState = () => EventBus.off("*", onDirectState as any);
+            this.wireDirect();
+        } else if (this.netMode === "lobby" && this.lobbyId) {
+            this.wireLobby();
+        } else {
+            // local solo test
+            this.setAttackEnabled(true);
         }
 
-        // resize & cleanup hooks
+        // resize / cleanup
         this.scale.on("resize", this.onResize, this);
         EventBus.emit("current-scene-ready", this);
 
-        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-            this.enemyTurnTimer?.remove();
-            this.scale.off("resize", this.onResize, this);
-            this.attackBtn?.removeAllListeners();
-            this.offAttack && this.offAttack();
-            this.offState && this.offState();
-        });
-        this.events.once(Phaser.Scenes.Events.DESTROY, () => {
-            this.enemyTurnTimer?.remove();
-            this.scale.off("resize", this.onResize, this);
-            this.attackBtn?.removeAllListeners();
-            this.offAttack && this.offAttack();
-            this.offState && this.offState();
-        });
-    } // <-- IMPORTANT: close create()
+        // === GAME-ENDED (DIRECT) ===
+        // Lobby mode already handles this in wireLobby().
+        // Here we hook the same event for direct matches.
+        const onAnyGameEnded = (evt: {
+            lobbyId: string;
+            by: string;
+            reason: string;
+        }) => {
+            if (this.netMode !== "direct") return;
+            if (!this.matchId) return;
+            if (evt.lobbyId !== this.matchId) return;
 
-    // ---------- resize ----------
+            // Both players get this via socket.io -> EventBus, so both go home.
+            this.scene.start("MainMenu");
+        };
+        EventBus.on("game-ended", onAnyGameEnded as any);
+
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            EventBus.off("game-ended", onAnyGameEnded as any);
+        });
+
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanup());
+        this.events.once(Phaser.Scenes.Events.DESTROY, () => this.cleanup());
+    }
+
+    private cleanup() {
+        this.enemyTurnTimer?.remove();
+        this.scale.off("resize", this.onResize, this);
+        this.attackBtn?.removeAllListeners();
+        this.offAttack && this.offAttack();
+        this.offState && this.offState();
+        this.hideOpponentMinigameBanner();
+        this.minigameManager?.forceCloseCurrent();
+        this.directMinigameManager?.forceCloseCurrent();
+    }
+
+    // -------------------------------------
+    // networking: direct (quick-match)
+    // -------------------------------------
+    private wireDirect() {
+        if (this.matchId) sendDirectReady(this.matchId);
+
+        const onDirectAttack = (type: string, payload: any) => {
+            if (type !== "direct-attack") return;
+            const ev = payload as {
+                matchId: string;
+                playerId: string;
+                weaponKey: string;
+                damage?: number;
+                attackId?: string;
+            };
+            if (!ev || ev.matchId !== this.matchId) return;
+
+            if (ev.attackId && this.seenAttackIds.has(ev.attackId)) return;
+            if (ev.attackId) this.seenAttackIds.add(ev.attackId);
+
+            const weap =
+                this.weapons.find((x) => x.key === ev.weaponKey) ||
+                this.weapons[0];
+
+            // Prefer server-authoritative damage; fall back to local table
+            const dmg =
+                typeof ev.damage === "number"
+                    ? ev.damage
+                    : this.damageForWeapon(weap.key);
+
+            const { height: H2, width: W2 } = this.scale;
+            const topY2 = H2 * 0.2,
+                bottomY2 = H2 * 0.8;
+            const shotFromTop = ev.playerId !== this.meId;
+
+            this.flyBullet({
+                fromX: W2 / 2,
+                fromY: shotFromTop ? topY2 + 30 : bottomY2 - 30,
+                toY: shotFromTop ? bottomY2 - 20 : topY2 + 20,
+                color: weap.color,
+                duration: 300,
+                onImpact: () => {
+                    const impactX = W2 / 2;
+                    const impactY = shotFromTop ? bottomY2 - 20 : topY2 + 20;
+                    this.showExplosion(impactX, impactY);
+                    this.cameras.main.shake(180, 0.006); // 180ms, small amplitude
+
+                    if (shotFromTop) {
+                        // Opponent hit ME
+                        this.playerHP = Math.max(0, this.playerHP - dmg);
+                        this.playerHPBar.set(this.playerHP / this.playerHPMax);
+                        this.updateHPTexts();
+                        this.updateShipVisuals();
+                        if (this.playerHP === 0) {
+                            this.endRound(false);
+                            return;
+                        }
+                        this.nextTurnBadge();
+                        this.startPlayerTurn();
+                    } else {
+                        // I hit opponent
+                        this.enemyHP = Math.max(0, this.enemyHP - dmg);
+                        this.totalDamage += dmg;
+                        this.enemyHPBar.set(this.enemyHP / this.enemyHPMax);
+                        this.updateHPTexts();
+                        this.updateShipVisuals();
+                        if (this.enemyHP === 0) {
+                            this.endRound(true);
+                            return;
+                        }
+                        this.nextTurnBadge();
+                        this.startEnemyTurn();
+                    }
+                },
+            });
+        };
+
+        EventBus.on("*", onDirectAttack as any);
+        this.offAttack = () => EventBus.off("*", onDirectAttack as any);
+    }
+
+    // -------------------------------------
+    // networking: lobby
+    // -------------------------------------
+    private wireLobby() {
+        // server → turn start (authoritative)
+        const onTurnStart = (evt: { turnId: number; playerId: string }) => {
+            this.turnId = evt.turnId;
+            const mine = evt.playerId === this.meId;
+            if (mine) this.startPlayerTurn();
+            else this.startEnemyTurn();
+        };
+
+        // server → turn resolved (animate and, if not game over, ask server to rotate turn)
+        const onTurnResolved = (res: {
+            turnId: number;
+            attackerId: string;
+            defenderId: string;
+            weaponId?: string;
+            outcome?: "success" | "failure" | "blocked" | "timeout";
+            damage?: number;
+        }) => {
+            if (this.resolvedTurnIds.has(res.turnId)) return;
+            this.resolvedTurnIds.add(res.turnId);
+
+            // Minigame just finished → remove spectator banner if it was shown
+            this.hideOpponentMinigameBanner();
+
+            // Try to find the weapon, but it's only used for color and fallback damage
+            const weap =
+                this.weapons.find((w) => w.key === (res.weaponId ?? "")) ||
+                this.weapons[0];
+
+            // --- DAMAGE LOGIC ---
+            // Prefer what the server tells us.
+            // Backend already does:
+            //   success: W1=10, W2=40, W3=80
+            //   failure: 5
+            let dmg: number;
+
+            if (typeof res.damage === "number" && res.damage > 0) {
+                dmg = res.damage;
+            } else {
+                // Fallback if backend hasn't been updated yet:
+                // success -> full base, fail/blocked/timeout -> 5
+                const base = this.damageForWeapon(weap.key);
+                if (res.outcome && res.outcome !== "success") {
+                    dmg = 5;
+                } else {
+                    dmg = base;
+                }
+            }
+
+            const { width: W2, height: H2 } = this.scale;
+            const topY = H2 * 0.2,
+                bottomY = H2 * 0.8;
+            const shotFromTop = res.attackerId !== this.meId;
+
+            this.flyBullet({
+                fromX: W2 / 2,
+                fromY: shotFromTop ? topY + 30 : bottomY - 30,
+                toY: shotFromTop ? bottomY - 20 : topY + 20,
+                color: weap.color,
+                duration: 280,
+                onImpact: () => {
+                    const impactX = W2 / 2;
+                    const impactY = shotFromTop ? bottomY - 20 : topY + 20;
+                    this.showExplosion(impactX, impactY);
+                    this.cameras.main.shake(180, 0.006);
+
+                    if (res.attackerId === this.meId) {
+                        this.enemyHP = Math.max(0, this.enemyHP - dmg);
+                        this.totalDamage += dmg;
+                        this.shotsFired += 1;
+                        this.enemyHPBar.set(this.enemyHP / this.enemyHPMax);
+                        this.updateHPTexts();
+                        this.updateShipVisuals();
+                        if (this.enemyHP === 0) {
+                            this.endRound(true);
+                            return;
+                        }
+                        if (this.lobbyId) {
+                            sendNextTurn({
+                                lobbyId: this.lobbyId,
+                                turnId: res.turnId,
+                                currentPlayer: res.attackerId,
+                            });
+                        }
+                    } else {
+                        this.playerHP = Math.max(0, this.playerHP - dmg);
+                        this.playerHPBar.set(this.playerHP / this.playerHPMax);
+                        this.updateHPTexts();
+                        this.updateShipVisuals();
+                        if (this.playerHP === 0) {
+                            this.endRound(false);
+                            return;
+                        }
+                    }
+                    this.nextTurnBadge();
+                },
+            });
+        };
+
+        // === MINIGAME START ===
+        const onMinigameStart = (evt: {
+            lobbyId: string;
+            attackerId: string;
+            defenderId: string;
+            weaponId: string;
+        }) => {
+            if (!this.lobbyId || evt.lobbyId !== this.lobbyId) return;
+            if (!this.minigameManager) return;
+
+            const role: MinigameRole =
+                evt.attackerId === this.meId ? "controller" : "spectator";
+
+            // Attacker already launches locally in doAttack; we only need
+            // the server event for spectators / defender.
+            if (role === "controller") {
+                return;
+            }
+
+            this.launchFuelSortForTurn(
+                evt.attackerId,
+                evt.defenderId,
+                evt.weaponId,
+                role
+            );
+        };
+
+        const onGameEnded = (evt: {
+            lobbyId: string;
+            by: string;
+            reason: string;
+        }) => {
+            if (!this.lobbyId || evt.lobbyId !== this.lobbyId) return;
+
+            // Go back to main menu on disconnect
+            this.scene.start("MainMenu");
+        };
+
+        EventBus.on("turn-start", onTurnStart as any);
+        EventBus.on("turn-resolved", onTurnResolved as any);
+        EventBus.on("minigame-start", onMinigameStart as any);
+        EventBus.on("game-ended", onGameEnded as any);
+
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            EventBus.off("turn-start", onTurnStart as any);
+            EventBus.off("turn-resolved", onTurnResolved as any);
+            EventBus.off("minigame-start", onMinigameStart as any);
+            EventBus.off("game-ended", onGameEnded as any);
+        });
+    }
+
+    // -------------------------------------
+    // input → attack
+    // -------------------------------------
+    private doAttack() {
+        // lobby path (authoritative + lobby minigame)
+        if (this.netMode === "lobby") {
+            if (!this.isPlayerTurn || !this.lobbyId) return;
+
+            const w = this.weapons[this.currentWeaponIndex];
+
+            // defenderId is required by your server payload but not used to compute turns.
+            const targetId = this.opponentId ?? "opponent";
+
+            // 1) Tell backend which weapon we chose
+            sendChooseWeapon({
+                lobbyId: this.lobbyId,
+                turnId: this.turnId,
+                playerId: this.meId,
+                targetPlayerId: targetId,
+                weaponId: w.key,
+            });
+
+            // 2) Disable attack button while minigame is running
+            this.setAttackEnabled(false);
+
+            // 3) Immediately launch Fuel Sort locally for the controller (LOBBY)
+            this.launchFuelSortForTurn(
+                this.meId,
+                targetId,
+                w.key,
+                "controller"
+            );
+
+            // Defender (other client) will start their spectator overlay
+            // when the server emits minigameStart.
+            return;
+        }
+
+        // shared pre-checks for direct/local
+        if (!this.isPlayerTurn || this.enemyHP <= 0 || this.playerHP <= 0)
+            return;
+
+        const w = this.weapons[this.currentWeaponIndex];
+        this.shotsFired++;
+
+        // ---------- DIRECT MODE: use DirectMinigameManager ----------
+        if (this.netMode === "direct" && this.matchId) {
+            if (this.coolingDown) return;
+            this.coolingDown = true;
+            this.setAttackEnabled(false);
+
+            // Map weapon to difficulty
+            let difficultyId: MinigameDifficultyId;
+            switch (w.key) {
+                case "W1":
+                    difficultyId = "easy";
+                    break;
+                case "W2":
+                    difficultyId = "medium";
+                    break;
+                case "W3":
+                    difficultyId = "hard";
+                    break;
+                default:
+                    difficultyId = "easy";
+            }
+
+            if (this.directMinigameManager) {
+                this.directMinigameManager.launchFuelSort({
+                    matchId: this.matchId,
+                    weaponId: w.key,
+                    difficultyId,
+                    onComplete: () => {
+                        // Minigame finished; cooldown is cleared here.
+                        this.coolingDown = false;
+                    },
+                });
+            } else {
+                // Fallback: no minigame manager -> send a basic "success" attack
+                sendDirectAttack(this.matchId, w.key, "success", 0);
+                this.coolingDown = false;
+            }
+
+            return;
+        }
+
+        // ---------- LOCAL OFFLINE ----------
+        if (this.coolingDown) return;
+
+        this.coolingDown = true;
+        this.time.delayedCall(
+            this.cooldownMs,
+            () => (this.coolingDown = false)
+        );
+
+        const { width: W, height: H } = this.scale;
+        const topY = H * 0.2;
+        const bottomY = H * 0.8;
+        const duration = Phaser.Math.Clamp(1000 * (300 / w.speed), 120, 600);
+
+        this.flyBullet({
+            fromX: W / 2,
+            fromY: bottomY - 30,
+            toY: topY + 20,
+            color: w.color,
+            duration,
+            onImpact: () => {
+                const impactX = W / 2;
+                const impactY = topY + 20;
+                this.showExplosion(impactX, impactY);
+                this.cameras.main.shake(180, 0.006); // 180ms, small amplitude
+
+                // purely local damage
+                this.enemyHP = Math.max(0, this.enemyHP - w.dmg);
+                this.totalDamage += w.dmg;
+                this.enemyHPBar.set(this.enemyHP / this.enemyHPMax);
+                this.updateHPTexts();
+                this.updateShipVisuals();
+                if (this.enemyHP === 0) {
+                    this.endRound(true);
+                    return;
+                }
+                this.nextTurnBadge();
+                this.startEnemyTurn();
+            },
+        });
+    }
+
+    // -------------------------------------
+    // resize
+    // -------------------------------------
     private onResize(gameSize: Phaser.Structs.Size) {
         const { width: W, height: H } = gameSize;
 
@@ -677,15 +1256,20 @@ export class Game extends Phaser.Scene {
 
         if (this.background)
             this.background.setPosition(W / 2, H / 2).setDisplaySize(W, H);
-        (this.homeBtn as any)?.setPosition(pad + 24, pad + 24);
+        this.homeBtn.setPosition(pad + 24, pad + 24);
 
-        (this.enemy as any)?.setPosition(W / 2, topY);
-        (this.player as any)?.setPosition(W / 2, bottomY);
+        if (this.enemy instanceof Phaser.GameObjects.Image) {
+            this.enemy.setPosition(W / 2, topY);
+        }
+
+        if (this.player instanceof Phaser.GameObjects.Image) {
+            this.player.setPosition(W / 2, bottomY);
+        }
 
         if (this.enemy instanceof Phaser.GameObjects.Image)
-            this.sizeShipByHeight(this.enemy as any, H, 0.09);
+            this.sizeShipByHeight(this.enemy, H, 0.09);
         if (this.player instanceof Phaser.GameObjects.Image)
-            this.sizeShipByHeight(this.player as any, H, 0.11);
+            this.sizeShipByHeight(this.player, H, 0.11);
 
         const gap = 32;
         this.enemyHPBar?.setPosition(W / 2, topY - gap);
@@ -721,62 +1305,11 @@ export class Game extends Phaser.Scene {
             .setPosition(this.turnLabelGlass.x, this.turnLabelGlass.y);
     }
 
-    // ---------- attacks ----------
-    private doLocalAttack() {
-        if (
-            !this.isPlayerTurn ||
-            this.coolingDown ||
-            this.enemyHP <= 0 ||
-            this.playerHP <= 0
-        )
-            return;
-
-        this.coolingDown = true;
-        this.time.delayedCall(
-            this.cooldownMs,
-            () => (this.coolingDown = false)
-        );
-
-        const w = this.weapons[this.currentWeaponIndex];
-        this.shotsFired++;
-
-        const { width: W, height: H } = this.scale;
-        const topY = H * 0.2;
-        const bottomY = H * 0.8;
-        const duration = Phaser.Math.Clamp(1000 * (300 / w.speed), 120, 600);
-
-        this.flyBullet({
-            fromX: W / 2,
-            fromY: bottomY - 30,
-            toY: topY + 20,
-            color: w.color,
-            duration,
-            onImpact: () => {
-                // Local-only mutation. In direct mode you should rely on server echoes.
-                if (this.netMode === "direct" && this.matchId) {
-                    sendDirectAttack(this.matchId, w.key);
-                } else {
-                    this.enemyHP = Math.max(0, this.enemyHP - w.dmg);
-                    this.totalDamage += w.dmg;
-                    this.enemyHPBar.set(this.enemyHP / this.enemyHPMax);
-                    this.updateHPTexts();
-                    if (this.enemyHP === 0) {
-                        this.endRound(true);
-                        return;
-                    }
-                    this.nextTurn();
-                    this.startEnemyTurn();
-                }
-            },
-        });
-    }
-
-    // ---------- end ----------
+    // -------------------------------------
+    // finish
+    // -------------------------------------
     private endRound(playerWon: boolean) {
-        this.enemyTurnTimer?.remove();
-        this.scale.off("resize", this.onResize, this);
-        this.attackBtn?.removeAllListeners();
-
+        this.cleanup();
         this.scene.start("GameOver", {
             result: playerWon ? "VICTORY" : "DEFEAT",
             playerHP: this.playerHP,

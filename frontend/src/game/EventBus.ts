@@ -16,7 +16,9 @@ import type {
     ReconnectResponse,
     MinigameStartEvent,
     ResumeTurnEvent,
-    SetUsernameEvent
+    SetUsernameEvent,
+    FuelSortCompleteEvent,
+    GameEndedEvent,
 } from 'shared/types';
 
 export type Events = {
@@ -30,7 +32,7 @@ export type Events = {
     'snapshot': ServerSnapshot;
     'lobby-update': LobbyUpdate;
     'ack': { seq: number };
-    'error' : { code: number; message: string } | any;
+    'error': { code: number; message: string } | any;
 
     // Turn-based
     'turn-start': TurnStartEvent;
@@ -40,6 +42,8 @@ export type Events = {
     // Minigame (local aliases/acks)
     'minigame-start': MinigameStartEvent;
     'minigame-result-sent': MinigameResultEvent;
+
+    'fuel-sort-complete': FuelSortCompleteEvent;
 
     // Group
     'group-minigame-start': GroupMinigameStartEvent;
@@ -54,6 +58,8 @@ export type Events = {
     'player-reconnected': PlayerReconnectedEvent;
     'reconnect-response': ReconnectResponse;
     'resume-turn': ResumeTurnEvent;
+
+    'game-ended': GameEndedEvent;
 };
 
 // The emitter
