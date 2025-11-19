@@ -1,4 +1,9 @@
 import { Scene } from 'phaser';
+import {
+    getStoredPlayerName,
+    getOrCreatePlayerId,
+} from "../utils/playerUsername";
+import { getLastSession } from "../utils/playerSession";
 
 export class Preloader extends Scene {
     constructor() {
@@ -61,8 +66,44 @@ export class Preloader extends Scene {
     create() {
         // Define global animations here if you add an explosion spritesheet later.
 
-        // Continue to main menu
-        this.scene.start('MainMenu');
+        // Continue to main menu or previous session scene
+        const session = getLastSession();
+        const savedName = getStoredPlayerName();
+        const playerId = getOrCreatePlayerId();
+
+        if (session?.scene) {
+            switch (session.scene) {
+                case "EnterUsername":
+                    return this.scene.start("EnterUsername");
+
+                case "MainMenu":
+                    return this.scene.start("MainMenu");
+
+                case "CreateLobby":
+                    return this.scene.start("CreateLobby");
+
+                case "JoinLobby":
+                    return this.scene.start("JoinLobby");
+
+                case "Lobby":
+                    return this.scene.start("Lobby", {
+                        lobbyId: session.lobbyId,
+                        playerId,
+                    });
+
+                case "Game":
+                    return this.scene.start("Game", {
+                        lobbyId: session.lobbyId,
+                        playerId,
+                    });
+            }
+        }
+
+        if (savedName) {
+            this.scene.start('MainMenu');
+        } else {
+            this.scene.start("EnterUsername");
+        }
     }
 }
 

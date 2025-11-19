@@ -35,22 +35,22 @@ export class CreateLobby extends Scene {
             timestamp: Date.now(),
         });
 
-        // Background 
+        // Background
         this.background = this.add
-          .image(centerX, centerY, 'spacebackground')
-          .setDisplaySize(height*0.46, height )
+          .image(centerX, centerY, "spacebackground")
+          .setDisplaySize(height * 0.46, height)
           .setOrigin(0.5);
 
-        // Title 
+        // Title
         const titleFontSize = getResponsiveFontSize(width, height, 50, 32);
         this.title = this.add
-            .text(centerX, height * 0.15, 'Create\nLobby', {
-                fontFamily: 'Arial Black',
+            .text(centerX, height * 0.15, "Create\nLobby", {
+                fontFamily: "Arial Black",
                 fontSize: `${titleFontSize}px`,
-                color: '#ffffff',
-                stroke: '#000000',
+                color: "#ffffff",
+                stroke: "#000000",
                 strokeThickness: 8,
-                align: 'center',
+                align: "center",
             })
             .setOrigin(0.5);
 
@@ -64,7 +64,7 @@ export class CreateLobby extends Scene {
             color: "#ffffff",
             backgroundColor: "#1e90ff",
             padding: { x: 20, y: 10 },
-            align: 'center',
+            align: "center",
             fixedWidth: mobile ? 190 : 250,
         };
 
@@ -125,7 +125,7 @@ export class CreateLobby extends Scene {
             color: "black",
             border: "2px solid #1e90ff",
             borderRadius: "6px",
-            padding: "4px 8px",
+            padding: "10px",
             width: "240px",
             height: "32px",
             fontSize: "18px",
@@ -133,7 +133,6 @@ export class CreateLobby extends Scene {
             textAlign: "center",
             zIndex: "10",
             pointerEvents: "auto",
-            transform: "translate(-50%, -50%)",
         });
 
         document.body.appendChild(this.nameInput);
@@ -147,13 +146,13 @@ export class CreateLobby extends Scene {
 
         const rect = this.game.canvas.getBoundingClientRect();
         const { height } = this.scale;
-        const { x: centerX } = getCenter(this.scale);
+        const centerXOnScreen = rect.left + rect.width / 2;
 
         const titleY = height * 0.15;
         const createBtnY = height * 0.55;
         const midY = titleY + (createBtnY - titleY) * 0.5;
 
-        this.nameInput.style.left = `${rect.left + centerX}px`;
+        this.nameInput.style.left = `${centerXOnScreen - 120}px`;
         this.nameInput.style.top = `${rect.top + midY}px`;
     }
 

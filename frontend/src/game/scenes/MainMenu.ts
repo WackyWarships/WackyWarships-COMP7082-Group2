@@ -73,7 +73,7 @@ export class MainMenu extends Scene {
         const usernameFontSize = getResponsiveFontSize(width, height, 28, 22);
 
         this.usernameText = this.add
-            .text(width - 20, 20, `User: ${playerName}`, {
+            .text(width / 2, height - 100, `User: ${playerName}`, {
                 fontFamily: "Arial",
                 fontSize: `${usernameFontSize}px`,
                 color: "#ffffff",
@@ -81,7 +81,7 @@ export class MainMenu extends Scene {
                 strokeThickness: 4,
                 align: "right",
             })
-            .setOrigin(0.5, 1);
+            .setOrigin(0.5);
 
         // Menu Container
         this.menuContainer = this.add.container(centerX, height * 0.55);
@@ -132,7 +132,7 @@ export class MainMenu extends Scene {
         // makeButton("Play Mini-Game", 210, () => {
         //     this.scene.start("FuelSortGame", { difficulty: "easy" });
         // });
-        makeButton("Change Username", 30, () => {
+        makeButton("Change User", 30, () => {
             clearPlayerName();
             this.scene.start("EnterUsername");
         });
@@ -232,6 +232,6 @@ export class MainMenu extends Scene {
 
         this.usernameText
             .setFontSize(usernameFontSize)
-            .setPosition(width - 20, 20);
+            .setPosition(width / 2, height - 100);
     }
 }

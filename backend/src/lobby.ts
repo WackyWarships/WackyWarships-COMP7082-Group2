@@ -222,24 +222,4 @@ export function setupSocket(
         lobbyIdToLobbyMap.delete(lobby.lobbyId);
         io.in(lobby.lobbyId).socketsLeave(lobby.lobbyId);
     });
-
-    (socket as any).on("playerExitGame", (payload: { lobbyId: string; playerId: string }) => {
-        const lobby = lobbyIdToLobbyMap.get(payload.lobbyId);
-        if (!lobby) return;
-
-        // Tell both players the game ended
-        (io.to(payload.lobbyId) as any).emit("gameEnded", {
-            lobbyId: payload.lobbyId,
-            by: payload.playerId,
-            reason: "Player returned to main menu",
-        });
-
-        // Optionally: fully remove lobby
-        for (const p of lobby.players) {
-            playerToLobbyIdMap.delete(p.playerId);
-        }
-        lobbyIdToLobbyMap.delete(payload.lobbyId);
-        io.in(payload.lobbyId).socketsLeave(payload.lobbyId);
-    });
-
 }

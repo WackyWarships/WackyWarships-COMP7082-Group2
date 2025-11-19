@@ -43,14 +43,14 @@ function pickOpponentId(allIds: string[], me: string): string | undefined {
 
 // Sprite keys (adjust if needed)
 const ENEMY_SPRITES = {
-    normal: 'blueship',
-    damaged: 'blueship_dmg',
-    critical: 'blueship_crit',
+    normal: "blueship",
+    damaged: "blueship_dmg",
+    critical: "blueship_crit",
 };
 const PLAYER_SPRITES = {
-    normal: 'redship',
-    damaged: 'redship_dmg',
-    critical: 'redship_crit',
+    normal: "redship",
+    damaged: "redship_dmg",
+    critical: "redship_crit",
 };
 
 export class Game extends Phaser.Scene {

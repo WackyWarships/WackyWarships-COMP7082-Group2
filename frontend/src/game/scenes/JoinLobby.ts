@@ -131,7 +131,7 @@ export class JoinLobby extends Scene {
             color: "black",
             border: "2px solid #1e90ff",
             borderRadius: "6px",
-            padding: "4px 8px",
+            padding: "10px",
             width: "240px",
             height: "32px",
             fontSize: "18px",
@@ -139,7 +139,6 @@ export class JoinLobby extends Scene {
             textAlign: "center",
             zIndex: "10",
             pointerEvents: "auto",
-            transform: "translate(-50%, -50%)",
         });
 
         document.body.appendChild(this.codeInput);
@@ -153,13 +152,13 @@ export class JoinLobby extends Scene {
 
         const rect = this.game.canvas.getBoundingClientRect();
         const { height } = this.scale;
-        const { x: centerX } = getCenter(this.scale);
+        const centerXOnScreen = rect.left + rect.width / 2;
 
         const titleY = height * 0.15;
         const createBtnY = height * 0.55;
         const midY = titleY + (createBtnY - titleY) * 0.5;
 
-        this.codeInput.style.left = `${rect.left + centerX}px`;
+        this.codeInput.style.left = `${centerXOnScreen - 120}px`;
         this.codeInput.style.top = `${rect.top + midY}px`;
     }
 
