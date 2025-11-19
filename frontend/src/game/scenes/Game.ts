@@ -283,11 +283,10 @@ export class Game extends Phaser.Scene {
     private buildWeaponUI() {
         const { width: W, height: H } = this.scale;
         const count = this.weapons.length;
-        const r = 24;
-        const gap = 14;
-        const pad = 20;
-        const x = W - (pad + r);
-        const yBottom = H - (pad + r);
+        const r = H * 0.02;//24;
+        const gap = W * 0.04;
+        const xLeft = W / 2 - (gap + r * 2);
+        const y = H * 0.9;
 
         this.weaponNodes.forEach((n) => {
             n.circle.destroy();
@@ -297,7 +296,7 @@ export class Game extends Phaser.Scene {
         this.weaponNodes = [];
 
         for (let i = 0; i < count; i++) {
-            const y = yBottom - i * (r * 2 + gap);
+            const x = xLeft + i * (r * 3);
 
             const circle = this.add
                 .circle(x, y, r, 0x0d1a2b, 0.35)
@@ -316,7 +315,7 @@ export class Game extends Phaser.Scene {
                 .setVisible(false);
 
             const chip = this.add
-                .circle(x, y, 8, this.weapons[i].color)
+                .circle(x, y, r / 3, this.weapons[i].color)
                 .setDepth(202);
 
             this.weaponNodes.push({ circle, ring, chip });
@@ -325,16 +324,28 @@ export class Game extends Phaser.Scene {
         this.currentWeaponIndex = 0;
         this.refreshWeaponHighlight();
 
+        // attack button
+        this.attackBtn = this.add
+            .text(xLeft + 11 * r, y, "ATTACK", {
+                fontFamily: "Arial Black",
+                fontSize: "18px",
+                color: "#ffffff",
+                stroke: "#000000",
+                strokeThickness: 6,
+            })
+            .setOrigin(0.5);
+
         this.weaponRelayout = () => {
             const { width: W2, height: H2 } = this.scale;
-            const X = W2 - (pad + r);
-            const YB = H2 - (pad + r);
+            const XL = W2 / 2 - (gap + r * 2);
+            const Y = H2 * 0.9;
             this.weaponNodes.forEach((n, i) => {
-                const ny = YB - i * (r * 2 + gap);
-                n.circle.setPosition(X, ny);
-                n.ring.setPosition(X, ny);
-                n.chip.setPosition(X, ny);
+                const nx = XL + i * (r * 3);
+                n.circle.setPosition(nx, Y);
+                n.ring.setPosition(nx, Y);
+                n.chip.setPosition(nx, Y);
             });
+            this.attackBtn?.setPosition(XL + 11 * r, Y);
         };
     }
 
@@ -636,13 +647,12 @@ export class Game extends Phaser.Scene {
             this.cameras.main.setBackgroundColor(0x082a47);
         }
 
-        const pad = 24;
         // FIXED-SIZE HOME BUTTON (never gets stretched again)
         const raw = this.add.image(0, 0, "home").setOrigin(0.5);
         raw.setDisplaySize(32, 32); // fixed size forever
 
         this.homeBtn = this.add
-            .container(pad + 24, pad + 24, [raw])
+            .container(W * 0.415, H * 0.05, [raw])
             .setSize(32, 32)
             .setInteractive({ useHandCursor: true })
             .on("pointerdown", () => {
@@ -774,17 +784,6 @@ export class Game extends Phaser.Scene {
         // === MINIGAME MANAGERS INIT ===
         this.minigameManager = new MinigameManager(this); // lobby
         this.directMinigameManager = new DirectMinigameManager(this); // direct
-
-        // attack button
-        this.attackBtn = this.add
-            .text(W - 140, bottomY - 10, "ATTACK", {
-                fontFamily: "Arial Black",
-                fontSize: "18px",
-                color: "#ffffff",
-                stroke: "#000000",
-                strokeThickness: 6,
-            })
-            .setOrigin(1, 0.5);
 
         // turn badge + label
         const badgeW = 140,
@@ -1250,13 +1249,12 @@ export class Game extends Phaser.Scene {
 
         resizeSceneBase(this, W, H);
 
-        const pad = 24;
         const topY = H * 0.325;
         const bottomY = H * 0.675;
 
         if (this.background)
             this.background.setPosition(W / 2, H / 2).setDisplaySize(H * 0.46, H);
-        this.homeBtn.setPosition(pad + 24, pad + 24);
+        this.homeBtn.setPosition(W * 0.42, H * 0.05);
 
         if (this.enemy instanceof Phaser.GameObjects.Image) {
             this.enemy.setPosition(W / 2, topY);
@@ -1303,7 +1301,6 @@ export class Game extends Phaser.Scene {
             .setPosition(W / 2, H * 0.8 + 20);
 
         this.weaponRelayout && this.weaponRelayout();
-        this.attackBtn?.setPosition(W - 140, bottomY - 10);
 
         const badgeW = 140,
             badgeH = 40;
