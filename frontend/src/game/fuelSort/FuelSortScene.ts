@@ -239,19 +239,19 @@ export class FuelSortScene extends Phaser.Scene {
         );
         this.descriptionText.setOrigin(0.5);
 
-        this.moveText = this.add.text(width * 0.25, height * 0.2, 'Moves: 0', {
+        this.moveText = this.add.text(width * 0.45, height * 0.2, 'Moves: 0', {
             fontSize: `${UI_CONFIG.UI_TEXT_SIZE}px`,
             color: UI_CONFIG.TEXT_COLOR,
             fontFamily: 'Arial, sans-serif',
         });
-        this.moveText.setOrigin(0.5);
+        this.moveText.setOrigin(1, 0.5);
 
-        this.timeText = this.add.text(width * 0.75, height * 0.2, 'Time: 0s', {
+        this.timeText = this.add.text(width * 0.55, height * 0.2, 'Time: 0s', {
             fontSize: `${UI_CONFIG.UI_TEXT_SIZE}px`,
             color: UI_CONFIG.TEXT_COLOR,
             fontFamily: 'Arial, sans-serif',
         });
-        this.timeText.setOrigin(0.5);
+        this.timeText.setOrigin(0, 0.5);
 
         // Add home button at top-left
         this.homeButton = this.createSvgButton(
@@ -513,17 +513,17 @@ export class FuelSortScene extends Phaser.Scene {
         const infoY = height * 0.25;
         this.moveText.setFontSize(infoFont);
         this.timeText.setFontSize(infoFont);
-        this.moveText.setPosition(width * 0.25, infoY);
-        this.timeText.setPosition(width * 0.75, infoY);
+        this.moveText.setPosition(width * 0.45, infoY);
+        this.timeText.setPosition(width * 0.55, infoY);
 
         // Position home button at the top
-        const topButtonY = height * 0.05;
+        const topButtonY = height * 0.80;
         const topButtonScale = Phaser.Math.Clamp(
             Math.min(width / 1200, height / 1200),
             0.6,
             1.0
         );
-        this.homeButton.setPosition(width * 0.08, topButtonY);
+        this.homeButton.setPosition(width / 2, topButtonY);
         this.homeButton.setScale(topButtonScale);
     }
 
@@ -533,7 +533,7 @@ export class FuelSortScene extends Phaser.Scene {
         }
 
         const clampedTime = Math.max(0, Math.ceil(this.remainingTime));
-        this.timeText.setText(`TIME LEFT: ${clampedTime}s`);
+        this.timeText.setText(`Time: ${clampedTime}s`);
     }
 
     private handleWin(): void {

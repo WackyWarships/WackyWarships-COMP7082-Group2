@@ -411,8 +411,8 @@ export class Game extends Phaser.Scene {
         keys: { normal: string; damaged: string; critical: string }
     ) {
         const pct = (hp / max) * 100;
-        if (pct < 20) return keys.critical;
-        if (pct < 70) return keys.damaged;
+        if (pct < 31) return keys.critical;
+        if (pct < 71) return keys.damaged;
         return keys.normal;
     }
 
