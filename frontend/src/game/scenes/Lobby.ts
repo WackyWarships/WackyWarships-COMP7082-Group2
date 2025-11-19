@@ -202,6 +202,11 @@ export class Lobby extends Scene {
 
         // When server says the game starts, jump to Game scene
         const onTurnStart = (evt: TurnStartEvent) => {
+            // Prevent duplicate starts if multiple turnStart events arrive
+            EventBus.off("turn-start", onTurnStart);
+            if (this.scene.isActive && this.scene.isActive("Game")) {
+                return;
+            }
             this.scene.start("Game", {
                 net: {
                     mode: "lobby",
@@ -209,11 +214,11 @@ export class Lobby extends Scene {
                     starterId: evt.playerId,
                     turnId: evt.turnId,
                     // optional but helpful for opponent detection:
-                    players: this.players, // [{ playerId, playerName }, ...]
+                    players: this.players,
                 },
             });
         };
-        EventBus.on("turn-start", onTurnStart as any);
+        EventBus.on("turn-start", onTurnStart);
 
         // Moderation notices
         const onKicked = (n: any) => {
@@ -239,6 +244,7 @@ export class Lobby extends Scene {
             EventBus.off("lobby-update", this.onLobbyUpdate);
             EventBus.off("player-kicked", onKicked as any);
             EventBus.off("lobby-disbanded", onDisbanded as any);
+            EventBus.off("turn-start", onTurnStart);
             this.scale.off("resize", this.handleResize, this);
         });
     }
