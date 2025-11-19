@@ -1,26 +1,62 @@
-import { Scene } from 'phaser';
-import { initSocket } from '../../api/socket';
-import { getStoredPlayerName } from '../utils/playerUsername';
+import { Scene } from "phaser";
+import { initSocket } from "../../api/socket";
+import {
+    getStoredPlayerName,
+    getOrCreatePlayerId,
+} from "../utils/playerUsername";
+import { getLastSession } from "../utils/playerSession";
 
 export class Boot extends Scene {
     constructor() {
-        super('Boot');
+        super("Boot");
     }
 
     preload() {
-        //  The Boot Scene is typically used to load in any assets you require for your Preloader, such as a game logo or background.
-        //  The smaller the file size of the assets, the better, as the Boot Scene itself has no preloader.
-
-        this.load.image('background', 'assets/bg.png');
+        // Minimal assets required before Preloader runs
+        this.load.image("background", "assets/bg.png");
     }
 
     create() {
         initSocket();
+
+        const session = getLastSession();
         const savedName = getStoredPlayerName();
+        const playerId = getOrCreatePlayerId();
+
+        if (session?.scene) {
+            switch (session.scene) {
+                case "EnterUsername":
+                    return this.scene.start("EnterUsername");
+
+                case "MainMenu":
+                    return this.scene.start("MainMenu");
+
+                case "CreateLobby":
+                    return this.scene.start("CreateLobby");
+
+                case "JoinLobby":
+                    return this.scene.start("JoinLobby");
+
+                case "Lobby":
+                    return this.scene.start("Lobby", {
+                        lobbyId: session.lobbyId,
+                        playerId,
+                    });
+
+                case "Game":
+                    return this.scene.start("Game", {
+                        lobbyId: session.lobbyId,
+                        playerId,
+                    });
+            }
+        }
+
         if (savedName) {
-            this.scene.start('Preloader');
+            this.scene.start("Preloader");
         } else {
-            this.scene.start('EnterUsername'); 
+            this.scene.start("EnterUsername");
         }
     }
 }
+
+export default Boot;
