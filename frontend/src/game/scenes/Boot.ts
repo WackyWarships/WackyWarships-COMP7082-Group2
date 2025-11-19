@@ -1,10 +1,5 @@
 import { Scene } from "phaser";
 import { initSocket } from "../../api/socket";
-import {
-    getStoredPlayerName,
-    getOrCreatePlayerId,
-} from "../utils/playerUsername";
-import { getLastSession } from "../utils/playerSession";
 
 export class Boot extends Scene {
     constructor() {

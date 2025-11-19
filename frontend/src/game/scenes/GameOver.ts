@@ -128,7 +128,7 @@ export class GameOver extends Scene {
 
         this.background = this.add.image(centerX, centerY, "spacebackground")
             .setOrigin(0.5)
-            .setDisplaySize(height*0.46, height)
+            .setDisplaySize(height * 0.46, height)
             .setTint(0x222222);
 
         const titleSize = getResponsiveFontSize(width, height, 48, 36);

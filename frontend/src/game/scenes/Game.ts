@@ -426,7 +426,7 @@ export class Game extends Phaser.Scene {
             this.enemyHPMax,
             ENEMY_SPRITES
         );
-        this.swapTextureIfAvailable(this.enemy, enemyKey, 0.09);
+        this.swapTextureIfAvailable(this.enemy, enemyKey, 0.15);
 
         // Player ship visuals
         const playerKey = this.spriteFor(
@@ -434,7 +434,7 @@ export class Game extends Phaser.Scene {
             this.playerHPMax,
             PLAYER_SPRITES
         );
-        this.swapTextureIfAvailable(this.player, playerKey, 0.11);
+        this.swapTextureIfAvailable(this.player, playerKey, 0.15);
     }
 
     // ---------- new: explosion effect ----------
@@ -631,7 +631,7 @@ export class Game extends Phaser.Scene {
             this.background = this.add
                 .image(centerX, centerY, "spacebackground")
                 .setOrigin(0.5)
-                .setDisplaySize(H*0.46, H);
+                .setDisplaySize(H * 0.46, H);
         } else {
             this.cameras.main.setBackgroundColor(0x082a47);
         }
@@ -657,8 +657,8 @@ export class Game extends Phaser.Scene {
                 this.scene.start("MainMenu");
             });
 
-        const topY = H * 0.2;
-        const bottomY = H * 0.8;
+        const topY = H * 0.325;
+        const bottomY = H * 0.675;
 
         // enemy (start with appropriate sprite for full HP -> normal)
         const enemyStartKey = this.spriteFor(
@@ -670,13 +670,13 @@ export class Game extends Phaser.Scene {
             const img = this.add
                 .image(W / 2, topY, enemyStartKey)
                 .setOrigin(0.5);
-            this.sizeShipByHeight(img, H, 0.09);
+            this.sizeShipByHeight(img, H, 0.15);
             this.enemy = img;
         } else if (this.textureExists(ENEMY_SPRITES.normal)) {
             const img = this.add
                 .image(W / 2, topY, ENEMY_SPRITES.normal)
                 .setOrigin(0.5);
-            this.sizeShipByHeight(img, H, 0.09);
+            this.sizeShipByHeight(img, H, 0.15);
             this.enemy = img;
         } else {
             this.enemy = this.add
@@ -694,13 +694,13 @@ export class Game extends Phaser.Scene {
             const img = this.add
                 .image(W / 2, bottomY, playerStartKey)
                 .setOrigin(0.5);
-            this.sizeShipByHeight(img, H, 0.11);
+            this.sizeShipByHeight(img, H, 0.15);
             this.player = img;
         } else if (this.textureExists(PLAYER_SPRITES.normal)) {
             const img = this.add
                 .image(W / 2, bottomY, PLAYER_SPRITES.normal)
                 .setOrigin(0.5);
-            this.sizeShipByHeight(img, H, 0.11);
+            this.sizeShipByHeight(img, H, 0.15);
             this.player = img;
         } else {
             this.player = this.add
@@ -728,18 +728,17 @@ export class Game extends Phaser.Scene {
 
         // HP bars
         const barW = 220,
-            barH = 16,
-            gap = 32;
+            barH = 16;
         this.enemyHPBar = this.makeHPBar(
             W / 2,
-            topY - gap,
+            H * 0.2,
             barW,
             barH,
             0xff3b3b
         );
         this.playerHPBar = this.makeHPBar(
             W / 2,
-            bottomY + gap,
+            H * 0.8,
             barW,
             barH,
             0x27d35a
@@ -750,7 +749,7 @@ export class Game extends Phaser.Scene {
         // HP labels
         const hpFont = getResponsiveFontSize(W, H, 18, 14);
         this.enemyHPText = this.add
-            .text(W / 2, topY - gap - 20, "", {
+            .text(W / 2, H * 0.2 - 20, "", {
                 fontFamily: "Arial Black",
                 fontSize: `${hpFont}px`,
                 color: "#ffffff",
@@ -759,7 +758,7 @@ export class Game extends Phaser.Scene {
             })
             .setOrigin(0.5);
         this.playerHPText = this.add
-            .text(W / 2, bottomY + gap + 20, "", {
+            .text(W / 2, H * 0.8 + 20, "", {
                 fontFamily: "Arial Black",
                 fontSize: `${hpFont}px`,
                 color: "#ffffff",
@@ -791,11 +790,12 @@ export class Game extends Phaser.Scene {
         const badgeW = 140,
             badgeH = 40;
         this.turnBadgeGlass = this.drawGlass(
-            W - (pad + badgeW / 2),
-            pad + 24,
+            W / 2,
+            H * 0.1,
             badgeW,
             badgeH
-        );
+        )
+        .setOrigin(0.5);
         const badgeFont = getResponsiveFontSize(W, H, 20, 16);
         this.turnBadgeText = this.add
             .text(
@@ -1251,8 +1251,8 @@ export class Game extends Phaser.Scene {
         resizeSceneBase(this, W, H);
 
         const pad = 24;
-        const topY = H * 0.2;
-        const bottomY = H * 0.8;
+        const topY = H * 0.325;
+        const bottomY = H * 0.675;
 
         if (this.background)
             this.background.setPosition(W / 2, H / 2).setDisplaySize(H * 0.46, H);
@@ -1267,21 +1267,40 @@ export class Game extends Phaser.Scene {
         }
 
         if (this.enemy instanceof Phaser.GameObjects.Image)
-            this.sizeShipByHeight(this.enemy, H, 0.09);
+            this.sizeShipByHeight(this.enemy, H, 0.15);
         if (this.player instanceof Phaser.GameObjects.Image)
-            this.sizeShipByHeight(this.player, H, 0.11);
+            this.sizeShipByHeight(this.player, H, 0.15);
 
-        const gap = 32;
-        this.enemyHPBar?.setPosition(W / 2, topY - gap);
-        this.playerHPBar?.setPosition(W / 2, bottomY + gap);
+        this.tweens.killAll();
+
+        // idle motion
+        this.tweens.add({
+            targets: this.player,
+            y: bottomY - 10,
+            duration: 900,
+            yoyo: true,
+            repeat: -1,
+            ease: "Sine.inOut",
+        });
+        this.tweens.add({
+            targets: this.enemy,
+            y: topY + 10,
+            duration: 900,
+            yoyo: true,
+            repeat: -1,
+            ease: "Sine.inOut",
+        });
+
+        this.enemyHPBar?.setPosition(W / 2, H * 0.2);
+        this.playerHPBar?.setPosition(W / 2, H * 0.8);
 
         const hpFont = getResponsiveFontSize(W, H, 18, 14);
         this.enemyHPText
             ?.setFontSize(hpFont)
-            .setPosition(W / 2, topY - gap - 20);
+            .setPosition(W / 2, H * 0.2 - 20);
         this.playerHPText
             ?.setFontSize(hpFont)
-            .setPosition(W / 2, bottomY + gap + 20);
+            .setPosition(W / 2, H * 0.8 + 20);
 
         this.weaponRelayout && this.weaponRelayout();
         this.attackBtn?.setPosition(W - 140, bottomY - 10);
@@ -1289,8 +1308,9 @@ export class Game extends Phaser.Scene {
         const badgeW = 140,
             badgeH = 40;
         this.turnBadgeGlass
-            ?.setPosition(W - (pad + badgeW / 2), pad + 24)
-            .setSize(badgeW, badgeH);
+            ?.setPosition(W / 2, H * 0.1)
+            .setSize(badgeW, badgeH)
+            .setOrigin(0.5);
         const badgeFont = getResponsiveFontSize(W, H, 20, 16);
         this.turnBadgeText
             ?.setFontSize(badgeFont)
