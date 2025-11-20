@@ -37,14 +37,14 @@ export class EnterUsername extends Scene {
         // Background
         this.background = this.add
             .image(centerX, height / 2, "spacebackground")
-            .setDisplaySize(height * 0.46, height)
+            .setDisplaySize(height * 1.12, height)
             .setOrigin(0.5);
 
         // Titles
         const titleSize = getResponsiveFontSize(width, height, 50, 32);
         this.title1 = this.add
             .text(centerX, height * (1 / 6), "Enter Your", {
-                fontFamily: "Arial Black",
+                fontFamily: "Orbitron",
                 fontSize: `${titleSize}px`,
                 color: "#ffffff",
                 stroke: "#000000",
@@ -55,7 +55,7 @@ export class EnterUsername extends Scene {
 
         this.title2 = this.add
             .text(centerX, this.title1.y + this.title1.height, "Username!", {
-                fontFamily: "Arial Black",
+                fontFamily: "Orbitron",
                 fontSize: `${titleSize}px`,
                 color: "#ffffff",
                 stroke: "#000000",
@@ -71,7 +71,7 @@ export class EnterUsername extends Scene {
         const errorY = Math.min(height * 0.75, height - 40);
         this.errorText = this.add
             .text(width / 2, errorY, "", {
-                fontFamily: "Arial",
+                fontFamily: "Orbitron",
                 fontSize: `${mobile ? 18 : 20}px`,
                 color: "#ff5555",
                 align: "center",
@@ -82,10 +82,10 @@ export class EnterUsername extends Scene {
 
         // Confirm button
         const buttonStyle = {
-            fontFamily: "Arial",
+            fontFamily: "Orbitron",
             fontSize: `${mobile ? 26 : 32}px`,
             color: "#ffffff",
-            backgroundColor: "#1e90ff",
+            backgroundColor: "#262079",
             padding: { x: 20, y: 10 },
             align: "center" as const,
             fixedWidth: mobile ? 220 : 260,
@@ -100,7 +100,7 @@ export class EnterUsername extends Scene {
                 this.confirmButton.setStyle({ backgroundColor: "#63b3ff" })
             )
             .on("pointerout", () =>
-                this.confirmButton.setStyle({ backgroundColor: "#1e90ff" })
+                this.confirmButton.setStyle({ backgroundColor: "#262079" })
             );
 
         // Resize + cleanup
@@ -129,7 +129,7 @@ export class EnterUsername extends Scene {
             fontSize: "18px",
             textAlign: "center",
             borderRadius: "6px",
-            border: "2px solid #1e90ff",
+            border: "2px solid #262079",
             boxSizing: "border-box",
         } as CSSStyleDeclaration);
 

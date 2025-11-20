@@ -37,14 +37,14 @@ export class JoinLobby extends Scene {
         // Background
         this.background = this.add
             .image(centerX, centerY, "spacebackground")
-            .setDisplaySize(height * 0.46, height)
+            .setDisplaySize(height * 1.12, height)
             .setOrigin(0.5);
 
         // Title
         const titleFontSize = getResponsiveFontSize(width, height, 52, 30);
         this.title = this.add
             .text(centerX, height * 0.15, "Join\nLobby", {
-                fontFamily: "Arial Black",
+                fontFamily: "Orbitron",
                 fontSize: `${titleFontSize}px`,
                 color: "#ffffff",
                 stroke: "#000000",
@@ -58,10 +58,10 @@ export class JoinLobby extends Scene {
 
         // Buttons
         const buttonStyle = {
-            fontFamily: "Arial",
+            fontFamily: "Orbitron",
             fontSize: `${mobile ? 26 : 34}px`,
             color: "#ffffff",
-            backgroundColor: "#1e90ff",
+            backgroundColor: "#262079",
             padding: { x: 20, y: 10 },
             align: "center",
             fixedWidth: mobile ? 190 : 250,
@@ -76,7 +76,7 @@ export class JoinLobby extends Scene {
                 this.joinButton.setStyle({ backgroundColor: "#63b3ff" })
             )
             .on("pointerout", () =>
-                this.joinButton.setStyle({ backgroundColor: "#1e90ff" })
+                this.joinButton.setStyle({ backgroundColor: "#262079" })
             );
 
         this.backButton = this.add
@@ -97,7 +97,7 @@ export class JoinLobby extends Scene {
         // Error message (hidden by default)
         this.errorText = this.add
             .text(centerX, height * 0.75, "", {
-                fontFamily: "Arial",
+                fontFamily: "Orbitron",
                 fontSize: "18px",
                 color: "#ff6b6b",
                 stroke: "#000000",
@@ -129,7 +129,7 @@ export class JoinLobby extends Scene {
             position: "absolute",
             background: "white",
             color: "black",
-            border: "2px solid #1e90ff",
+            border: "2px solid #262079",
             borderRadius: "6px",
             padding: "10px",
             width: "240px",

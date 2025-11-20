@@ -13,8 +13,9 @@ import {
 
 export class MainMenu extends Scene {
     background!: GameObjects.Image;
-    titleTop!: GameObjects.Text;
-    titleBottom!: GameObjects.Text;
+    // titleTop!: GameObjects.Text;
+    // titleBottom!: GameObjects.Text;
+    titleImage!: GameObjects.Image;
     usernameText!: GameObjects.Text;
     menuContainer!: Phaser.GameObjects.Container;
 
@@ -39,42 +40,47 @@ export class MainMenu extends Scene {
         // Background
         this.background = this.add
             .image(centerX, centerY, "spacebackground")
-            .setDisplaySize(height * 0.46, height)
+            .setDisplaySize(height * 1.12, height)
             .setOrigin(0.5);
 
         // Title
-        const fontSizeTop = getResponsiveFontSize(width, height, 50, 32);
-        const fontSizeBottom = getResponsiveFontSize(width, height, 50, 32);
+        // const fontSizeTop = getResponsiveFontSize(width, height, 50, 32);
+        // const fontSizeBottom = getResponsiveFontSize(width, height, 50, 32);
 
-        this.titleTop = this.add
-            .text(centerX, height * 0.12, "Wacky", {
-                fontFamily: "Arial Black",
-                fontSize: `${fontSizeTop}px`,
-                color: "#ffffff",
-                stroke: "#000000",
-                strokeThickness: 8,
-                align: "center",
-            })
-            .setOrigin(0.5);
+        // this.titleTop = this.add
+        //     .text(centerX, height * 0.12, "Wacky", {
+        //         fontFamily: "Orbitron",
+        //         fontSize: `${fontSizeTop}px`,
+        //         color: "#ffffff",
+        //         stroke: "#000000",
+        //         strokeThickness: 8,
+        //         align: "center",
+        //     })
+        //     .setOrigin(0.5);
 
-        this.titleBottom = this.add
-            .text(centerX, height * 0.21, "Warships", {
-                fontFamily: "Arial Black",
-                fontSize: `${fontSizeBottom}px`,
-                color: "#ffffff",
-                stroke: "#000000",
-                strokeThickness: 8,
-                align: "center",
-            })
+        // this.titleBottom = this.add
+        //     .text(centerX, height * 0.21, "Warships", {
+        //         fontFamily: "Orbitron",
+        //         fontSize: `${fontSizeBottom}px`,
+        //         color: "#ffffff",
+        //         stroke: "#000000",
+        //         strokeThickness: 8,
+        //         align: "center",
+        //     })
+        //     .setOrigin(0.5);
+        
+        this.titleImage = this.add
+            .image(centerX, height * 0.21, "title_image")
             .setOrigin(0.5);
+        this.sizeImageByHeight(this.titleImage, height, 0.25);
 
         // Current Username
         const playerName = getStoredPlayerName();
         const usernameFontSize = getResponsiveFontSize(width, height, 28, 22);
 
         this.usernameText = this.add
-            .text(width / 2, height - 100, `User: ${playerName}`, {
-                fontFamily: "Arial",
+            .text(width / 2, height * 0.95, `User: ${playerName}`, {
+                fontFamily: "Orbitron",
                 fontSize: `${usernameFontSize}px`,
                 color: "#ffffff",
                 stroke: "#000000",
@@ -87,10 +93,10 @@ export class MainMenu extends Scene {
         this.menuContainer = this.add.container(centerX, height * 0.55);
 
         const buttonStyle = {
-            fontFamily: "Arial",
-            fontSize: `${mobile ? 24 : 32}px`,
+            fontFamily: "Orbitron",
+            fontSize: `${mobile ? 20 : 28}px`,
             color: "#ffffff",
-            backgroundColor: "#1e90ff",
+            backgroundColor: "#262079",
             padding: { x: 20, y: 10 },
             align: "center" as const,
             fixedWidth: mobile ? 190 : 250,
@@ -116,7 +122,7 @@ export class MainMenu extends Scene {
                     btn.setStyle({ backgroundColor: "#63b3ff" })
                 )
                 .on("pointerout", () =>
-                    btn.setStyle({ backgroundColor: "#1e90ff" })
+                    btn.setStyle({ backgroundColor: "#262079" })
                 );
 
             this.menuContainer.add(btn);
@@ -208,6 +214,16 @@ export class MainMenu extends Scene {
         }
     }
 
+    private sizeImageByHeight(
+        img: Phaser.GameObjects.Image,
+        screenH: number,
+        percentH: number) 
+    {
+        const baseH = img.height || 1;
+        const targetH = screenH * percentH;
+        img.setScale(targetH / baseH);
+    }
+
     handleResize(gameSize: Phaser.Structs.Size) {
         // If this is not the current scene, ignore this resize
         if (!this.background || !this.scene.isActive()) return;
@@ -218,20 +234,23 @@ export class MainMenu extends Scene {
 
         const { x: centerX } = getCenter(this.scale);
 
-        const fontSizeTop = getResponsiveFontSize(width, height, 50, 32);
-        const fontSizeBottom = getResponsiveFontSize(width, height, 50, 32);
+        // const fontSizeTop = getResponsiveFontSize(width, height, 50, 32);
+        // const fontSizeBottom = getResponsiveFontSize(width, height, 50, 32);
         const usernameFontSize = getResponsiveFontSize(width, height, 28, 22);
 
-        this.titleTop.setFontSize(fontSizeTop);
-        this.titleBottom.setFontSize(fontSizeBottom);
+        // this.titleTop.setFontSize(fontSizeTop);
+        // this.titleBottom.setFontSize(fontSizeBottom);
 
         // Reposition dynamic elements
-        this.titleTop.setPosition(centerX, height * 0.12);
-        this.titleBottom.setPosition(centerX, height * 0.21);
+        // this.titleTop.setPosition(centerX, height * 0.12);
+        // this.titleBottom.setPosition(centerX, height * 0.21);
         this.menuContainer.setPosition(centerX, height * 0.55);
+        
+        this.titleImage.setPosition(centerX, height * 0.21);
+        this.sizeImageByHeight(this.titleImage, height, 0.25);
 
         this.usernameText
             .setFontSize(usernameFontSize)
-            .setPosition(width / 2, height - 100);
+            .setPosition(width / 2, height * 0.95);
     }
 }

@@ -11,14 +11,15 @@ export class Preloader extends Scene {
     }
 
     init() {
+        const { width: W, height: H } = this.scale;
         // 'background' is assumed loaded by Boot; show it behind the loading bar
-        this.add.image(512, 384, 'background');
+        this.add.image(W / 2, H / 2, 'background').setOrigin(0.5);
 
         // Progress bar frame
-        this.add.rectangle(512, 384, 468, 32).setStrokeStyle(1, 0xffffff);
+        this.add.rectangle(W / 2, H / 2, 468, 32).setStrokeStyle(1, 0xffffff).setOrigin(0.5);
 
         // Progress fill
-        const bar = this.add.rectangle(512 - 230, 384, 4, 28, 0xffffff);
+        const bar = this.add.rectangle(W / 2 - 230, H / 2, 4, 28, 0xffffff).setOrigin(0.5);
 
         this.load.on('progress', (progress: number) => {
             // 100% = 460px
@@ -33,7 +34,7 @@ export class Preloader extends Scene {
         // --- Existing ---
         this.load.image('laser', 'laser.png');
         this.load.image('rockets', 'rockets.png');
-        this.load.image('spacebackground', 'spacebackground.png');
+        this.load.image('spacebackground', 'spacebackground2.png');
 
         // Base ship sprites
         this.load.image('redship', 'redship.png');
@@ -53,14 +54,25 @@ export class Preloader extends Scene {
 
         // --- UI icons used in Game (optional but recommended) ---
         this.load.image('home', 'home.svg');
+        this.load.image('home_button', 'home.png');
 
         // Enemy destroyed
         this.load.image('redship_destroyed', 'redship_destroyed.png');
         // Player destroyed
         this.load.image('blueship_destroyed', 'blueship_destroyed.png');
 
+        // Main Menu logo and title
+        this.load.image('title_image', 'title_image.png');
+
         // If want to load the background here (instead of Boot), uncomment:
-        // this.load.image('background', 'background.png');
+        // this.load.image('background', 'background.png');   
+        
+        // Load font
+        this.load.font({
+            key: "Orbitron",
+            url: "fonts/Orbitron-Regular.ttf",
+            format: "truetype"
+        });
     }
 
     create() {

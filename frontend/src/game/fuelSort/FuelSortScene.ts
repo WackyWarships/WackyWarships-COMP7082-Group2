@@ -208,7 +208,7 @@ export class FuelSortScene extends Phaser.Scene {
         this.titleText = this.add.text(width / 2, 60, 'Fuel Sort Puzzle', {
             fontSize: '32px',
             color: UI_CONFIG.TEXT_COLOR,
-            fontFamily: 'Arial, sans-serif',
+            fontFamily: 'Orbitron, sans-serif',
             fontStyle: 'bold',
         });
         this.titleText.setOrigin(0.5);
@@ -220,7 +220,7 @@ export class FuelSortScene extends Phaser.Scene {
             {
                 fontSize: '26px',
                 color: '#ffffff',
-                fontFamily: 'Arial, sans-serif',
+                fontFamily: 'Orbitron, sans-serif',
                 fontStyle: 'bold',
             }
         );
@@ -233,7 +233,7 @@ export class FuelSortScene extends Phaser.Scene {
             {
                 fontSize: '20px',
                 color: '#bbbbbb',
-                fontFamily: 'Arial, sans-serif',
+                fontFamily: 'Orbitron, sans-serif',
                 align: 'center',
             }
         );
@@ -242,14 +242,14 @@ export class FuelSortScene extends Phaser.Scene {
         this.moveText = this.add.text(width * 0.45, height * 0.2, 'Moves: 0', {
             fontSize: `${UI_CONFIG.UI_TEXT_SIZE}px`,
             color: UI_CONFIG.TEXT_COLOR,
-            fontFamily: 'Arial, sans-serif',
+            fontFamily: 'Orbitron, sans-serif',
         });
         this.moveText.setOrigin(1, 0.5);
 
         this.timeText = this.add.text(width * 0.55, height * 0.2, 'Time: 0s', {
             fontSize: `${UI_CONFIG.UI_TEXT_SIZE}px`,
             color: UI_CONFIG.TEXT_COLOR,
-            fontFamily: 'Arial, sans-serif',
+            fontFamily: 'Orbitron, sans-serif',
         });
         this.timeText.setOrigin(0, 0.5);
 
@@ -384,7 +384,7 @@ export class FuelSortScene extends Phaser.Scene {
         const title = this.add.text(width / 2, height * 0.25, 'Pause Menu', {
             fontSize: '32px',
             color: '#ffffff',
-            fontFamily: 'Arial, sans-serif',
+            fontFamily: 'Orbitron, sans-serif',
         });
         title.setOrigin(0.5);
 
@@ -396,7 +396,7 @@ export class FuelSortScene extends Phaser.Scene {
             {
                 fontSize: '18px',
                 color: '#cccccc',
-                fontFamily: 'Arial, sans-serif',
+                fontFamily: 'Orbitron, sans-serif',
                 align: 'center',
             }
         );
@@ -440,7 +440,7 @@ export class FuelSortScene extends Phaser.Scene {
         const buttonText = this.add.text(0, 0, text, {
             fontSize: '16px',
             color: '#ffffff',
-            fontFamily: 'Arial, sans-serif',
+            fontFamily: 'Orbitron, sans-serif',
         });
         buttonText.setOrigin(0.5);
 
@@ -659,7 +659,7 @@ export class FuelSortScene extends Phaser.Scene {
         const title = this.add.text(0, 0, 'How to Play', {
             fontSize: '36px',
             color: UI_CONFIG.TEXT_COLOR,
-            fontFamily: 'Arial, sans-serif',
+            fontFamily: 'Orbitron, sans-serif',
             fontStyle: 'bold',
         });
         title.setOrigin(0.5);
@@ -671,7 +671,7 @@ export class FuelSortScene extends Phaser.Scene {
             {
                 fontSize: '22px',
                 color: '#d7d7d7',
-                fontFamily: 'Arial, sans-serif',
+                fontFamily: 'Orbitron, sans-serif',
                 align: 'center',
                 lineSpacing: 12,
                 wordWrap: { width: Math.min(width * 0.6, 540) },
@@ -682,14 +682,14 @@ export class FuelSortScene extends Phaser.Scene {
         const prompt = this.add.text(0, 0, 'Preparing puzzle...', {
             fontSize: '20px',
             color: '#b7d9ff',
-            fontFamily: 'Arial, sans-serif',
+            fontFamily: 'Orbitron, sans-serif',
         });
         prompt.setOrigin(0.5);
 
         const countdown = this.add.text(0, 0, '', {
             fontSize: '64px',
             color: UI_CONFIG.TEXT_COLOR,
-            fontFamily: 'Arial Black',
+            fontFamily: 'Orbitron',
         });
         countdown.setOrigin(0.5);
         countdown.setAlpha(0);
@@ -843,7 +843,7 @@ export class FuelSortScene extends Phaser.Scene {
         const timeoutText = this.add.text(width / 2, height * 0.5, "Time's up!", {
             fontSize: '48px',
             color: '#ff5b5b',
-            fontFamily: 'Arial Black',
+            fontFamily: 'Orbitron',
         });
         timeoutText.setOrigin(0.5);
         timeoutText.setDepth(1001);
@@ -914,7 +914,7 @@ export class FuelSortScene extends Phaser.Scene {
         const text = this.add.text(width / 2, height * 0.5, 'Forfeit!', {
             fontSize: '48px',
             color: '#ff5b5b',
-            fontFamily: 'Arial Black',
+            fontFamily: 'Orbitron',
         });
         text.setOrigin(0.5);
         text.setDepth(1001);

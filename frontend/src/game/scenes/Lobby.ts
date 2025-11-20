@@ -81,14 +81,14 @@ export class Lobby extends Scene {
         // Background
         this.background = this.add
             .image(centerX, centerY, "spacebackground")
-            .setDisplaySize(height * 0.46, height)
+            .setDisplaySize(height * 1.12, height)
             .setOrigin(0.5);
 
         // Title
         const titleSize = getResponsiveFontSize(width, height, 42, 20);
         this.title = this.add
             .text(centerX, height * 0.1, `Lobby: ${this.lobbyName}`, {
-                fontFamily: "Arial Black",
+                fontFamily: "Orbitron",
                 fontSize: `${titleSize}px`,
                 color: "#ffffff",
                 stroke: "#000000",
@@ -101,7 +101,7 @@ export class Lobby extends Scene {
         const codeSize = getResponsiveFontSize(width, height, 36, 28);
         this.codeLabel = this.add
             .text(centerX, height * 0.2, `Code: ${this.lobbyId.slice(0, 6)}`, {
-                fontFamily: "Arial Black",
+                fontFamily: "Orbitron",
                 fontSize: `${codeSize}px`,
                 color: "#ffeb3b",
                 stroke: "#000000",
@@ -114,7 +114,7 @@ export class Lobby extends Scene {
         const listHeaderSize = getResponsiveFontSize(width, height, 28, 22);
         this.playersTitle = this.add
             .text(centerX, height * 0.3, "Players", {
-                fontFamily: "Arial Black",
+                fontFamily: "Orbitron",
                 fontSize: `${listHeaderSize}px`,
                 color: "#ffffff",
                 stroke: "#000000",
@@ -127,10 +127,10 @@ export class Lobby extends Scene {
         const btnFontSize = `${mobile ? 26 : 32}px`;
         this.startButton = this.add
             .text(centerX, height * 0.85, "Start Game", {
-                fontFamily: "Arial",
+                fontFamily: "Orbitron",
                 fontSize: btnFontSize,
                 color: "#ffffff",
-                backgroundColor: "#1e90ff",
+                backgroundColor: "#262079",
                 padding: { x: 20, y: 10 },
                 align: "center",
                 fixedWidth: mobile ? 220 : 260,
@@ -142,13 +142,13 @@ export class Lobby extends Scene {
                 this.startButton?.setStyle({ backgroundColor: "#63b3ff" })
             )
             .on("pointerout", () =>
-                this.startButton?.setStyle({ backgroundColor: "#1e90ff" })
+                this.startButton?.setStyle({ backgroundColor: "#262079" })
             );
 
         // Leave Button (players only)
         this.leaveButton = this.add
             .text(centerX, height * 0.9, "Leave Lobby", {
-                fontFamily: "Arial",
+                fontFamily: "Orbitron",
                 fontSize: `${mobile ? 22 : 26}px`,
                 color: "#ffffff",
                 backgroundColor: "#444444",
@@ -169,7 +169,7 @@ export class Lobby extends Scene {
         // Disband Button (host only)
         this.disbandButton = this.add
             .text(centerX, height * 0.95, "Disband Lobby", {
-                fontFamily: "Arial",
+                fontFamily: "Orbitron",
                 fontSize: `${mobile ? 20 : 24}px`,
                 color: "#ffffff",
                 backgroundColor: "#a52a2a",
@@ -310,7 +310,7 @@ export class Lobby extends Scene {
 
             const text = this.add
                 .text(centerX, startY + idx * lineHeight, `${icon}${name}`, {
-                    fontFamily: "Arial",
+                    fontFamily: "Orbitron",
                     fontSize: `${itemSize}px`,
                     color: isHost ? "#ffeb3b" : "#ffffff",
                     stroke: "#000000",
@@ -332,7 +332,7 @@ export class Lobby extends Scene {
                         startY + idx * lineHeight,
                         "Kick",
                         {
-                            fontFamily: "Arial",
+                            fontFamily: "Orbitron",
                             fontSize: `${Math.max(16, itemSize - 6)}px`,
                             color: "#ffffff",
                             backgroundColor: "#a52a2a",

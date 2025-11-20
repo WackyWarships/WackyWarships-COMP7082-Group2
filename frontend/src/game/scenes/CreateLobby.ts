@@ -38,14 +38,14 @@ export class CreateLobby extends Scene {
         // Background
         this.background = this.add
           .image(centerX, centerY, "spacebackground")
-          .setDisplaySize(height * 0.46, height)
+          .setDisplaySize(height * 1.12, height)
           .setOrigin(0.5);
 
         // Title
         const titleFontSize = getResponsiveFontSize(width, height, 50, 32);
         this.title = this.add
             .text(centerX, height * 0.15, "Create\nLobby", {
-                fontFamily: "Arial Black",
+                fontFamily: "Orbitron",
                 fontSize: `${titleFontSize}px`,
                 color: "#ffffff",
                 stroke: "#000000",
@@ -59,10 +59,10 @@ export class CreateLobby extends Scene {
 
         // Buttons
         const buttonStyle = {
-            fontFamily: "Arial",
+            fontFamily: "Orbitron",
             fontSize: `${mobile ? 26 : 34}px`,
             color: "#ffffff",
-            backgroundColor: "#1e90ff",
+            backgroundColor: "#262079",
             padding: { x: 20, y: 10 },
             align: "center",
             fixedWidth: mobile ? 190 : 250,
@@ -77,7 +77,7 @@ export class CreateLobby extends Scene {
                 this.createButton.setStyle({ backgroundColor: "#63b3ff" })
             )
             .on("pointerout", () =>
-                this.createButton.setStyle({ backgroundColor: "#1e90ff" })
+                this.createButton.setStyle({ backgroundColor: "#262079" })
             );
 
         this.backButton = this.add
@@ -123,7 +123,7 @@ export class CreateLobby extends Scene {
             position: "absolute",
             background: "white",
             color: "black",
-            border: "2px solid #1e90ff",
+            border: "2px solid #262079",
             borderRadius: "6px",
             padding: "10px",
             width: "240px",

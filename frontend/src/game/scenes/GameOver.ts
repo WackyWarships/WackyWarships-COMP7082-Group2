@@ -128,12 +128,12 @@ export class GameOver extends Scene {
 
         this.background = this.add.image(centerX, centerY, "spacebackground")
             .setOrigin(0.5)
-            .setDisplaySize(height * 0.46, height)
+            .setDisplaySize(height * 1.12, height)
             .setTint(0x222222);
 
         const titleSize = getResponsiveFontSize(width, height, 48, 36);
         this.title = this.add.text(centerX, height * 0.18, data.result ?? 'GAME OVER', {
-            fontFamily: 'Arial Black',
+            fontFamily: 'Orbitron',
             fontSize: `${titleSize}px`,
             color: '#ffffff',
             stroke: '#000000',
@@ -151,7 +151,7 @@ export class GameOver extends Scene {
             `Damage:    ${data.damage ?? 0}`,
         ];
         this.stats = this.add.text(centerX, height * 0.72, lines.join('\n'), {
-            fontFamily: 'Arial',
+            fontFamily: 'Orbitron',
             fontSize: `${bodySize}px`,
             color: '#ffffff',
             align: 'center',
@@ -161,10 +161,10 @@ export class GameOver extends Scene {
 
         const btnSize = getResponsiveFontSize(width, height, 24, 20);
         this.mainBtn = this.add.text(centerX, height * 0.90, 'MAIN MENU', {
-            fontFamily: 'Arial Black',
+            fontFamily: 'Orbitron',
             fontSize: `${btnSize}px`,
             color: '#ffffff',
-            backgroundColor: '#1e90ff',
+            backgroundColor: '#262079',
             padding: { x: 22, y: 12 },
             stroke: '#000000',
             strokeThickness: 6,
@@ -172,7 +172,7 @@ export class GameOver extends Scene {
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true })
             .on('pointerover', () => this.mainBtn.setStyle({ backgroundColor: '#63b3ff' }))
-            .on('pointerout', () => this.mainBtn.setStyle({ backgroundColor: '#1e90ff' }))
+            .on('pointerout', () => this.mainBtn.setStyle({ backgroundColor: '#262079' }))
             .on('pointerdown', () => {
                 this.scene.stop('Game');
                 this.scene.start('MainMenu');

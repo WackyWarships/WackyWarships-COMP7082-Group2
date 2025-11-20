@@ -327,7 +327,7 @@ export class Game extends Phaser.Scene {
         // attack button
         this.attackBtn = this.add
             .text(xLeft + 11 * r, y, "ATTACK", {
-                fontFamily: "Arial Black",
+                fontFamily: "Orbitron",
                 fontSize: "18px",
                 color: "#ffffff",
                 stroke: "#000000",
@@ -535,7 +535,7 @@ export class Game extends Phaser.Scene {
                 H / 2 - panelH * 0.2,
                 "Opponent is playing Fuel Sort…",
                 {
-                    fontFamily: "Arial Black",
+                    fontFamily: "Orbitron",
                     fontSize: "22px",
                     color: "#ffffff",
                     stroke: "#000000",
@@ -550,7 +550,7 @@ export class Game extends Phaser.Scene {
                 H / 2 + panelH * 0.05,
                 "Waiting for minigame result…",
                 {
-                    fontFamily: "Arial",
+                    fontFamily: "Orbitron",
                     fontSize: "18px",
                     color: "#d0d4ff",
                     align: "center",
@@ -618,6 +618,7 @@ export class Game extends Phaser.Scene {
     // create
     // -------------------------------------
     create() {
+        this.scale.lockOrientation("portrait");
         const { width: W, height: H } = this.scale;
         const { x: centerX, y: centerY } = getCenter(this.scale);
 
@@ -642,30 +643,10 @@ export class Game extends Phaser.Scene {
             this.background = this.add
                 .image(centerX, centerY, "spacebackground")
                 .setOrigin(0.5)
-                .setDisplaySize(H * 0.46, H);
+                .setDisplaySize(H * 1.12, H);
         } else {
             this.cameras.main.setBackgroundColor(0x082a47);
         }
-
-        // FIXED-SIZE HOME BUTTON (never gets stretched again)
-        const raw = this.add.image(0, 0, "home").setOrigin(0.5);
-        raw.setDisplaySize(32, 32); // fixed size forever
-
-        this.homeBtn = this.add
-            .container(W * 0.415, H * 0.05, [raw])
-            .setSize(32, 32)
-            .setInteractive({ useHandCursor: true })
-            .on("pointerdown", () => {
-                if (this.netMode === "lobby" && this.lobbyId) {
-                    sendPlayerExitGame({
-                        lobbyId: this.lobbyId,
-                        playerId: this.meId,
-                    });
-                } else if (this.netMode === "direct" && this.matchId) {
-                    sendDirectExitGame(this.matchId);
-                }
-                this.scene.start("MainMenu");
-            });
 
         const topY = H * 0.325;
         const bottomY = H * 0.675;
@@ -760,7 +741,7 @@ export class Game extends Phaser.Scene {
         const hpFont = getResponsiveFontSize(W, H, 18, 14);
         this.enemyHPText = this.add
             .text(W / 2, H * 0.2 - 20, "", {
-                fontFamily: "Arial Black",
+                fontFamily: "Orbitron",
                 fontSize: `${hpFont}px`,
                 color: "#ffffff",
                 stroke: "#000000",
@@ -769,7 +750,7 @@ export class Game extends Phaser.Scene {
             .setOrigin(0.5);
         this.playerHPText = this.add
             .text(W / 2, H * 0.8 + 20, "", {
-                fontFamily: "Arial Black",
+                fontFamily: "Orbitron",
                 fontSize: `${hpFont}px`,
                 color: "#ffffff",
                 stroke: "#000000",
@@ -802,7 +783,7 @@ export class Game extends Phaser.Scene {
                 this.turnBadgeGlass.y,
                 `Turn: ${this.turnNumber}`,
                 {
-                    fontFamily: "Arial Black",
+                    fontFamily: "Orbitron",
                     fontSize: `${badgeFont}px`,
                     color: "#ffffff",
                     stroke: "#000000",
@@ -817,13 +798,33 @@ export class Game extends Phaser.Scene {
         const whoFont = getResponsiveFontSize(W, H, 26, 20);
         this.turnLabelText = this.add
             .text(this.turnLabelGlass.x, this.turnLabelGlass.y, "YOUR TURN", {
-                fontFamily: "Arial Black",
+                fontFamily: "Orbitron",
                 fontSize: `${whoFont}px`,
                 color: "#ffffff",
                 stroke: "#000000",
                 strokeThickness: 6,
             })
             .setOrigin(0.5);
+
+        // FIXED-SIZE HOME BUTTON (never gets stretched again)
+        const raw = this.add.image(0, 0, "home_button");
+        raw.setDisplaySize(100, 100); // fixed size forever
+
+        this.homeBtn = this.add
+            .container(W / 2 - badgeW, H * 0.1, [raw])
+            .setSize(50, 50)
+            .setInteractive({ useHandCursor: true })
+            .on("pointerdown", () => {
+                if (this.netMode === "lobby" && this.lobbyId) {
+                    sendPlayerExitGame({
+                        lobbyId: this.lobbyId,
+                        playerId: this.meId,
+                    });
+                } else if (this.netMode === "direct" && this.matchId) {
+                    sendDirectExitGame(this.matchId);
+                }
+                this.scene.start("MainMenu");
+            });
 
         // initial turn UI
         if (this.isPlayerTurn) this.startPlayerTurn();
@@ -1253,8 +1254,7 @@ export class Game extends Phaser.Scene {
         const bottomY = H * 0.675;
 
         if (this.background)
-            this.background.setPosition(W / 2, H / 2).setDisplaySize(H * 0.46, H);
-        this.homeBtn.setPosition(W * 0.42, H * 0.05);
+            this.background.setPosition(W / 2, H / 2).setDisplaySize(H * 1.12, H);
 
         if (this.enemy instanceof Phaser.GameObjects.Image) {
             this.enemy.setPosition(W / 2, topY);
@@ -1320,6 +1320,8 @@ export class Game extends Phaser.Scene {
         this.turnLabelText
             ?.setFontSize(whoFont)
             .setPosition(this.turnLabelGlass.x, this.turnLabelGlass.y);
+
+        this.homeBtn.setPosition(W / 2 - badgeW, H * 0.1);
     }
 
     // -------------------------------------
