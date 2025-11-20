@@ -72,7 +72,7 @@ export class MainMenu extends Scene {
         this.titleImage = this.add
             .image(centerX, height * 0.21, "title_image")
             .setOrigin(0.5);
-        this.sizeImageByHeight(this.titleImage, height, 0.25);
+        this.sizeImageByHeight(this.titleImage, height, 0.30);
 
         // Current Username
         const playerName = getStoredPlayerName();
@@ -247,7 +247,7 @@ export class MainMenu extends Scene {
         this.menuContainer.setPosition(centerX, height * 0.55);
         
         this.titleImage.setPosition(centerX, height * 0.21);
-        this.sizeImageByHeight(this.titleImage, height, 0.25);
+        this.sizeImageByHeight(this.titleImage, height, 0.30);
 
         this.usernameText
             .setFontSize(usernameFontSize)

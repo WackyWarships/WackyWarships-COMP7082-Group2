@@ -31,10 +31,13 @@ export class Preloader extends Scene {
         // All files are relative to /assets
         this.load.setPath('assets');
 
-        // --- Existing ---
-        this.load.image('laser', 'laser.png');
-        this.load.image('rockets', 'rockets.png');
+        // --- Background ---
         this.load.image('spacebackground', 'spacebackground2.png');
+
+        // Weapons
+        this.load.image('weapon_easy', 'weapon_easy.png');
+        this.load.image('weapon_medium', 'weapon_medium.png');
+        this.load.image('weapon_hard', 'weapon_hard.png');
 
         // Base ship sprites
         this.load.image('redship', 'redship.png');
