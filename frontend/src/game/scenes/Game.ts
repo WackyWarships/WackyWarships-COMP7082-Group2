@@ -808,7 +808,7 @@ export class Game extends Phaser.Scene {
 
         // FIXED-SIZE HOME BUTTON (never gets stretched again)
         const raw = this.add.image(0, 0, "home_button");
-        raw.setDisplaySize(100, 100); // fixed size forever
+        raw.setDisplaySize(50, 50); // fixed size forever
 
         this.homeBtn = this.add
             .container(W / 2 - badgeW, H * 0.1, [raw])

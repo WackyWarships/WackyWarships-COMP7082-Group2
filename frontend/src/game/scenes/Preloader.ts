@@ -57,7 +57,7 @@ export class Preloader extends Scene {
 
         // --- UI icons used in Game (optional but recommended) ---
         this.load.image('home', 'home.svg');
-        this.load.image('home_button', 'home.png');
+        this.load.image('home_button', 'home_icon.png');
 
         // Enemy destroyed
         this.load.image('redship_destroyed', 'redship_destroyed.png');

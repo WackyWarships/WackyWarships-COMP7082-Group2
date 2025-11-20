@@ -377,7 +377,7 @@ export class FuelSortScene extends Phaser.Scene {
         });
 
         // Create modal panel
-        const panel = this.add.rectangle(width / 2, height / 2, width * 0.8, height * 0.6, 0x2a2a3e);
+        const panel = this.add.rectangle(width / 2, height / 2, height, height * 0.6, 0x2a2a3e);
         panel.setStrokeStyle(4, 0x4a4a5e);
 
         // Create title
@@ -1071,12 +1071,12 @@ export class FuelSortScene extends Phaser.Scene {
 
         const minDim = Math.min(width, height);
         const circle1 = this.backgroundDecorations[0];
-        circle1.setPosition(width * 0.2, height * 0.15);
+        circle1.setPosition(width * 0.3, height * 0.15);
         circle1.setDisplaySize(minDim * 0.24, minDim * 0.24);
 
         if (this.backgroundDecorations[1]) {
             const circle2 = this.backgroundDecorations[1];
-            circle2.setPosition(width * 0.8, height * 0.85);
+            circle2.setPosition(width * 0.7, height * 0.85);
             circle2.setDisplaySize(minDim * 0.36, minDim * 0.36);
         }
     }
