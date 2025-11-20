@@ -52,11 +52,15 @@ import type {
 } from "shared/types";
 
 // -----------------------------------------
-// Backend URL (env override -> same host:3000)
+// Backend URL (Uses VITE_BACKEND_URL env override -> or logic below)
+// Use Port 3000 for the backend during development
+// Then use same the origin in production
 // -----------------------------------------
 const BACKEND_URL =
     (import.meta as any).env?.VITE_BACKEND_URL ??
-    `${window.location.protocol}//${window.location.hostname}:3000`;
+    (window.location.hostname === 'localhost'
+        ? `${window.location.protocol}//${window.location.hostname}:3000`
+        : window.location.origin);
 
 // -----------------------------------------------------------
 // Single socket + identity
