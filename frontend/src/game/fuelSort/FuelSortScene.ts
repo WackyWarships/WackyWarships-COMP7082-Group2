@@ -208,7 +208,7 @@ export class FuelSortScene extends Phaser.Scene {
         this.titleText = this.add.text(width / 2, 60, 'Fuel Sort Puzzle', {
             fontSize: '32px',
             color: UI_CONFIG.TEXT_COLOR,
-            fontFamily: 'Arial, sans-serif',
+            fontFamily: 'Orbitron, sans-serif',
             fontStyle: 'bold',
         });
         this.titleText.setOrigin(0.5);
@@ -220,7 +220,7 @@ export class FuelSortScene extends Phaser.Scene {
             {
                 fontSize: '26px',
                 color: '#ffffff',
-                fontFamily: 'Arial, sans-serif',
+                fontFamily: 'Orbitron, sans-serif',
                 fontStyle: 'bold',
             }
         );
@@ -233,25 +233,25 @@ export class FuelSortScene extends Phaser.Scene {
             {
                 fontSize: '20px',
                 color: '#bbbbbb',
-                fontFamily: 'Arial, sans-serif',
+                fontFamily: 'Orbitron, sans-serif',
                 align: 'center',
             }
         );
         this.descriptionText.setOrigin(0.5);
 
-        this.moveText = this.add.text(width * 0.25, height * 0.2, 'Moves: 0', {
+        this.moveText = this.add.text(width * 0.45, height * 0.2, 'Moves: 0', {
             fontSize: `${UI_CONFIG.UI_TEXT_SIZE}px`,
             color: UI_CONFIG.TEXT_COLOR,
-            fontFamily: 'Arial, sans-serif',
+            fontFamily: 'Orbitron, sans-serif',
         });
-        this.moveText.setOrigin(0.5);
+        this.moveText.setOrigin(1, 0.5);
 
-        this.timeText = this.add.text(width * 0.75, height * 0.2, 'Time: 0s', {
+        this.timeText = this.add.text(width * 0.55, height * 0.2, 'Time: 0s', {
             fontSize: `${UI_CONFIG.UI_TEXT_SIZE}px`,
             color: UI_CONFIG.TEXT_COLOR,
-            fontFamily: 'Arial, sans-serif',
+            fontFamily: 'Orbitron, sans-serif',
         });
-        this.timeText.setOrigin(0.5);
+        this.timeText.setOrigin(0, 0.5);
 
         // Add home button at top-left
         this.homeButton = this.createSvgButton(
@@ -377,39 +377,42 @@ export class FuelSortScene extends Phaser.Scene {
         });
 
         // Create modal panel
-        const panel = this.add.rectangle(width / 2, height / 2, width * 0.8, height * 0.6, 0x2a2a3e);
+        const panelWidth = Math.min(width * 0.75, 680);
+        const panelHeight = Math.min(height * 0.6, 460);
+        const panel = this.add.rectangle(width / 2, height / 2, panelWidth, panelHeight, 0x2a2a3e);
         panel.setStrokeStyle(4, 0x4a4a5e);
 
         // Create title
-        const title = this.add.text(width / 2, height * 0.25, 'Pause Menu', {
+        const title = this.add.text(width / 2, height * 0.3, 'Pause Menu', {
             fontSize: '32px',
             color: '#ffffff',
-            fontFamily: 'Arial, sans-serif',
+            fontFamily: 'Orbitron, sans-serif',
         });
         title.setOrigin(0.5);
 
         // Home modal content
         const content = this.add.text(
             width / 2,
-            height * 0.4,
+            height * 0.45,
             'Game is paused.\nClick outside to resume or use the buttons below.\nPlease note that the timer is still running.',
             {
                 fontSize: '18px',
                 color: '#cccccc',
-                fontFamily: 'Arial, sans-serif',
+                fontFamily: 'Orbitron, sans-serif',
                 align: 'center',
+                wordWrap: { width: Math.min(width * 0.6, 540) },
             }
         );
         content.setOrigin(0.5);
 
-        const resumeButton = this.createSimpleButton(width / 2, height * 0.55, 'Resume', () => {
+        const resumeButton = this.createSimpleButton(width / 2, height * 0.6, 'Resume', () => {
             this.hidePauseModal();
         });
 
         // NEW: Forfeit button – immediately fails minigame
         const forfeitButton = this.createSimpleButton(
             width / 2,
-            height * 0.63,
+            height * 0.68,
             'Forfeit',
             () => {
                 // close modal + trigger failure path
@@ -440,7 +443,7 @@ export class FuelSortScene extends Phaser.Scene {
         const buttonText = this.add.text(0, 0, text, {
             fontSize: '16px',
             color: '#ffffff',
-            fontFamily: 'Arial, sans-serif',
+            fontFamily: 'Orbitron, sans-serif',
         });
         buttonText.setOrigin(0.5);
 
@@ -513,17 +516,17 @@ export class FuelSortScene extends Phaser.Scene {
         const infoY = height * 0.25;
         this.moveText.setFontSize(infoFont);
         this.timeText.setFontSize(infoFont);
-        this.moveText.setPosition(width * 0.25, infoY);
-        this.timeText.setPosition(width * 0.75, infoY);
+        this.moveText.setPosition(width * 0.45, infoY);
+        this.timeText.setPosition(width * 0.55, infoY);
 
         // Position home button at the top
-        const topButtonY = height * 0.05;
+        const topButtonY = height * 0.80;
         const topButtonScale = Phaser.Math.Clamp(
             Math.min(width / 1200, height / 1200),
             0.6,
             1.0
         );
-        this.homeButton.setPosition(width * 0.08, topButtonY);
+        this.homeButton.setPosition(width / 2, topButtonY);
         this.homeButton.setScale(topButtonScale);
     }
 
@@ -533,7 +536,7 @@ export class FuelSortScene extends Phaser.Scene {
         }
 
         const clampedTime = Math.max(0, Math.ceil(this.remainingTime));
-        this.timeText.setText(`TIME LEFT: ${clampedTime}s`);
+        this.timeText.setText(`Time: ${clampedTime}s`);
     }
 
     private handleWin(): void {
@@ -659,7 +662,7 @@ export class FuelSortScene extends Phaser.Scene {
         const title = this.add.text(0, 0, 'How to Play', {
             fontSize: '36px',
             color: UI_CONFIG.TEXT_COLOR,
-            fontFamily: 'Arial, sans-serif',
+            fontFamily: 'Orbitron, sans-serif',
             fontStyle: 'bold',
         });
         title.setOrigin(0.5);
@@ -671,7 +674,7 @@ export class FuelSortScene extends Phaser.Scene {
             {
                 fontSize: '22px',
                 color: '#d7d7d7',
-                fontFamily: 'Arial, sans-serif',
+                fontFamily: 'Orbitron, sans-serif',
                 align: 'center',
                 lineSpacing: 12,
                 wordWrap: { width: Math.min(width * 0.6, 540) },
@@ -682,14 +685,14 @@ export class FuelSortScene extends Phaser.Scene {
         const prompt = this.add.text(0, 0, 'Preparing puzzle...', {
             fontSize: '20px',
             color: '#b7d9ff',
-            fontFamily: 'Arial, sans-serif',
+            fontFamily: 'Orbitron, sans-serif',
         });
         prompt.setOrigin(0.5);
 
         const countdown = this.add.text(0, 0, '', {
             fontSize: '64px',
             color: UI_CONFIG.TEXT_COLOR,
-            fontFamily: 'Arial Black',
+            fontFamily: 'Orbitron',
         });
         countdown.setOrigin(0.5);
         countdown.setAlpha(0);
@@ -843,7 +846,7 @@ export class FuelSortScene extends Phaser.Scene {
         const timeoutText = this.add.text(width / 2, height * 0.5, "Time's up!", {
             fontSize: '48px',
             color: '#ff5b5b',
-            fontFamily: 'Arial Black',
+            fontFamily: 'Orbitron',
         });
         timeoutText.setOrigin(0.5);
         timeoutText.setDepth(1001);
@@ -914,7 +917,7 @@ export class FuelSortScene extends Phaser.Scene {
         const text = this.add.text(width / 2, height * 0.5, 'Forfeit!', {
             fontSize: '48px',
             color: '#ff5b5b',
-            fontFamily: 'Arial Black',
+            fontFamily: 'Orbitron',
         });
         text.setOrigin(0.5);
         text.setDepth(1001);
@@ -1071,12 +1074,12 @@ export class FuelSortScene extends Phaser.Scene {
 
         const minDim = Math.min(width, height);
         const circle1 = this.backgroundDecorations[0];
-        circle1.setPosition(width * 0.2, height * 0.15);
+        circle1.setPosition(width * 0.3, height * 0.15);
         circle1.setDisplaySize(minDim * 0.24, minDim * 0.24);
 
         if (this.backgroundDecorations[1]) {
             const circle2 = this.backgroundDecorations[1];
-            circle2.setPosition(width * 0.8, height * 0.85);
+            circle2.setPosition(width * 0.7, height * 0.85);
             circle2.setDisplaySize(minDim * 0.36, minDim * 0.36);
         }
     }

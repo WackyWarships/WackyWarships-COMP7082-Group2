@@ -54,7 +54,7 @@ export function resizeSceneBase(
     // Scale and reposition background if available
     const bg = (scene as any).background as Phaser.GameObjects.Image | undefined;
     if (bg) {
-        bg.setDisplaySize(width, height);
+        bg.setDisplaySize(height * 1.12, height);
         bg.setPosition(width / 2, height / 2);
     }
 

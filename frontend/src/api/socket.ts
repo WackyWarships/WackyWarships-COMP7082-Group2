@@ -3,7 +3,15 @@
 import { io } from "socket.io-client";
 import type { Socket } from "socket.io-client";
 import EventBus from "../game/EventBus";
-import { getOrCreatePlayerId } from "../game/utils/playerUsername";
+import {
+    getOrCreatePlayerId,
+    getStoredPlayerName,
+} from "../game/utils/playerUsername";
+import {
+    getLastSession,
+    saveSession,
+    clearSession,
+} from "../game/utils/playerSession";
 
 import type {
     ServerToClientEvents,
@@ -44,13 +52,19 @@ import type {
 } from "shared/types";
 
 // -----------------------------------------
-// Backend URL (env override -> same host:3000)
+// Backend URL (Uses VITE_BACKEND_URL env override -> or logic below)
+// Use Port 3000 for the backend during development
+// Then use same the origin in production
 // -----------------------------------------
 const BACKEND_URL =
     (import.meta as any).env?.VITE_BACKEND_URL ??
-    `${window.location.protocol}//${window.location.hostname}:3000`;
+    (window.location.hostname === 'localhost'
+        ? `${window.location.protocol}//${window.location.hostname}:3000`
+        : window.location.origin);
 
+// -----------------------------------------------------------
 // Single socket + identity
+// -----------------------------------------------------------
 let socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
 const playerId: PlayerId = getOrCreatePlayerId();
 
@@ -83,13 +97,35 @@ export function initSocket(token?: string) {
         ClientToServerEvents
     >;
 
+    // -----------------------------------------------------------
     // Connection lifecycle
+    // -----------------------------------------------------------
     socket.on("connect", (): void => {
-        console.debug("socket connected", socket!.id);
+        console.debug("[Socket] Connected:", socket!.id);
 
-        // Bootstrap association on the server (real username will be sent by EnterUsername scene)
-        const payload: SetUsernameEvent = { playerId, playerName: playerId };
-        socket!.emit("setUsername", payload);
+        const playerName =
+            getStoredPlayerName() || `Player-${playerId.slice(0, 5)}`;
+        const lastSession = getLastSession();
+
+        if (lastSession?.lobbyId) {
+            const reconnectPayload: ReconnectRequest = {
+                lobbyId: lastSession.lobbyId,
+                playerId,
+                lastKnownTurnId: lastSession.lastKnownTurnId,
+                lastKnownSeq: lastSession.lastKnownSeq,
+            };
+
+            console.debug(
+                `[Socket] Attempting reconnect to lobby ${lastSession.lobbyId} as ${playerName}`
+            );
+            socket!.emit("reconnectRequest", reconnectPayload);
+
+            const namePayload: SetUsernameEvent = { playerId, playerName };
+            socket!.emit("setUsername", namePayload);
+        } else {
+            const payload: SetUsernameEvent = { playerId, playerName };
+            socket!.emit("setUsername", payload);
+        }
     });
 
     socket.on("connect_error", (err: unknown): void => {
@@ -121,6 +157,12 @@ export function initSocket(token?: string) {
     // Lobby management
     socket.on("lobbyUpdate", (lu: LobbyUpdate): void => {
         emitBus("lobby-update", lu);
+
+        saveSession({
+            lobbyId: lu.lobbyId,
+            scene: "Lobby",
+            timestamp: Date.now(),
+        });
     });
 
     // Errors
@@ -168,7 +210,8 @@ export function initSocket(token?: string) {
     });
 
     socket.on("lobbyDisbanded", (n: LobbyDisbandedNotice): void => {
-        emitBus("lobby-disbanded", n);
+        emitBus("lobby-disbanded", n as any);
+        clearSession();
     });
 
     // Presence / reconnect
@@ -245,20 +288,26 @@ export function sendPlayerExitGame(payload: {
 export function sendSetUsername(payload: SetUsernameEvent): void {
     ensureSocket().emit("setUsername", payload);
 }
+
 export function sendCreateLobby(payload: CreateLobbyEvent): void {
     ensureSocket().emit("createLobby", payload);
 }
+
 export function sendJoinLobby(payload: JoinLobbyEvent): void {
     ensureSocket().emit("joinLobby", payload);
+    saveSession({ lobbyId: payload.lobbyId, scene: "Lobby" });
 }
+
 export function sendLeaveLobby(payload: LeaveLobbyEvent): void {
     ensureSocket().emit("leaveLobby", payload);
+    clearSession();
 }
 
 // Lobby moderation
 export function sendKickPlayer(payload: KickPlayerEvent): void {
     ensureSocket().emit("kickPlayer", payload);
 }
+
 export function sendDisbandLobby(payload: DisbandLobbyEvent): void {
     ensureSocket().emit("disbandLobby", payload);
 }
@@ -267,6 +316,7 @@ export function sendDisbandLobby(payload: DisbandLobbyEvent): void {
 export function sendStartGame(payload: StartGameEvent): void {
     ensureSocket().emit("startGame", payload);
 }
+
 export function sendNextTurn(payload: NextTurnEvent): void {
     ensureSocket().emit("nextTurn", payload);
 }
@@ -298,6 +348,7 @@ export function sendReconnectRequest(payload: ReconnectRequest): void {
 export function sendDirectQueue(payload: { playerId: PlayerId }): void {
     ensureSocket().emit("directQueue", payload);
 }
+
 export function sendDirectReady(matchId: string): void {
     ensureSocket().emit("directReady", { matchId, playerId });
 }
@@ -322,6 +373,7 @@ export function sendDirectExitGame(matchId: string): void {
 export function sendDirectHost(matchId: string, username: string): void {
     ensureSocket().emit("direct:host", { matchId, playerId, username });
 }
+
 export function sendDirectJoin(matchId: string, username: string): void {
     ensureSocket().emit("direct:join", { matchId, playerId, username });
 }
@@ -335,6 +387,7 @@ export function getSocket(): Socket<
 > | null {
     return socket;
 }
+
 export function closeSocket(): void {
     if (!socket) return;
     try {
@@ -344,6 +397,7 @@ export function closeSocket(): void {
     }
     socket = null;
 }
+
 export function getPlayerId(): PlayerId {
     return playerId;
 }

@@ -12,16 +12,16 @@ type ResultData = {
 };
 
 const ENEMY_SPRITES = {
-    normal: 'battleshipP',
-    damaged: 'battleshipP_dmg',
-    critical: 'battleshipP_crit',
-    destroyed: 'battleshipP_destroyed', // NEW
+    normal: "blueship",
+    damaged: "blueship_dmg",
+    critical: "blueship_crit",
+    destroyed: "blueship_destroyed", // NEW
 };
 const PLAYER_SPRITES = {
-    normal: 'battleshipE',
-    damaged: 'battleshipE_dmg',
-    critical: 'battleshipE_crit',
-    destroyed: 'battleshipE_destroyed', // NEW
+    normal: "redship",
+    damaged: "redship_dmg",
+    critical: "redship_crit",
+    destroyed: "redship_destroyed", // NEW
 };
 
 export class GameOver extends Scene {
@@ -51,8 +51,8 @@ export class GameOver extends Scene {
         keys: { normal: string; damaged: string; critical: string }
     ) {
         const pct = (hp / max) * 100;
-        if (pct < 20) return keys.critical;
-        if (pct < 70) return keys.damaged;
+        if (pct < 31) return keys.critical;
+        if (pct < 71) return keys.damaged;
         return keys.normal;
     }
 
@@ -83,11 +83,11 @@ export class GameOver extends Scene {
         }
 
         if (enemyKeyToUse && this.textureExists(enemyKeyToUse)) {
-            const img = this.add.image(width * 0.28, enemyY, enemyKeyToUse).setOrigin(0.5);
-            this.sizeByHeight(img, height, 0.10);
+            const img = this.add.image(width * 0.44, enemyY, enemyKeyToUse).setOrigin(0.5);
+            this.sizeByHeight(img, height, 0.15);
             this.enemySprite = img;
         } else {
-            this.enemySprite = this.add.rectangle(width * 0.28, enemyY, 120, 40, 0xff5555).setOrigin(0.5);
+            this.enemySprite = this.add.rectangle(width * 0.44, enemyY, 120, 40, 0xff5555).setOrigin(0.5);
         }
 
         // --- Player final ---
@@ -101,11 +101,11 @@ export class GameOver extends Scene {
         }
 
         if (playerKeyToUse && this.textureExists(playerKeyToUse)) {
-            const img = this.add.image(width * 0.72, playerY, playerKeyToUse).setOrigin(0.5);
-            this.sizeByHeight(img, height, 0.12);
+            const img = this.add.image(width * 0.55, playerY, playerKeyToUse).setOrigin(0.5);
+            this.sizeByHeight(img, height, 0.15);
             this.playerSprite = img;
         } else {
-            this.playerSprite = this.add.rectangle(width * 0.72, playerY, 120, 40, 0x55ff88).setOrigin(0.5);
+            this.playerSprite = this.add.rectangle(width * 0.45, playerY, 120, 40, 0x55ff88).setOrigin(0.5);
         }
 
         // gentle float
@@ -126,14 +126,14 @@ export class GameOver extends Scene {
         this.finalPlayerHP = data.playerHP ?? 0;
         this.finalEnemyHP = data.enemyHP ?? 0;
 
-        this.background = this.add.image(centerX, centerY, 'background')
+        this.background = this.add.image(centerX, centerY, "spacebackground")
             .setOrigin(0.5)
-            .setDisplaySize(width, height)
+            .setDisplaySize(height * 1.12, height)
             .setTint(0x222222);
 
         const titleSize = getResponsiveFontSize(width, height, 48, 36);
         this.title = this.add.text(centerX, height * 0.18, data.result ?? 'GAME OVER', {
-            fontFamily: 'Arial Black',
+            fontFamily: 'Orbitron',
             fontSize: `${titleSize}px`,
             color: '#ffffff',
             stroke: '#000000',
@@ -151,7 +151,7 @@ export class GameOver extends Scene {
             `Damage:    ${data.damage ?? 0}`,
         ];
         this.stats = this.add.text(centerX, height * 0.72, lines.join('\n'), {
-            fontFamily: 'Arial',
+            fontFamily: 'Orbitron',
             fontSize: `${bodySize}px`,
             color: '#ffffff',
             align: 'center',
@@ -161,10 +161,10 @@ export class GameOver extends Scene {
 
         const btnSize = getResponsiveFontSize(width, height, 24, 20);
         this.mainBtn = this.add.text(centerX, height * 0.90, 'MAIN MENU', {
-            fontFamily: 'Arial Black',
+            fontFamily: 'Orbitron',
             fontSize: `${btnSize}px`,
             color: '#ffffff',
-            backgroundColor: '#1e90ff',
+            backgroundColor: '#262079',
             padding: { x: 22, y: 12 },
             stroke: '#000000',
             strokeThickness: 6,
@@ -172,7 +172,7 @@ export class GameOver extends Scene {
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true })
             .on('pointerover', () => this.mainBtn.setStyle({ backgroundColor: '#63b3ff' }))
-            .on('pointerout', () => this.mainBtn.setStyle({ backgroundColor: '#1e90ff' }))
+            .on('pointerout', () => this.mainBtn.setStyle({ backgroundColor: '#262079' }))
             .on('pointerdown', () => {
                 this.scene.stop('Game');
                 this.scene.start('MainMenu');
@@ -199,17 +199,29 @@ export class GameOver extends Scene {
         const playerY = height * 0.60;
 
         if (this.enemySprite) {
-            this.enemySprite.setPosition(width * 0.28, enemyY);
+            this.enemySprite.setPosition(width * 0.45, enemyY);
             if (this.enemySprite instanceof Phaser.GameObjects.Image) {
-                this.sizeByHeight(this.enemySprite, height, 0.10);
+                this.sizeByHeight(this.enemySprite, height, 0.15);
             }
         }
         if (this.playerSprite) {
-            this.playerSprite.setPosition(width * 0.72, playerY);
+            this.playerSprite.setPosition(width * 0.55, playerY);
             if (this.playerSprite instanceof Phaser.GameObjects.Image) {
-                this.sizeByHeight(this.playerSprite, height, 0.12);
+                this.sizeByHeight(this.playerSprite, height, 0.15);
             }
         }
+
+        this.tweens.killAll();
+
+        // gentle float
+        this.tweens.add({
+            targets: [this.enemySprite, this.playerSprite],
+            y: '+=10',
+            duration: 900,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.inOut',
+        });
 
         const bodySize = getResponsiveFontSize(width, height, 22, 18);
         this.stats?.setPosition(centerX, height * 0.72).setFontSize(bodySize);

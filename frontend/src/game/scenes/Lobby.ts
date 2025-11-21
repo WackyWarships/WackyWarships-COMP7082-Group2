@@ -1,21 +1,26 @@
-// frontend/src/game/scenes/Lobby.ts
-import { Scene, GameObjects } from 'phaser';
-import EventBus from '../EventBus';
-import { getCenter, isMobile, getResponsiveFontSize, resizeSceneBase } from '../utils/layout';
-import { getStoredPlayerName } from '../utils/playerUsername';
+import { Scene, GameObjects } from "phaser";
+import EventBus from "../EventBus";
+import {
+    getCenter,
+    isMobile,
+    getResponsiveFontSize,
+    resizeSceneBase,
+} from "../utils/layout";
+import { getStoredPlayerName } from "../utils/playerUsername";
 import type {
     LobbyUpdate,
     PlayerId,
     PlayerInfo,
     HostInfo,
     TurnStartEvent,
-} from 'shared/types';
+} from "shared/types";
+import { saveSession } from "../utils/playerSession";
 import {
     sendStartGame,
     sendLeaveLobby,
     sendKickPlayer,
     sendDisbandLobby,
-} from '../../api/socket';
+} from "../../api/socket";
 
 type LobbyInitData = {
     lobbyId: string;
@@ -44,18 +49,28 @@ export class Lobby extends Scene {
     players: PlayerInfo[] = [];
 
     constructor() {
-        super('Lobby');
+        super("Lobby");
     }
 
     init(data: LobbyInitData) {
         this.lobbyId = data.lobbyId;
         this.playerId = data.playerId;
-        this.lobbyName = data.lobbyName;
+
+        this.lobbyName = data.lobbyName ?? "Lobby";
         if (data.host) {
             this.hostId = data.host.hostId;
             this.hostName = data.host.hostName;
         }
-        if (data.players) this.players = data.players;
+
+        if (data.players) {
+            this.players = data.players;
+        }
+
+        saveSession({
+            lobbyId: this.lobbyId,
+            scene: "Lobby",
+            timestamp: Date.now(),
+        });
     }
 
     create() {
@@ -65,20 +80,20 @@ export class Lobby extends Scene {
 
         // Background
         this.background = this.add
-            .image(centerX, centerY, 'background')
-            .setDisplaySize(width, height)
+            .image(centerX, centerY, "spacebackground")
+            .setDisplaySize(height * 1.12, height)
             .setOrigin(0.5);
 
         // Title
-        const titleSize = getResponsiveFontSize(width, height, 56, 44);
+        const titleSize = getResponsiveFontSize(width, height, 42, 20);
         this.title = this.add
             .text(centerX, height * 0.1, `Lobby: ${this.lobbyName}`, {
-                fontFamily: 'Arial Black',
+                fontFamily: "Orbitron",
                 fontSize: `${titleSize}px`,
-                color: '#ffffff',
-                stroke: '#000000',
+                color: "#ffffff",
+                stroke: "#000000",
                 strokeThickness: 8,
-                align: 'center',
+                align: "center",
             })
             .setOrigin(0.5);
 
@@ -86,82 +101,95 @@ export class Lobby extends Scene {
         const codeSize = getResponsiveFontSize(width, height, 36, 28);
         this.codeLabel = this.add
             .text(centerX, height * 0.2, `Code: ${this.lobbyId.slice(0, 6)}`, {
-                fontFamily: 'Arial Black',
+                fontFamily: "Orbitron",
                 fontSize: `${codeSize}px`,
-                color: '#ffeb3b',
-                stroke: '#000000',
+                color: "#ffeb3b",
+                stroke: "#000000",
                 strokeThickness: 6,
-                align: 'center',
+                align: "center",
             })
             .setOrigin(0.5);
 
         // Player list header
         const listHeaderSize = getResponsiveFontSize(width, height, 28, 22);
         this.playersTitle = this.add
-            .text(centerX, height * 0.3, 'Players', {
-                fontFamily: 'Arial Black',
+            .text(centerX, height * 0.3, "Players", {
+                fontFamily: "Orbitron",
                 fontSize: `${listHeaderSize}px`,
-                color: '#ffffff',
-                stroke: '#000000',
+                color: "#ffffff",
+                stroke: "#000000",
                 strokeThickness: 6,
-                align: 'center',
+                align: "center",
             })
             .setOrigin(0.5);
 
         // Start (host only)
         const btnFontSize = `${mobile ? 26 : 32}px`;
         this.startButton = this.add
-            .text(centerX, height * 0.85, 'Start Game', {
-                fontFamily: 'Arial',
+            .text(centerX, height * 0.85, "Start Game", {
+                fontFamily: "Orbitron",
                 fontSize: btnFontSize,
-                color: '#ffffff',
-                backgroundColor: '#1e90ff',
+                color: "#ffffff",
+                backgroundColor: "#262079",
                 padding: { x: 20, y: 10 },
-                align: 'center',
+                align: "center",
                 fixedWidth: mobile ? 220 : 260,
             })
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true })
-            .on('pointerdown', () => this.handleStartGame())
-            .on('pointerover', () => this.startButton?.setStyle({ backgroundColor: '#63b3ff' }))
-            .on('pointerout', () => this.startButton?.setStyle({ backgroundColor: '#1e90ff' }));
+            .on("pointerdown", () => this.handleStartGame())
+            .on("pointerover", () =>
+                this.startButton?.setStyle({ backgroundColor: "#63b3ff" })
+            )
+            .on("pointerout", () =>
+                this.startButton?.setStyle({ backgroundColor: "#262079" })
+            );
 
-        // Leave (non-host)
+        // Leave Button (players only)
         this.leaveButton = this.add
-            .text(centerX, height * 0.9, 'Leave Lobby', {
-                fontFamily: 'Arial',
+            .text(centerX, height * 0.9, "Leave Lobby", {
+                fontFamily: "Orbitron",
                 fontSize: `${mobile ? 22 : 26}px`,
-                color: '#ffffff',
-                backgroundColor: '#444444',
+                color: "#ffffff",
+                backgroundColor: "#444444",
                 padding: { x: 16, y: 8 },
-                align: 'center',
+                align: "center",
                 fixedWidth: mobile ? 200 : 220,
             })
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true })
-            .on('pointerdown', () => this.handleLeaveLobby())
-            .on('pointerover', () => this.leaveButton?.setStyle({ backgroundColor: '#666666' }))
-            .on('pointerout', () => this.leaveButton?.setStyle({ backgroundColor: '#444444' }));
+            .on("pointerdown", () => this.handleLeaveLobby())
+            .on("pointerover", () =>
+                this.leaveButton?.setStyle({ backgroundColor: "#666666" })
+            )
+            .on("pointerout", () =>
+                this.leaveButton?.setStyle({ backgroundColor: "#444444" })
+            );
 
-        // Disband (host only)
+        // Disband Button (host only)
         this.disbandButton = this.add
-            .text(centerX, height * 0.95, 'Disband Lobby', {
-                fontFamily: 'Arial',
+            .text(centerX, height * 0.95, "Disband Lobby", {
+                fontFamily: "Orbitron",
                 fontSize: `${mobile ? 20 : 24}px`,
-                color: '#ffffff',
-                backgroundColor: '#a52a2a',
+                color: "#ffffff",
+                backgroundColor: "#a52a2a",
                 padding: { x: 16, y: 6 },
-                align: 'center',
+                align: "center",
                 fixedWidth: mobile ? 200 : 240,
             })
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true })
-            .on('pointerdown', () => this.handleDisbandLobby())
-            .on('pointerover', () => this.disbandButton?.setStyle({ backgroundColor: '#c34242' }))
-            .on('pointerout', () => this.disbandButton?.setStyle({ backgroundColor: '#a52a2a' }));
+            .on("pointerdown", () => this.handleDisbandLobby())
+            .on("pointerover", () =>
+                this.disbandButton?.setStyle({ backgroundColor: "#c34242" })
+            )
+            .on("pointerout", () =>
+                this.disbandButton?.setStyle({ backgroundColor: "#a52a2a" })
+            );
 
-        // Initial visibility
-        const isHostInitial = this.hostId ? this.playerId === this.hostId : false;
+        const isHostInitial = this.hostId
+            ? this.playerId === this.hostId
+            : false;
         this.startButton.setVisible(isHostInitial).setActive(isHostInitial);
         this.leaveButton.setVisible(!isHostInitial).setActive(!isHostInitial);
         this.disbandButton.setVisible(isHostInitial).setActive(isHostInitial);
@@ -169,55 +197,69 @@ export class Lobby extends Scene {
         // Render initial players if provided
         if (this.players.length > 0) this.renderPlayers();
 
-        // Listen for lobby updates
-        EventBus.on('lobby-update', this.onLobbyUpdate);
+        // Subscribe to lobby updates
+        EventBus.on("lobby-update", this.onLobbyUpdate);
 
         // When server says the game starts, jump to Game scene
         const onTurnStart = (evt: TurnStartEvent) => {
-            this.scene.start('Game', {
+            // Prevent duplicate starts if multiple turnStart events arrive
+            EventBus.off("turn-start", onTurnStart);
+            if (this.scene.isActive && this.scene.isActive("Game")) {
+                return;
+            }
+            this.scene.start("Game", {
                 net: {
-                    mode: 'lobby',
+                    mode: "lobby",
                     lobbyId: this.lobbyId,
                     starterId: evt.playerId,
                     turnId: evt.turnId,
                     // optional but helpful for opponent detection:
-                    players: this.players, // [{ playerId, playerName }, ...]
+                    players: this.players,
                 },
             });
         };
-        EventBus.on('turn-start', onTurnStart as any);
+        EventBus.on("turn-start", onTurnStart);
 
         // Moderation notices
         const onKicked = (n: any) => {
-            if (n && n.lobbyId === this.lobbyId && n.targetPlayerId === this.playerId) {
-                this.scene.start('MainMenu');
+            if (
+                n &&
+                n.lobbyId === this.lobbyId &&
+                n.targetPlayerId === this.playerId
+            ) {
+                this.scene.start("MainMenu");
             }
         };
         const onDisbanded = (n: any) => {
             if (n && n.lobbyId === this.lobbyId) {
-                this.scene.start('MainMenu');
+                this.scene.start("MainMenu");
             }
         };
-        EventBus.on('player-kicked', onKicked as any);
-        EventBus.on('lobby-disbanded', onDisbanded as any);
+        EventBus.on("player-kicked", onKicked as any);
+        EventBus.on("lobby-disbanded", onDisbanded as any);
 
-        // Resize & cleanup
-        this.scale.on('resize', this.handleResize, this);
+        // Resize handling
+        this.scale.on("resize", this.handleResize, this);
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-            EventBus.off('lobby-update', this.onLobbyUpdate);
-            EventBus.off('turn-start', onTurnStart as any);
-            EventBus.off('player-kicked', onKicked as any);
-            EventBus.off('lobby-disbanded', onDisbanded as any);
-            this.scale.off('resize', this.handleResize, this);
+            EventBus.off("lobby-update", this.onLobbyUpdate);
+            EventBus.off("player-kicked", onKicked as any);
+            EventBus.off("lobby-disbanded", onDisbanded as any);
+            EventBus.off("turn-start", onTurnStart);
+            this.scale.off("resize", this.handleResize, this);
         });
     }
 
     private onLobbyUpdate = (lu: LobbyUpdate) => {
         if (lu.lobbyId !== this.lobbyId) return;
 
-        this.hostId = lu.host.hostId;
-        this.hostName = lu.host.hostName;
-        this.players = lu.players;
+        if (lu.host) {
+            this.hostId = lu.host.hostId;
+            this.hostName = lu.host.hostName;
+        }
+
+        if (Array.isArray(lu.players)) {
+            this.players = lu.players;
+        }
 
         this.renderPlayers();
 
@@ -234,7 +276,7 @@ export class Lobby extends Scene {
     };
 
     private renderPlayers() {
-        // Clear old nodes
+        // Clear previous text objects
         this.playerTexts.forEach((t) => t.destroy());
         this.kickButtons.forEach((b) => b.destroy());
         this.playerTexts = [];
@@ -246,52 +288,67 @@ export class Lobby extends Scene {
         const startY = height * 0.36;
         const lineHeight = itemSize + 10;
 
-        const localName = getStoredPlayerName() || 'You';
+        const localName = getStoredPlayerName() || "You";
+        const short = (id: string) => id.slice(0, 8);
+
+        // Find yourself in the latest server update
         const me = this.players.find((p) => p.playerId === this.playerId);
+        // Server’s displayed name, fallback to local name
         const displayName = me?.playerName || localName;
 
         this.players.forEach((p, idx) => {
             const pid = p.playerId;
             const isHost = pid === this.hostId;
             const isMe = pid === this.playerId;
-            const icon = isHost ? '★ ' : '• ';
+            const icon = isHost ? "★ " : "• ";
 
-            const shownName = isMe
+            const name = isMe
                 ? `${displayName} (You)`
                 : isHost
-                    ? this.hostName
-                    : p.playerName || `Player ${pid.slice(0, 8)}`;
+                ? this.hostName
+                : p.playerName || `Player ${short(pid)}`;
 
-            const t = this.add
-                .text(centerX, startY + idx * lineHeight, `${icon}${shownName}`, {
-                    fontFamily: 'Arial',
+            const text = this.add
+                .text(centerX, startY + idx * lineHeight, `${icon}${name}`, {
+                    fontFamily: "Orbitron",
                     fontSize: `${itemSize}px`,
-                    color: isHost ? '#ffeb3b' : '#ffffff',
-                    stroke: '#000000',
+                    color: isHost ? "#ffeb3b" : "#ffffff",
+                    stroke: "#000000",
                     strokeThickness: 4,
-                    align: 'center',
+                    align: "center",
                 })
                 .setOrigin(0.5);
 
-            this.playerTexts.push(t);
+            this.playerTexts.push(text);
 
-            // Kick buttons (host only)
+            // Add kick button (only visible for host, not on mobile)
             const mobile = isMobile(width);
+            const offsetX = mobile ? 70 : 70;
+
             if (this.playerId === this.hostId && !isHost && !isMe) {
                 const kick = this.add
-                    .text(centerX + (mobile ? 70 : 180), startY + idx * lineHeight, 'Kick', {
-                        fontFamily: 'Arial',
-                        fontSize: `${Math.max(16, itemSize - 6)}px`,
-                        color: '#ffffff',
-                        backgroundColor: '#a52a2a',
-                        padding: { x: 8, y: 4 },
-                        align: 'center',
-                    })
+                    .text(
+                        centerX + offsetX,
+                        startY + idx * lineHeight,
+                        "Kick",
+                        {
+                            fontFamily: "Orbitron",
+                            fontSize: `${Math.max(16, itemSize - 6)}px`,
+                            color: "#ffffff",
+                            backgroundColor: "#a52a2a",
+                            padding: { x: 8, y: 4 },
+                            align: "center",
+                        }
+                    )
                     .setOrigin(0.5)
                     .setInteractive({ useHandCursor: true })
-                    .on('pointerdown', () => this.handleKick(pid))
-                    .on('pointerover', () => kick.setStyle({ backgroundColor: '#c34242' }))
-                    .on('pointerout', () => kick.setStyle({ backgroundColor: '#a52a2a' }));
+                    .on("pointerdown", () => this.handleKick(pid))
+                    .on("pointerover", () =>
+                        kick.setStyle({ backgroundColor: "#c34242" })
+                    )
+                    .on("pointerout", () =>
+                        kick.setStyle({ backgroundColor: "#a52a2a" })
+                    );
 
                 this.kickButtons.push(kick);
             }
@@ -299,7 +356,8 @@ export class Lobby extends Scene {
 
         // Refresh start state after list changes
         if (this.startButton) {
-            const canStart = this.playerId === this.hostId && this.players.length >= 2;
+            const canStart =
+                this.playerId === this.hostId && this.players.length >= 2;
             this.startButton.setActive(canStart).setAlpha(canStart ? 1 : 0.5);
         }
     }
@@ -311,15 +369,19 @@ export class Lobby extends Scene {
     }
 
     private handleLeaveLobby() {
-        const playerName = getStoredPlayerName() || 'Player';
-        sendLeaveLobby({ lobbyId: this.lobbyId, playerId: this.playerId, playerName });
-        this.scene.start('MainMenu');
+        const playerName = getStoredPlayerName() || "Player";
+        sendLeaveLobby({
+            lobbyId: this.lobbyId,
+            playerId: this.playerId,
+            playerName,
+        });
+        this.scene.start("MainMenu");
     }
 
     private handleDisbandLobby() {
         if (this.playerId !== this.hostId) return;
         sendDisbandLobby({ lobbyId: this.lobbyId });
-        this.scene.start('MainMenu');
+        this.scene.start("MainMenu");
     }
 
     private handleKick(targetPlayerId: PlayerId) {
@@ -339,7 +401,9 @@ export class Lobby extends Scene {
 
         this.title.setFontSize(titleSize).setPosition(centerX, height * 0.1);
         this.codeLabel.setFontSize(codeSize).setPosition(centerX, height * 0.2);
-        this.playersTitle.setFontSize(listHeaderSize).setPosition(centerX, height * 0.3);
+        this.playersTitle
+            .setFontSize(listHeaderSize)
+            .setPosition(centerX, height * 0.3);
         this.startButton?.setPosition(centerX, height * 0.85);
         this.leaveButton?.setPosition(centerX, height * 0.9);
         this.disbandButton?.setPosition(centerX, height * 0.95);
