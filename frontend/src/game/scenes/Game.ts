@@ -101,6 +101,7 @@ export class Game extends Phaser.Scene {
     private attackBtn!: Phaser.GameObjects.Text;
 
     private weaponNodes: {
+        circle: Phaser.GameObjects.Arc;
         ring: Phaser.GameObjects.Arc;
         image: Phaser.GameObjects.Image;
     }[] = [];
@@ -293,6 +294,7 @@ export class Game extends Phaser.Scene {
         const y = H * 0.9;
 
         this.weaponNodes.forEach((n) => {
+            n.circle.destroy();
             n.ring.destroy();
             n.image.destroy();
         });
@@ -301,6 +303,9 @@ export class Game extends Phaser.Scene {
         for (let i = 0; i < count; i++) {
             const x = xLeft + i * (r * 3);
 
+            const circle = this.add
+                .circle(x, y, r, 0x0d1a2b, 0.35)
+                .setStrokeStyle(2, 0x88aaff, 0.9)
             const ring = this.add
                 .circle(x, y, r + 3, 0x000000, 0)
                 .setStrokeStyle(4, 0xffffff, 1)
@@ -317,7 +322,7 @@ export class Game extends Phaser.Scene {
                 });
             this.sizeImageByHeight(image, H, 0.05);
 
-            this.weaponNodes.push({ ring, image });
+            this.weaponNodes.push({ circle, ring, image });
         }
 
         this.currentWeaponIndex = 0;
@@ -340,6 +345,8 @@ export class Game extends Phaser.Scene {
             const Y = H2 * 0.9;
             this.weaponNodes.forEach((n, i) => {
                 const nx = XL + i * (r * 3);
+                n.circle.setPosition(nx, Y);
+                n.circle.setScale(H2 * 0.02 / r);
                 n.ring.setPosition(nx, Y);
                 n.ring.setScale(H2 * 0.02 / r);
                 n.image.setPosition(nx, Y);
