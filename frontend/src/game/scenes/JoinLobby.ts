@@ -151,7 +151,7 @@ export class JoinLobby extends Scene {
             }
         });
 
-        this.codeInput.addEventListener('focus', function(event) {
+        this.codeInput.addEventListener('focus', function() {
             const app = document.getElementById("app");
             if (app) {
                 const rect = app.getBoundingClientRect();

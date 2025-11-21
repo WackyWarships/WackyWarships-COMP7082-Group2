@@ -143,7 +143,7 @@ export class EnterUsername extends Scene {
             }
         });
         
-        this.inputEl.addEventListener('focus', function(event) {
+        this.inputEl.addEventListener('focus', function() {
             const app = document.getElementById("app");
             if (app) {
                 const rect = app.getBoundingClientRect();

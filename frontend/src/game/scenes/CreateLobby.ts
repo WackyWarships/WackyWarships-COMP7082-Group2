@@ -145,7 +145,7 @@ export class CreateLobby extends Scene {
             }
         });
         
-        this.nameInput.addEventListener('focus', function(event) {
+        this.nameInput.addEventListener('focus', function() {
             const app = document.getElementById("app");
             if (app) {
                 const rect = app.getBoundingClientRect();
