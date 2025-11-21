@@ -377,11 +377,13 @@ export class FuelSortScene extends Phaser.Scene {
         });
 
         // Create modal panel
-        const panel = this.add.rectangle(width / 2, height / 2, height, height * 0.6, 0x2a2a3e);
+        const panelWidth = Math.min(width * 0.75, 680);
+        const panelHeight = Math.min(height * 0.6, 460);
+        const panel = this.add.rectangle(width / 2, height / 2, panelWidth, panelHeight, 0x2a2a3e);
         panel.setStrokeStyle(4, 0x4a4a5e);
 
         // Create title
-        const title = this.add.text(width / 2, height * 0.25, 'Pause Menu', {
+        const title = this.add.text(width / 2, height * 0.3, 'Pause Menu', {
             fontSize: '32px',
             color: '#ffffff',
             fontFamily: 'Orbitron, sans-serif',
@@ -391,25 +393,26 @@ export class FuelSortScene extends Phaser.Scene {
         // Home modal content
         const content = this.add.text(
             width / 2,
-            height * 0.4,
+            height * 0.45,
             'Game is paused.\nClick outside to resume or use the buttons below.\nPlease note that the timer is still running.',
             {
                 fontSize: '18px',
                 color: '#cccccc',
                 fontFamily: 'Orbitron, sans-serif',
                 align: 'center',
+                wordWrap: { width: Math.min(width * 0.6, 540) },
             }
         );
         content.setOrigin(0.5);
 
-        const resumeButton = this.createSimpleButton(width / 2, height * 0.55, 'Resume', () => {
+        const resumeButton = this.createSimpleButton(width / 2, height * 0.6, 'Resume', () => {
             this.hidePauseModal();
         });
 
         // NEW: Forfeit button – immediately fails minigame
         const forfeitButton = this.createSimpleButton(
             width / 2,
-            height * 0.63,
+            height * 0.68,
             'Forfeit',
             () => {
                 // close modal + trigger failure path
