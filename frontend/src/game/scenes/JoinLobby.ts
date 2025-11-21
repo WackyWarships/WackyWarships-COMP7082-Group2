@@ -141,7 +141,7 @@ export class JoinLobby extends Scene {
             pointerEvents: "auto",
         });
         
-        this.codeInput.addEventListener('blur', function(event) {
+        this.codeInput.addEventListener('blur', function() {
             const app = document.getElementById("app");
             if (app) {
                 const rect = app.getBoundingClientRect();

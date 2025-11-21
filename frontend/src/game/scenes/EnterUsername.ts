@@ -133,7 +133,7 @@ export class EnterUsername extends Scene {
             boxSizing: "border-box",
         } as CSSStyleDeclaration);
         
-        this.inputEl.addEventListener('blur', function(event) {
+        this.inputEl.addEventListener('blur', function() {
             const app = document.getElementById("app");
             if (app) {
                 const rect = app.getBoundingClientRect();
