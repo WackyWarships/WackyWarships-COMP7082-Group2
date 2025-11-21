@@ -82,6 +82,14 @@ export function setupSocket(
             return;
         }
 
+        if (lobby.players.length >= 2) {
+            socket.emit("error", {
+                code: 403,
+                message: "This lobby is full (2 players max)",
+            });
+            return;
+        }
+
         if (lobby.players.some((p) => p.playerId === payload.playerId)) {
             socket.emit("error", {
                 code: 409,

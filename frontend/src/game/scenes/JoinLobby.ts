@@ -239,12 +239,18 @@ export class JoinLobby extends Scene {
         };
 
         const onError = (err: { code?: number; message?: string }) => {
-            // Show only if it relates to this lobby attempt
-            if (
-                err &&
-                typeof err.message === "string" &&
-                err.message.includes(targetLobby!.lobbyId)
-            ) {
+            if (!err || typeof err.message !== "string") return;
+
+            // Lobby full
+            if (err.message.includes("full")) {
+                this.showError("This lobby is full (2 players max).");
+                EventBus.off("lobby-update", onUpdate);
+                EventBus.off("error", onError as any);
+                return;
+            }
+
+            // Lobby not found / invalid
+            if (err.message.includes(targetLobby!.lobbyId)) {
                 this.showError("Failed to join lobby. It may no longer exist.");
                 EventBus.off("lobby-update", onUpdate);
                 EventBus.off("error", onError as any);
