@@ -132,6 +132,20 @@ export class EnterUsername extends Scene {
             border: "2px solid #262079",
             boxSizing: "border-box",
         } as CSSStyleDeclaration);
+        
+        this.inputEl.addEventListener('blur', function(event) {
+            const app = document.getElementById("app");
+            if (app) {
+                const rect = app.getBoundingClientRect();
+                const centerXOnScreen = rect.left + rect.width / 2;
+                this.style.top = `${rect.height * 0.4}px`;
+                this.style.left = `${centerXOnScreen - 120}px`;
+            }
+        });
+        
+        this.inputEl.addEventListener('focus', function(event) {
+            event.preventDefault();
+        });
 
         document.body.appendChild(this.inputEl);
     }

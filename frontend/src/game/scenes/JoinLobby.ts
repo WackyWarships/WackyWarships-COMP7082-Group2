@@ -140,6 +140,20 @@ export class JoinLobby extends Scene {
             zIndex: "10",
             pointerEvents: "auto",
         });
+        
+        this.codeInput.addEventListener('blur', function(event) {
+            const app = document.getElementById("app");
+            if (app) {
+                const rect = app.getBoundingClientRect();
+                const centerXOnScreen = rect.left + rect.width / 2;
+                this.style.top = `${rect.height * 0.4}px`;
+                this.style.left = `${centerXOnScreen - 120}px`;
+            }
+        });
+
+        this.codeInput.addEventListener('focus', function(event) {
+            event.preventDefault();
+        });
 
         document.body.appendChild(this.codeInput);
 

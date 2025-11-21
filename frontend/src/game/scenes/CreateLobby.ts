@@ -134,6 +134,20 @@ export class CreateLobby extends Scene {
             zIndex: "10",
             pointerEvents: "auto",
         });
+        
+        this.nameInput.addEventListener('blur', function(event) {
+            const app = document.getElementById("app");
+            if (app) {
+                const rect = app.getBoundingClientRect();
+                const centerXOnScreen = rect.left + rect.width / 2;
+                this.style.top = `${rect.height * 0.4}px`;
+                this.style.left = `${centerXOnScreen - 120}px`;
+            }
+        });
+        
+        this.nameInput.addEventListener('focus', function(event) {
+            event.preventDefault();
+        });
 
         document.body.appendChild(this.nameInput);
 
@@ -145,15 +159,10 @@ export class CreateLobby extends Scene {
         if (!this.nameInput) return;
 
         const rect = this.game.canvas.getBoundingClientRect();
-        const { height } = this.scale;
         const centerXOnScreen = rect.left + rect.width / 2;
 
-        const titleY = height * 0.15;
-        const createBtnY = height * 0.55;
-        const midY = titleY + (createBtnY - titleY) * 0.5;
-
         this.nameInput.style.left = `${centerXOnScreen - 120}px`;
-        this.nameInput.style.top = `${rect.top + midY}px`;
+        this.nameInput.style.top = `${rect.height * 0.4}px`;
     }
 
     handleCreateClick() {
