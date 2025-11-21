@@ -144,7 +144,13 @@ export class EnterUsername extends Scene {
         });
         
         this.inputEl.addEventListener('focus', function(event) {
-            event.preventDefault();
+            const app = document.getElementById("app");
+            if (app) {
+                const rect = app.getBoundingClientRect();
+                const centerXOnScreen = rect.left + rect.width / 2;
+                this.style.top = `${rect.height * 0.4}px`;
+                this.style.left = `${centerXOnScreen - 120}px`;
+            }
         });
 
         document.body.appendChild(this.inputEl);
@@ -212,7 +218,7 @@ export class EnterUsername extends Scene {
                 this.inputEl.style.left = `${
                     centerXOnScreen - inputWidth / 2
                 }px`;
-                this.inputEl.style.top = `${rect.top + height * 0.5 - 20}px`;
+                this.inputEl.style.top = `${rect.height * 0.4}px`;
             });
         }
 

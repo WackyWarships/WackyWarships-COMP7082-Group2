@@ -146,7 +146,13 @@ export class CreateLobby extends Scene {
         });
         
         this.nameInput.addEventListener('focus', function(event) {
-            event.preventDefault();
+            const app = document.getElementById("app");
+            if (app) {
+                const rect = app.getBoundingClientRect();
+                const centerXOnScreen = rect.left + rect.width / 2;
+                this.style.top = `${rect.height * 0.4}px`;
+                this.style.left = `${centerXOnScreen - 120}px`;
+            }
         });
 
         document.body.appendChild(this.nameInput);
