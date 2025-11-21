@@ -136,7 +136,7 @@ export class CreateLobby extends Scene {
         });
         
         this.nameInput.addEventListener('blur', function() {
-            const app = document.getElementById("app");
+            const app = document.getElementById("game-container");
             if (app) {
                 const rect = app.getBoundingClientRect();
                 const centerXOnScreen = rect.left + rect.width / 2;
@@ -146,7 +146,7 @@ export class CreateLobby extends Scene {
         });
         
         this.nameInput.addEventListener('focus', function() {
-            const app = document.getElementById("app");
+            const app = document.getElementById("game-container");
             if (app) {
                 const rect = app.getBoundingClientRect();
                 const centerXOnScreen = rect.left + rect.width / 2;
