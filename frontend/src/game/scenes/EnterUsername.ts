@@ -123,7 +123,7 @@ export class EnterUsername extends Scene {
         Object.assign(this.inputEl.style, {
             position: "absolute",
             left: `${centerXOnScreen - inputWidth / 2}px`,
-            top: `${rect.top + inputY - 20}px`,
+            top: `${inputY}px`,
             width: `${inputWidth}px`,
             padding: "10px",
             fontSize: "18px",
@@ -132,6 +132,26 @@ export class EnterUsername extends Scene {
             border: "2px solid #262079",
             boxSizing: "border-box",
         } as CSSStyleDeclaration);
+        
+        this.inputEl.addEventListener('blur', function() {
+            const app = document.getElementById("game-container");
+            if (app) {
+                const rect = app.getBoundingClientRect();
+                const centerXOnScreen = rect.left + rect.width / 2;
+                this.style.top = `${rect.height * 0.5}px`;
+                this.style.left = `${centerXOnScreen - 120}px`;
+            }
+        });
+        
+        this.inputEl.addEventListener('focus', function() {
+            const app = document.getElementById("game-container");
+            if (app) {
+                const rect = app.getBoundingClientRect();
+                const centerXOnScreen = rect.left + rect.width / 2;
+                this.style.top = `${rect.height * 0.5}px`;
+                this.style.left = `${centerXOnScreen - 120}px`;
+            }
+        });
 
         document.body.appendChild(this.inputEl);
     }
@@ -198,7 +218,7 @@ export class EnterUsername extends Scene {
                 this.inputEl.style.left = `${
                     centerXOnScreen - inputWidth / 2
                 }px`;
-                this.inputEl.style.top = `${rect.top + height * 0.5 - 20}px`;
+                this.inputEl.style.top = `${rect.height * 0.4}px`;
             });
         }
 

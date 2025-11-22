@@ -140,6 +140,26 @@ export class JoinLobby extends Scene {
             zIndex: "10",
             pointerEvents: "auto",
         });
+        
+        this.codeInput.addEventListener('blur', function() {
+            const app = document.getElementById("game-container");
+            if (app) {
+                const rect = app.getBoundingClientRect();
+                const centerXOnScreen = rect.left + rect.width / 2;
+                this.style.top = `${rect.height * 0.4}px`;
+                this.style.left = `${centerXOnScreen - 120}px`;
+            }
+        });
+
+        this.codeInput.addEventListener('focus', function() {
+            const app = document.getElementById("game-container");
+            if (app) {
+                const rect = app.getBoundingClientRect();
+                const centerXOnScreen = rect.left + rect.width / 2;
+                this.style.top = `${rect.height * 0.4}px`;
+                this.style.left = `${centerXOnScreen - 120}px`;
+            }
+        });
 
         document.body.appendChild(this.codeInput);
 
@@ -151,15 +171,10 @@ export class JoinLobby extends Scene {
         if (!this.codeInput) return;
 
         const rect = this.game.canvas.getBoundingClientRect();
-        const { height } = this.scale;
         const centerXOnScreen = rect.left + rect.width / 2;
 
-        const titleY = height * 0.15;
-        const createBtnY = height * 0.55;
-        const midY = titleY + (createBtnY - titleY) * 0.5;
-
         this.codeInput.style.left = `${centerXOnScreen - 120}px`;
-        this.codeInput.style.top = `${rect.top + midY}px`;
+        this.codeInput.style.top = `${rect.height * 0.4}px`;
     }
 
     async handleJoinClick() {
