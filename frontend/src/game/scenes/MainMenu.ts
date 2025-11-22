@@ -43,32 +43,7 @@ export class MainMenu extends Scene {
             .setDisplaySize(height * 1.12, height)
             .setOrigin(0.5);
 
-        // Title
-        // const fontSizeTop = getResponsiveFontSize(width, height, 50, 32);
-        // const fontSizeBottom = getResponsiveFontSize(width, height, 50, 32);
-
-        // this.titleTop = this.add
-        //     .text(centerX, height * 0.12, "Wacky", {
-        //         fontFamily: "Orbitron",
-        //         fontSize: `${fontSizeTop}px`,
-        //         color: "#ffffff",
-        //         stroke: "#000000",
-        //         strokeThickness: 8,
-        //         align: "center",
-        //     })
-        //     .setOrigin(0.5);
-
-        // this.titleBottom = this.add
-        //     .text(centerX, height * 0.21, "Warships", {
-        //         fontFamily: "Orbitron",
-        //         fontSize: `${fontSizeBottom}px`,
-        //         color: "#ffffff",
-        //         stroke: "#000000",
-        //         strokeThickness: 8,
-        //         align: "center",
-        //     })
-        //     .setOrigin(0.5);
-        
+        // Title   
         this.titleImage = this.add
             .image(centerX, height * 0.21, "title_image")
             .setOrigin(0.5);
